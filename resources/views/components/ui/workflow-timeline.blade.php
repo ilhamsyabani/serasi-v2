@@ -45,7 +45,8 @@
     }
 @endphp
 
-<ol class="relative ml-3 border-l border-slate-200 space-y-5">
+{{-- Perubahan 1: Mengubah space dan margin ol agar border lurus --}}
+<ol class="relative border-l border-slate-200 ml-4 space-y-8">
     @foreach($steps as $status)
         @php
             $entries = $logs->get($status);
@@ -69,62 +70,63 @@
 
             // Warna & ikon penanda tahap sesuai state.
             if ($isDone && $isTutup)      { $markBg = 'bg-red-500';     $markIcon = 'ph-x'; }
-            elseif ($isDone)              { $markBg = 'bg-emerald-500'; $markIcon = 'ph-check'; }
-            elseif ($isCurrent)           { $markBg = 'bg-amber-400';   $markIcon = $ikonStatus; }
+            elseif ($isDone)              { $markBg = 'bg-emerald-500'; $markIcon = $ikonStatus; } // Menggunakan ikon spesifik tahap
+            elseif ($isCurrent)           { $markBg = 'bg-amber-500';   $markIcon = $ikonStatus; }
             else                          { $markBg = 'bg-slate-200';   $markIcon = $ikonStatus; }
         @endphp
 
-        <li class="ml-6 relative">
-            {{-- Penanda tahap --}}
-            <span class="absolute -left-[22px] flex h-6 w-6 items-center justify-center rounded-full ring-4 ring-white {{ $markBg }} {{ $isCurrent ? 'animate-pulse' : '' }}">
-                <i class="ph-bold {{ $markIcon }} text-[13px] {{ $isPending ? 'text-slate-400' : 'text-white' }}" aria-hidden="true"></i>
+        {{-- Perubahan 2: Memperbaiki posisi li dan relative left untuk centering bulatannya --}}
+        <li class="relative pl-8">
+            {{-- Penanda tahap (-left-3 akan memposisikan lingkaran w-6 tepat di tengah border) --}}
+            <span class="absolute -left-3 top-0 flex h-6 w-6 items-center justify-center rounded-full ring-4 ring-white {{ $markBg }} {{ $isCurrent ? 'animate-pulse' : '' }}">
+                <i class="ph-bold {{ $markIcon }} text-[12px] {{ $isPending ? 'text-slate-400' : 'text-white' }}" aria-hidden="true"></i>
             </span>
 
-            <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
                 <div class="min-w-0 flex-1">
-                    <p class="flex items-center gap-1.5 text-sm font-semibold {{ $isDone ? 'text-blue-900' : ($isCurrent ? 'text-amber-700' : 'text-slate-400') }}">
-                        <i class="ph {{ $ikonStatus }} text-base {{ $isDone ? 'text-emerald-600' : ($isCurrent ? 'text-amber-500' : 'text-slate-300') }}" aria-hidden="true"></i>
+                    {{-- Perubahan 3: Menghapus ikon duplikat di samping teks dan merapikan warna teks --}}
+                    <p class="flex items-center gap-1.5 text-sm font-semibold {{ $isDone ? 'text-[#1E3A8A]' : ($isCurrent ? 'text-amber-600' : 'text-slate-400') }}">
                         {{ $label }}
                         @if($siklus > 1)
-                            <span class="ml-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ $siklus }}x siklus</span>
+                            <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ $siklus }}x siklus</span>
                         @endif
                     </p>
 
                     @if(($isDone || $isCurrent) && ($aktor[$status] ?? null))
-                        <p class="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                        <p class="mt-1 flex items-center gap-1 text-xs text-slate-500 font-medium">
                             <i class="ph ph-user text-sm" aria-hidden="true"></i>{{ $aktor[$status] }}
                         </p>
                     @endif
 
                     @if($mulai)
-                        <p class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-slate-400">
-                            <i class="ph ph-clock text-sm" aria-hidden="true"></i>
+                        <p class="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate-500">
+                            <i class="ph ph-clock text-sm text-slate-400" aria-hidden="true"></i>
                             <span>{{ $mulai->format('d M Y, H:i') }}</span>
                             @if($selesai)<span class="text-slate-300">&rarr;</span><span>{{ $selesai->format('d M Y, H:i') }}</span>@endif
                             @if($durasi !== null)<span class="text-slate-300">&middot;</span><span>{{ $durasi }} hari kerja</span>@endif
-                            @if($isCurrent)<span class="text-slate-300">&middot;</span><span>berjalan {{ $mulai->diffForHumans(null, true) }}</span>@endif
+                            @if($isCurrent)<span class="text-slate-300">&middot;</span><span class="text-amber-600 font-medium">berjalan {{ $mulai->diffForHumans(null, true) }}</span>@endif
                         </p>
                     @else
-                        <p class="mt-1 text-xs text-slate-300">Belum dimulai</p>
+                        <p class="mt-1 text-xs text-slate-400">Belum dimulai</p>
                     @endif
                 </div>
 
                 {{-- Indikator status + SLA --}}
-                <div class="flex shrink-0 flex-wrap items-center gap-1.5">
+                <div class="flex shrink-0 flex-wrap items-center gap-2 mt-2 sm:mt-0">
                     @if($isCurrent)
-                        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                            <i class="ph-fill ph-spinner-gap text-xs" aria-hidden="true"></i> Sedang Diproses
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                            <i class="ph-fill ph-spinner-gap animate-spin" aria-hidden="true"></i> Sedang Diproses
                         </span>
                     @elseif($isDone && $isTutup)
-                        <span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
-                            <i class="ph-fill ph-x-circle text-xs" aria-hidden="true"></i> Perlu Pengajuan Ulang
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                            <i class="ph-fill ph-x-circle" aria-hidden="true"></i> Perlu Pengajuan Ulang
                         </span>
                     @elseif($isDone)
-                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                            <i class="ph-fill ph-check-circle text-xs" aria-hidden="true"></i> Selesai
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                            <i class="ph-fill ph-check-circle" aria-hidden="true"></i> Selesai
                         </span>
                     @else
-                        <span class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-400 ring-1 ring-inset ring-slate-300/60">Belum Dimulai</span>
+                        <span class="inline-flex items-center rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-inset ring-slate-300/60">Belum Dimulai</span>
                     @endif
 
                     @if($slaTahap && ($isDone || $isCurrent))
