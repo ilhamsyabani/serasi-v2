@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\DokumenRevisi;
 use App\Models\Permohonan;
 use App\Services\NotifikasiService;
+use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class RevisiController extends Controller
 {
+    use ValidatesFileContent;
+
     public function show(Permohonan $permohonan)
     {
         $pbf = Auth::guard('pemohon')->user();
@@ -31,6 +34,10 @@ class RevisiController extends Controller
         $request->validate([
             'dokumen.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
+
+        foreach ($request->file('dokumen') as $file) {
+            $this->assertAllowedFileMime($file);
+        }
 
         $evaluasiTerakhir = $permohonan->evaluasiTerakhir;
 

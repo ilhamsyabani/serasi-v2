@@ -15,9 +15,9 @@ use App\Http\Controllers\Internal\AdminIt\DashboardController as AdminItDashboar
 use App\Http\Controllers\Internal\AdminIt\UserController;
 use App\Http\Controllers\Internal\Permohonan\PermohonanController;
 
-Route::prefix('admin')->name('internal.')->middleware('web')->group(function () {
+Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'security.headers'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle.login:5,1')->name('login.submit');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware(['auth', 'role:kepala_balai,ketua_tim,staff_sertifikasi,admin_it'])->group(function () {

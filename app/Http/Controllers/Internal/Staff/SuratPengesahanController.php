@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Permohonan;
 use App\Models\SuratPengesahan;
 use App\Services\StatusTransitionService;
+use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class SuratPengesahanController extends Controller
 {
+    use ValidatesFileContent;
     public function edit(Permohonan $permohonan)
     {
         abort_if($permohonan->status_saat_ini !== Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN, 403);
@@ -25,6 +27,8 @@ class SuratPengesahanController extends Controller
             'file_surat' => 'required|file|mimes:pdf|max:10240',
             'nomor_surat' => 'required|string|max:100',
         ]);
+
+        $this->assertAllowedFileMime($request->file('file_surat'));
 
         $path = $request->file('file_surat')->store('surat_pengesahan', 'public');
 

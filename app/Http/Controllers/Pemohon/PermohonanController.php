@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Pemohon;
 use App\Http\Controllers\Controller;
 use App\Models\Permohonan;
 use App\Services\StatusTransitionService;
+use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class PermohonanController extends Controller
 {
+    use ValidatesFileContent;
+
     public function index()
     {
         $pbf = Auth::guard('pemohon')->user();
@@ -45,6 +48,12 @@ class PermohonanController extends Controller
         $data = $request->validate([
             'dokumen.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
+
+        if ($request->hasFile('dokumen')) {
+            foreach ($request->file('dokumen') as $file) {
+                $this->assertAllowedFileMime($file);
+            }
+        }
 
         $noReg = 'PBF/DENAH/' . date('Y') . '/' . str_pad(Permohonan::count() + 1, 5, '0', STR_PAD_LEFT);
 

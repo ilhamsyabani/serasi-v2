@@ -24,11 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'pbf.auth' => PbfAuthenticate::class,
             'pbf.guest' => PemohonRedirectIfAuthenticated::class,
+            'throttle.login' => \App\Http\Middleware\ThrottleLogin::class,
+            'force.https' => \App\Http\Middleware\ForceHttps::class,
+            'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
-        // Aplikasi punya dua portal dengan halaman login berbeda dan TIDAK punya
-        // route bernama `login` (default yang dicari middleware `auth`). Tanpa ini,
-        // tamu yang membuka URL terlindungi mendapat RouteNotFoundException.
+        $middleware->append([
+            \App\Http\Middleware\ForceHttps::class,
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
+
         $middleware->redirectGuestsTo(function ($request) {
             return $request->is('pemohon/*')
                 ? route('pemohon.login')

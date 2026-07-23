@@ -11,6 +11,7 @@ use App\Services\StatusTransitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -34,6 +35,10 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $pbf = Auth::guard('pemohon')->user();
 
+            \Illuminate\Support\Facades\RateLimiter::clear(
+                sha1(($data['identifier'] ?? '') . '|' . $request->ip())
+            );
+
             if (!$pbf->otp_terverifikasi) {
                 Auth::guard('pemohon')->logout();
                 $request->session()->invalidate();
@@ -43,7 +48,9 @@ class AuthController extends Controller
             return redirect()->intended(route('pemohon.dashboard'));
         }
 
-        return back()->withErrors(['identifier' => 'Kredensial salah.'])->withInput();
+        throw ValidationException::withMessages([
+            'identifier' => 'Kredensial salah.',
+        ]);
     }
 
     public function logout(Request $request)

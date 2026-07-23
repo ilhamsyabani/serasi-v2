@@ -6,9 +6,9 @@ use App\Http\Controllers\Pemohon\DashboardController;
 use App\Http\Controllers\Pemohon\PermohonanController;
 use App\Http\Controllers\Pemohon\RevisiController;
 
-Route::prefix('pemohon')->middleware('web')->name('pemohon.')->group(function () {
+Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])->name('pemohon.')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle.login:5,1')->name('login.submit');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware('pbf.auth')->group(function () {

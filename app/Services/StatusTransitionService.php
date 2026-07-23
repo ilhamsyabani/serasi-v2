@@ -78,6 +78,15 @@ class StatusTransitionService
                 'permohonan_id' => $permohonan->id,
                 'detail' => ['dari' => $statusLama, 'ke' => $statusBaru, 'catatan' => $catatan],
             ]);
+        } else {
+            AuditTrail::create([
+                'user_id' => 0,
+                'user_type' => $aktorTipe ?? 'system',
+                'aksi' => 'status_transition',
+                'modul' => 'M-07',
+                'permohonan_id' => $permohonan->id,
+                'detail' => ['dari' => $statusLama, 'ke' => $statusBaru, 'catatan' => $catatan],
+            ]);
         }
 
         return $log;

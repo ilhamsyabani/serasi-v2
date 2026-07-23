@@ -7,11 +7,13 @@ use App\Http\Requests\StorePermohonanRequest;
 use App\Models\DokumenPermohonan;
 use App\Models\Permohonan;
 use App\Services\StatusTransitionService;
+use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PermohonanController extends Controller
 {
+    use ValidatesFileContent;
     public function index(Request $request)
     {
         $sort   = $request->get('sort', 'tanggal_pengajuan');
@@ -102,6 +104,7 @@ class PermohonanController extends Controller
             }
 
             $file = $request->file($jenis);
+            $this->assertAllowedFileMime($file);
             DokumenPermohonan::create([
                 'permohonan_id' => $permohonan->id,
                 'jenis_dokumen' => $jenis,
