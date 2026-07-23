@@ -1,0 +1,5 @@
+{{-- Card Content --}}
+@props(['class' => ''])
+<div class="p-6 pt-0 {{ $class }}">
+    {{ $slot }}
+</div>

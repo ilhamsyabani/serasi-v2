@@ -1,0 +1,52 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+/* Alpine.js x-cloak */
+[x-cloak] { display: none !important; }
+
+/*
+ * Design System "Trusted Pharmacy" — Emerald Green & Navy (design_system.md).
+ * Font Inter & Phosphor Icons dimuat via <link> Google Fonts / CDN di layout head.
+ * Warna brand utama tetap memakai skala Tailwind bawaan: emerald-500/600 (primary),
+ * blue-900 (#1E3A8A navy) untuk judul, slate-* untuk netral.
+ */
+@theme {
+    --font-sans: 'Inter', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Alias semantik brand (design_system.md §2) */
+    --color-brand: #10b981;        /* emerald-500 — primary/CTA */
+    --color-brand-hover: #059669;  /* emerald-600 */
+    --color-navy: #1e3a8a;         /* blue-900 — heading & aksen */
+
+    /* SLA Indicators (CLAUDE.md §6) */
+    --color-sla-on-time: #10b981;
+    --color-sla-at-risk: #f59e0b;
+    --color-sla-late: #ef4444;
+
+    /* Status Badge Colors */
+    --color-status-pengajuan: #3b82f6;
+    --color-status-didisposisikan: #7c3aed;
+    --color-status-proses-evaluasi: #0891b2;
+    --color-status-revisi: #f59e0b;
+    --color-status-ditutup: #ef4444;
+    --color-status-menunggu: #9333ea;
+    --color-status-terbit: #10b981;
+}
+
+/* Latar & warna teks dasar sesuai design system */
+body {
+    background-color: #f8fafc; /* slate-50 */
+    color: #334155;            /* slate-700 */
+}
+
+/* Phosphor Icons: samakan baseline agar sejajar dengan teks */
+.ph, [class^="ph-"], [class*=" ph-"] {
+    line-height: 1;
+    vertical-align: -0.125em;
+    display: inline-block;
+}
