@@ -41,7 +41,7 @@ $navItems = collect([
                @class([
                    'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                    // Item aktif: latar hijau muda, teks & aksen navy, garis kiri tebal
-                   'bg-emerald-50 text-blue-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-6 before:w-1 before:rounded-r-full before:bg-emerald-500' => $isActive,
+                   'bg-emerald-50 text-blue-900' => $isActive,
                    'text-slate-500 hover:bg-slate-100 hover:text-slate-900' => ! $isActive,
                ])>
                 <i class="{{ $isActive ? 'ph-fill' : 'ph' }} {{ $item->icon }} text-xl {{ $isActive ? 'text-emerald-600' : '' }}" aria-hidden="true"></i>

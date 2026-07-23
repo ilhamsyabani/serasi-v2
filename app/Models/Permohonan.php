@@ -155,6 +155,21 @@ class Permohonan extends Model
         return $this->parent_permohonan_id !== null;
     }
 
+    public static function statusList(): array
+    {
+        return [
+            self::STATUS_PENGAJUAN => 'Pengajuan',
+            self::STATUS_DIDISPOSISIKAN => 'Didisposisikan',
+            self::STATUS_PROSES_EVALUASI => 'Proses Evaluasi',
+            self::STATUS_REVISI_1 => 'Revisi 1',
+            self::STATUS_REVISI_2 => 'Revisi 2',
+            self::STATUS_REVISI_3 => 'Revisi 3',
+            self::STATUS_DITUTUP_PENGAJUAN_ULANG => 'Ditutup – Pengajuan Ulang',
+            self::STATUS_MENUNGGU_SURAT_PENGESAHAN => 'Menunggu Surat Pengesahan',
+            self::STATUS_TERBIT_SURAT_PENGESAHAN => 'Terbit Surat Pengesahan',
+        ];
+    }
+
     public function isStatusAkhir(): bool
     {
         return in_array($this->status_saat_ini, [

@@ -19,16 +19,45 @@ class DistribusiController extends Controller
      * `didisposisikan` (menunggu ditugaskan ke staff), lengkap dengan beban
      * kerja tiap staff sebagai bahan pertimbangan penugasan.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
-        $permohonans = Permohonan::query()
+        $sort   = $request->get('sort', 'tanggal_pengajuan');
+        $dir    = $request->get('dir', 'desc');
+        $tanggalDari   = $request->get('tanggal_dari', '');
+        $tanggalSampai = $request->get('tanggal_sampai', '');
+        $search = $request->get('search');
+        $user = Auth::user();
+
+        $allowedSorts = ['tanggal_pengajuan'];
+        
+        $query = Permohonan::query()
             ->whereHas('disposisi', fn ($q) => $q->where('ketua_tim_id', $user->id))
             ->where('status_saat_ini', Permohonan::STATUS_DIDISPOSISIKAN)
-            ->with(['statusLog', 'disposisi.ketuaTim'])
-            ->latest()
-            ->get();
+            ->with(['statusLog', 'disposisi.ketuaTim'])->latest();
+
+        if ($tanggalDari) {
+            $query->whereDate('tanggal_pengajuan', '>=', $tanggalDari);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
+                ->orWhere('no_registrasi', 'like', "%{$search}%");
+            });
+        }
+
+        if ($tanggalSampai) {
+            $query->whereDate('tanggal_pengajuan', '<=', $tanggalSampai);
+        }
+
+        if (in_array($sort, $allowedSorts)) {
+            $query->orderBy($sort, $dir === 'asc' ? 'asc' : 'desc');
+        }
+
+        $permohonans = $query->latest()->paginate(10);
+
 
         $staffList = User::whereHas('role', fn ($q) => $q->where('kode', 'staff_sertifikasi'))
             ->where('is_aktif', true)
@@ -46,7 +75,7 @@ class DistribusiController extends Controller
             ->groupBy('staff_id')
             ->pluck('total', 'staff_id');
 
-        return view('internal.ketua_tim.distribusi.index', compact('permohonans', 'staffList', 'bebanKerja'));
+        return view('internal.ketua_tim.distribusi.index', compact('permohonans', 'staffList', 'bebanKerja', 'sort', 'dir', 'tanggalDari', 'tanggalSampai'));
     }
 
     public function store(Request $request, Permohonan $permohonan)

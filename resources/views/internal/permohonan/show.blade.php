@@ -92,7 +92,7 @@ $canEdit = $user->isKepalaBalai() && $user->id === $permohonan->kepala_balai_id 
 
 {{-- Surat Pengesahan --}}
 @if($permohonan->suratPengesahan)
-    <x-ui.card class="mb-4 border-l-4 border-l-emerald-700">
+    <x-ui.card class="mb-4">
         <x-ui.card-header title="Surat Pengesahan" />
         <x-ui.card-content>
             <div class="flex items-center justify-between">

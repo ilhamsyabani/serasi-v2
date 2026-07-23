@@ -12,14 +12,50 @@ use Illuminate\Support\Facades\Auth;
 
 class PermohonanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Eager load untuk timeline per baris (statusLog + aktor), hindari N+1.
-        $permohonans = Permohonan::with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
-            ->where('kepala_balai_id', Auth::id())
-            ->latest()
-            ->get();
-        return view('internal.kabalai.permohonan.index', compact('permohonans'));
+        $sort   = $request->get('sort', 'tanggal_pengajuan');
+        $dir    = $request->get('dir', 'desc');
+        $status = $request->get('status', '');
+        $tanggalDari   = $request->get('tanggal_dari', '');
+        $tanggalSampai = $request->get('tanggal_sampai', '');
+        $search = $request->get('search');
+       
+
+
+        $allowedSorts = ['status_saat_ini', 'tanggal_pengajuan'];
+
+        $query = Permohonan::with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
+            ->where('kepala_balai_id', Auth::id());
+
+        if ($status !== '' && $status !== null) {
+            $query->where('status_saat_ini', $status);
+        }
+
+        if ($tanggalDari) {
+            $query->whereDate('tanggal_pengajuan', '>=', $tanggalDari);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
+                ->orWhere('no_registrasi', 'like', "%{$search}%");
+            });
+        }
+
+        if ($tanggalSampai) {
+            $query->whereDate('tanggal_pengajuan', '<=', $tanggalSampai);
+        }
+
+        if (in_array($sort, $allowedSorts)) {
+            $query->orderBy($sort, $dir === 'asc' ? 'asc' : 'desc');
+        }
+
+        $permohonans = $query->latest()->paginate(10);
+
+        return view('internal.kabalai.permohonan.index', compact(
+            'permohonans', 'sort', 'dir', 'status', 'tanggalDari', 'tanggalSampai'
+        ));
     }
 
     public function create()

@@ -1,7 +1,7 @@
 {{-- Topbar untuk Portal Internal (design_system.md §5.5) --}}
 @props(['title' => ''])
 @php $user = Auth::user(); @endphp
-<header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
+<header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex items-center justify-between gap-3 shrink-0">
     <div class="min-w-0">
         <h1 class="text-lg font-semibold text-blue-900 truncate">{{ $title }}</h1>
     </div>

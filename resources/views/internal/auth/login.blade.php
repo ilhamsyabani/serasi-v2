@@ -37,7 +37,7 @@
                                class="h-4 w-4 rounded border-slate-300 text-emerald-800 focus:ring-emerald-700">
                         Ingat saya di perangkat ini
                     </label>
-                    <x-ui.button type="submit" variant="default" class="w-full">Masuk</x-ui.button>
+                    <x-ui.button type="submit" variant="default" size="full" class="w-full">Masuk</x-ui.button>
                 </form>
             </x-ui.card-content>
         </x-ui.card>

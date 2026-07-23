@@ -9,6 +9,36 @@
     <p class="text-sm text-slate-500">Kirim permohonan ke Ketua Tim Sertifikasi</p>
 </div>
 
+<form method="GET" action="{{ route('internal.kabalai.disposisi.index') }}" class="mb-4">
+    <div class="flex flex-wrap items-end gap-4">
+        <div class="flex-1">
+            <x-ui.input label="Search" name="search" :value="request('search')" placeholder="Ketik No. Reg atau Nama PBF..." />
+        </div>
+        <div class="w-38">
+            <x-ui.input
+                label="Dari Tanggal"
+                type="date"
+                name="tanggal_dari"
+                value="{{ $tanggalDari }}"
+                placeholder="DD-MM-YYYY"
+            />
+        </div>
+        <div class="w-38">
+            <x-ui.input
+                label="Sampai Tanggal"
+                type="date"
+                name="tanggal_sampai"
+                value="{{ $tanggalSampai }}"
+                placeholder="DD-MM-YYYY"
+            />
+        </div>
+        <div class="flex gap-2">
+            <x-ui.button variant="default" type="submit">Terapkan</x-ui.button>
+            <x-ui.button variant="outline" type="submit" onclick="this.form.status.value=''; this.form.tanggal_dari.value=''; this.form.tanggal_sampai.value=''; this.form.search.value='';" >Reset</x-ui.button>
+        </div>
+    </div>
+</form>
+
 <x-ui.card>
     <x-ui.card-content class="p-0">
         <table class="w-full text-sm">

@@ -95,7 +95,7 @@
 
 {{-- Surat Pengesahan --}}
 @if($permohonan->suratPengesahan)
-    <x-ui.card class="mb-20 sm:mb-4 border-l-4 border-l-emerald-700">
+    <x-ui.card class="mb-20 sm:mb-4">
         <x-ui.card-header title="Surat Pengesahan" description="Terdapat surat pengesahan" />
         <x-ui.card-content>
             <div class="flex items-center justify-between">

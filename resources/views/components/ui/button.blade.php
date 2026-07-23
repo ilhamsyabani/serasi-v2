@@ -11,6 +11,7 @@ $base = 'inline-flex items-center justify-center font-medium rounded-xl transiti
 $sizes = [
     'sm'   => 'h-8 px-3 text-xs gap-1.5 rounded-lg',
     'md'   => 'h-10 px-4 text-sm gap-2',
+    'full'   => 'h-10 px-4 text-sm gap-2 w-full',
     'lg'   => 'h-12 px-6 text-base gap-2',
     'icon' => 'h-10 w-10',
 ];

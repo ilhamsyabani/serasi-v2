@@ -3,6 +3,7 @@
     'label' => '',
     'name' => '',
     'options' => [], // ['value' => 'label', ...]
+    'selected' => null,
     'placeholder' => '— Pilih —',
     'required' => false,
     'error' => '',
@@ -29,7 +30,7 @@
             <option value="">{{ $placeholder }}</option>
         @endif
         @foreach($options as $val => $label)
-            <option value="{{ $val }}">{{ $label }}</option>
+            <option value="{{ $val }}" @selected((string) $val === (string) ($selected ?? old($name)))>{{ $label }}</option>
         @endforeach
     </select>
     @if($error)

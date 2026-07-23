@@ -12,14 +12,42 @@ use Illuminate\Support\Facades\Auth;
 
 class DisposisiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $sort   = $request->get('sort', 'tanggal_pengajuan');
+        $dir    = $request->get('dir', 'desc');
+        $tanggalDari   = $request->get('tanggal_dari', '');
+        $tanggalSampai = $request->get('tanggal_sampai', '');
+        $search = $request->get('search');
         $user = Auth::user();
-        $permohonans = Permohonan::where('status_saat_ini', Permohonan::STATUS_PENGAJUAN)
-            ->where('kepala_balai_id', $user->id)
-            ->get();
+
+        $allowedSorts = ['tanggal_pengajuan'];
+        
+        $query = Permohonan::where('status_saat_ini', Permohonan::STATUS_PENGAJUAN)
+            ->where('kepala_balai_id', $user->id);
+
+        if ($tanggalDari) {
+            $query->whereDate('tanggal_pengajuan', '>=', $tanggalDari);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
+                ->orWhere('no_registrasi', 'like', "%{$search}%");
+            });
+        }
+
+        if ($tanggalSampai) {
+            $query->whereDate('tanggal_pengajuan', '<=', $tanggalSampai);
+        }
+
+        if (in_array($sort, $allowedSorts)) {
+            $query->orderBy($sort, $dir === 'asc' ? 'asc' : 'desc');
+        }
+
+        $permohonans = $query->latest()->paginate(10);
         $ketuaTimList = User::whereHas('role', fn($q) => $q->where('kode', 'ketua_tim'))->get();
-        return view('internal.kabalai.disposisi.index', compact('permohonans', 'ketuaTimList'));
+        return view('internal.kabalai.disposisi.index', compact('permohonans', 'ketuaTimList', 'sort', 'dir', 'tanggalDari', 'tanggalSampai'));
     }
 
     public function store(Request $request, Permohonan $permohonan)

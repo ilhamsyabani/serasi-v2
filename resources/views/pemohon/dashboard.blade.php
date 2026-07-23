@@ -11,7 +11,7 @@
 
 {{-- Active Permohonan Card --}}
 @if($permohonanAktif)
-    <x-ui.card class="mb-6 border-l-4 border-l-emerald-700">
+    <x-ui.card class="mb-6">
         <x-ui.card-header :title="$permohonanAktif->no_registrasi" description="Permohonan aktif" />
         <x-ui.card-content>
             <div class="flex items-center justify-between mb-3">

@@ -35,7 +35,7 @@
                     @csrf
                     <x-ui.input label="Email atau No. WhatsApp" name="identifier" :value="old('identifier')" placeholder="email@pbf.id atau 08xxxxxxxxxx" required autofocus />
                     <x-ui.input label="Password" name="password" type="password" placeholder="••••••••" required />
-                    <x-ui.button type="submit" variant="default" class="w-full">Masuk</x-ui.button>
+                    <x-ui.button type="submit" variant="default" class="w-full" size="full">Masuk</x-ui.button>
                 </form>
             </x-ui.card-content>
         </x-ui.card>
