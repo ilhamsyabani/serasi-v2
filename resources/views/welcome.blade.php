@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Denah PBF - {{ config('app.name', 'BBPOM') }}</title>
+    <title>Sistem Persetujuan Denah PBF {{ config('app.name', 'BBPOM') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
@@ -13,8 +13,8 @@
     <nav class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-800 text-white flex items-center justify-center shadow-sm">
-                    <i class="ph-bold ph-shield-plus text-lg"></i>
+                <div class="h-8 w-8">
+                    <x-ui.logo src="img/logos.png" alt="Logo" />
                 </div>
                 <span class="font-bold text-slate-900 tracking-tight">Serasi</span>
             </div>
@@ -231,9 +231,9 @@
                     <div>
                         <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-700 pb-2">Demo Internal BBPOM</h4>
                         <div class="space-y-3 text-sm font-mono text-slate-300">
-                            <div class="flex justify-between"><span>K. Balai</span><span class="text-white">kepala.balai@bbpom.test</span></div>
-                            <div class="flex justify-between"><span>K. Tim</span><span class="text-white">ketua.tim@bbpom.test</span></div>
-                            <div class="flex justify-between"><span>Staff</span><span class="text-white">staff1@bbpom.test</span></div>
+                            <div class="flex justify-between"><span>K. Balai</span><span class="text-white">198501012010011001</span></div>
+                            <div class="flex justify-between"><span>K. Tim</span><span class="text-white">198703152011012002</span></div>
+                            <div class="flex justify-between"><span>Staff</span><span class="text-white">199002102015031003</span></div>
                             <div class="flex justify-between text-blue-400 pt-2 border-t border-slate-700/50"><span>Password Semua</span><span>password</span></div>
                         </div>
                     </div>

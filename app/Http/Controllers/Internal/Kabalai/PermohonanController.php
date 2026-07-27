@@ -27,8 +27,10 @@ class PermohonanController extends Controller
 
         $allowedSorts = ['status_saat_ini', 'tanggal_pengajuan'];
 
-        $query = Permohonan::with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
-            ->where('kepala_balai_id', Auth::id());
+        $query = Permohonan::select('permohonan.*','pbf.nib as nib')
+            ->with(['statusLog', 'disposisi.ketuaTim', 'pbf','distribusiAktif.staff'])
+            ->where('kepala_balai_id', Auth::id())
+            -> leftJoin('pbf', 'permohonan.pbf_id', '=', 'pbf.id');
 
         if ($status !== '' && $status !== null) {
             $query->where('status_saat_ini', $status);
