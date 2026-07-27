@@ -23,6 +23,7 @@ class User extends Authenticatable
         'nip',
         'nama',
         'email',
+        'no_wa',
         'sso_identifier',
         'password',
         'is_aktif',

@@ -33,8 +33,8 @@
             <x-ui.textarea label="Alamat" name="alamat" :value="old('alamat')" placeholder="Alamat lengkap PBF" :rows="2" />
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <x-ui.input label="Email" name="email" type="email" :value="old('email')" placeholder="email@pbf.id" :error="$errors->first('email')" required />
-                <x-ui.input label="No. WhatsApp" name="no_whatsapp" type="text" :value="old('no_whatsapp')" placeholder="08xxxxxxxxxx" :error="$errors->first('no_whatsapp')" required />
+                <x-ui.input label="Email PIC" name="email" type="email" :value="old('email')" placeholder="email@pbf.id" :error="$errors->first('email')" required />
+                <x-ui.input label="No. WhatsApp PIC" name="no_whatsapp" type="text" :value="old('no_whatsapp')" placeholder="08xxxxxxxxxx" :error="$errors->first('no_whatsapp')" required />
             </div>
 
             {{-- Upload dokumen: 5 input terpisah, bersumber dari DokumenPermohonan::JENIS --}}

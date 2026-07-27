@@ -94,7 +94,7 @@
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <span class="text-xs text-slate-400 hidden sm:block bg-slate-100 px-2 py-1 rounded">{{ number_format($d->ukuran_file_kb) }} KB</span>
-                                    <x-ui.button variant="ghost" size="sm" href="{{ asset('storage/' . $d->path_file) }}" target="_blank" title="Unduh Dokumen">
+                                    <x-ui.button variant="ghost" size="sm" href="{{ route('internal.download.dokumen', [$permohonan, $d->jenis_dokumen]) }}" target="_blank" title="Unduh Dokumen">
                                         <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                         </svg>
@@ -127,7 +127,7 @@
                                 </p>
                             </div>
                         </div>
-                        <x-ui.button variant="default" size="sm" href="{{ asset('storage/' . $permohonan->suratPengesahan->path_file) }}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+                        <x-ui.button variant="default" size="sm" href="{{ route('internal.download.surat', $permohonan) }}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
                             <i class="ph ph-download-simple mr-1.5"></i> Unduh Surat
                         </x-ui.button>
                     </div>

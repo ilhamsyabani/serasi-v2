@@ -5,6 +5,7 @@ use App\Http\Controllers\Pemohon\AuthController;
 use App\Http\Controllers\Pemohon\DashboardController;
 use App\Http\Controllers\Pemohon\PermohonanController;
 use App\Http\Controllers\Pemohon\RevisiController;
+use App\Http\Controllers\DownloadController;
 
 Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])->name('pemohon.')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -17,6 +18,9 @@ Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])
         Route::get('/permohonan/{permohonan}', [PermohonanController::class, 'show'])->name('permohonan.show');
         Route::get('/permohonan/{permohonan}/revisi', [RevisiController::class, 'show'])->name('revisi.show');
         Route::post('/permohonan/{permohonan}/revisi', [RevisiController::class, 'store'])->name('revisi.store');
+        Route::get('/download/dokumen/{permohonan}/{jenisDokumen}', [DownloadController::class, 'dokumen'])->name('download.dokumen');
+        Route::get('/download/surat/{permohonan}', [DownloadController::class, 'surat'])->name('download.surat');
+        Route::get('/download/revisi/{revisi}', [DownloadController::class, 'revisi'])->name('download.revisi');
         Route::get('/permohonan/baru', [PermohonanController::class, 'create'])->name('permohonan.create');
         Route::post('/permohonan/baru', [PermohonanController::class, 'store'])->name('permohonan.store');
     });
