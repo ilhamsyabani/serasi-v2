@@ -99,7 +99,7 @@ class PermohonanController extends Controller
             try {
                 Mail::to($pbf->email)->send(new AkunBaruMail($username, $password, $pbf->nama_pbf));
                 $statusEmail = Notifikasi::STATUS_TERKIRIM;
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
                 $statusEmail = Notifikasi::STATUS_GAGAL;
             }
             Notifikasi::create([
@@ -111,16 +111,24 @@ class PermohonanController extends Controller
                 'status_kirim'  => $statusEmail,
             ]);
 
-            $waPesan = "🔐 *Akun Portal PBF*\n\n"
-                . "Yth. {$pbf->nama_pbf},\n\n"
-                . "Akun Portal Pelaku Usaha Anda telah dibuat.\n\n"
-                . "Username: {$username}\n"
-                . "Password: {$password}\n\n"
-                . "Login di: " . config('app.url') . "\n\n"
-                . "Pada login pertama, kode OTP akan dikirim via WhatsApp.";
-
-            $waService = app(NotifikasiService::class);
-            $waService->kirim(new Permohonan(), Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_WHATSAPP, null, $waPesan);
+            // WA kredensial via template (kirimAkunBaru butuh permohonan objek dengan pbf)
+            $permTemp = new Permohonan();
+            $permTemp->pbf = $pbf;
+            $permTemp->no_registrasi = 'PENDING';
+            $permTemp->nama_pbf_snapshot = $pbf->nama_pbf;
+            app(NotifikasiService::class)->kirim(
+                $permTemp,
+                Notifikasi::TUJUAN_PEMOHON,
+                $pbf->id,
+                Notifikasi::CHANNEL_WHATSAPP,
+                'AKUN_BARU',
+                null,
+                [
+                    '{{username}}' => $username,
+                    '{{password}}' => $password,
+                    '{{app_url}}'  => config('app.url'),
+                ]
+            );
         }
 
         $noReg = 'PBF/DENAH/' . date('Y') . '/' . str_pad(Permohonan::count() + 1, 5, '0', STR_PAD_LEFT);

@@ -55,6 +55,9 @@
             <a href="{{ route('pemohon.permohonan.index') }}" @class(['flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm', 'bg-white/15 font-medium' => request()->routeIs('pemohon.permohonan.*'), 'hover:bg-white/10' => ! request()->routeIs('pemohon.permohonan.*')])>
                 <i class="ph ph-files" aria-hidden="true"></i> Permohonan
             </a>
+            <a href="{{ route('pemohon.notifikasi.index') }}" @class(['flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm', 'bg-white/15 font-medium' => request()->routeIs('pemohon.notifikasi.index'), 'hover:bg-white/10' => ! request()->routeIs('pemohon.notifikasi.index')])>
+                <i class="ph ph-bell" aria-hidden="true"></i> Notifikasi
+            </a>
             <div class="border-t border-white/15 pt-2 mt-2">
                 <p class="px-3 pb-1 text-xs text-blue-200 truncate">{{ $pemohon->nama_pbf }}</p>
                 <form method="POST" action="{{ route('pemohon.logout') }}">
@@ -90,7 +93,7 @@
     {{-- Bottom Navigation (mobile-first) --}}
     <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1 z-50">
         <div class="flex items-center justify-around">
-            @php $dashActive = request()->routeIs('pemohon.dashboard'); $permActive = request()->routeIs('pemohon.permohonan.*'); @endphp
+            @php $dashActive = request()->routeIs('pemohon.dashboard'); $permActive = request()->routeIs('pemohon.permohonan.*'); $notifActive = request()->routeIs('pemohon.notifikasi.index'); @endphp
             <a href="{{ route('pemohon.dashboard') }}" @class(['flex flex-col items-center py-2 px-6 text-[11px] gap-0.5', 'text-emerald-600' => $dashActive, 'text-slate-400' => ! $dashActive])>
                 <i class="{{ $dashActive ? 'ph-fill' : 'ph' }} ph-house text-xl" aria-hidden="true"></i>
                 <span>Beranda</span>
@@ -98,6 +101,10 @@
             <a href="{{ route('pemohon.permohonan.index') }}" @class(['flex flex-col items-center py-2 px-6 text-[11px] gap-0.5', 'text-emerald-600' => $permActive, 'text-slate-400' => ! $permActive])>
                 <i class="{{ $permActive ? 'ph-fill' : 'ph' }} ph-files text-xl" aria-hidden="true"></i>
                 <span>Permohonan</span>
+            </a>
+            <a href="{{ route('pemohon.notifikasi.index') }}" @class(['flex flex-col items-center py-2 px-6 text-[11px] gap-0.5', 'text-emerald-600' => $notifActive, 'text-slate-400' => ! $notifActive])>
+                <i class="{{ $notifActive ? 'ph-fill' : 'ph' }} ph-bell text-xl" aria-hidden="true"></i>
+                <span>Notifikasi</span>
             </a>
         </div>
     </nav>

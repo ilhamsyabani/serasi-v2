@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Pemohon;
 
 use App\Http\Controllers\Controller;
 use App\Models\DokumenRevisi;
+use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Services\NotifikasiService;
 use App\Traits\ValidatesFileContent;
@@ -58,6 +59,13 @@ class RevisiController extends Controller
 
         app(NotifikasiService::class)->kirim($permohonan, 'staff', $permohonan->distribusiAktif->staff_id ?? 0, 'email', 'REVISI_DITERIMA');
         app(NotifikasiService::class)->kirim($permohonan, 'staff', $permohonan->distribusiAktif->staff_id ?? 0, 'whatsapp', 'REVISI_DITERIMA');
+
+        // Notify KT bahwa pemohon telah upload revisi
+        $ktId = $permohonan->disposisi?->ketua_tim_id;
+        if ($ktId) {
+            app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ktId, Notifikasi::CHANNEL_WHATSAPP, 'REVISI_UPLOADED');
+        }
+
         app(\App\Services\StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PROSES_EVALUASI, 'Revisi diupload', null, 'pemohon');
 
         return redirect()->route('pemohon.dashboard')->with('success', 'Revisi berhasil dikirim.');

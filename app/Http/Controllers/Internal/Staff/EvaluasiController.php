@@ -56,6 +56,7 @@ class EvaluasiController extends Controller
 
             if ($ketuaTimId) {
                 $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTimId, Notifikasi::CHANNEL_WHATSAPP, 'SIAP_TERBIT');
+                $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTimId, Notifikasi::CHANNEL_EMAIL, 'PERMOHONAN_SIAP_TERBIT');
             }
 
             $pesan = 'Evaluasi disimpan. Permohonan siap terbit surat.';

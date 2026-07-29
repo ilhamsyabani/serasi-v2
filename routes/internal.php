@@ -15,6 +15,7 @@ use App\Http\Controllers\Internal\AdminIt\DashboardController as AdminItDashboar
 use App\Http\Controllers\Internal\AdminIt\UserController;
 use App\Http\Controllers\Internal\Permohonan\PermohonanController;
 use App\Http\Controllers\DownloadController;
+use App\Http\Controllers\Internal\NotifikasiController;
 
 Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'security.headers'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -60,5 +61,8 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
         Route::get('/permohonan/{permohonan}', [PermohonanController::class, 'show'])->name('permohonan.show');
         Route::get('/download/dokumen/{permohonan}/{jenisDokumen}', [DownloadController::class, 'dokumen'])->name('download.dokumen');
         Route::get('/download/surat/{permohonan}', [DownloadController::class, 'surat'])->name('download.surat');
+
+        // Notifikasi
+        Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
     });
 });

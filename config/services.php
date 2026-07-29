@@ -53,4 +53,7 @@ return [
         'max_attempts' => env('OTP_MAX_ATTEMPTS', 3),
     ],
 
+    'sla_reminder_jam' => env('SLA_REMINDER_JAM', 9),
+    'sla_reminder_tenggat' => env('SLA_REMINDER_TENGGAT', 24),
+
 ];

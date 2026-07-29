@@ -7,6 +7,7 @@ use App\Http\Controllers\Pemohon\OtpController;
 use App\Http\Controllers\Pemohon\PermohonanController;
 use App\Http\Controllers\Pemohon\RevisiController;
 use App\Http\Controllers\DownloadController;
+use App\Http\Controllers\Pemohon\NotifikasiController;
 
 Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])->name('pemohon.')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -29,5 +30,8 @@ Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])
         Route::get('/download/revisi/{revisi}', [DownloadController::class, 'revisi'])->name('download.revisi');
         Route::get('/permohonan/baru', [PermohonanController::class, 'create'])->name('permohonan.create');
         Route::post('/permohonan/baru', [PermohonanController::class, 'store'])->name('permohonan.store');
+
+        // Notifikasi
+        Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
     });
 });

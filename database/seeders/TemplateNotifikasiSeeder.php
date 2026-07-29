@@ -31,6 +31,10 @@ class TemplateNotifikasiSeeder extends Seeder
             ['kode_event' => 'SIAP_TERBIT', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "✅ *Dokumen Lengkap*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nDokumen telah memenuhi persyaratan. Menunggu penerbitan Surat Pengesahan.", 'is_active' => true],
             // WA: Kredensial akun baru ke Pemohon (password disubstitusi manual via pesanManual)
             ['kode_event' => 'AKUN_BARU', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "🔐 *Akun Portal PBF*\n\nYth. {{nama_pbf}},\n\nAkun Portal Pelaku Usaha Anda telah dibuat.\n\nUsername: {{username}}\nPassword: {{password}}\n\nLogin di: {{app_url}}\n\nPada login pertama, kode OTP akan dikirim via WhatsApp.", 'is_active' => true],
+            // WA: Pemberitahuan ke pemohon bahwa permohonan baru tercatat
+            ['kode_event' => 'PENGAJUAN_BARU', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "📋 *Pengajuan Diterima*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nPengajuan Anda telah diterima dan sedang dalam proses. Pantau status di portal.", 'is_active' => true],
+            // WA: Pemberitahuan ke KT bahwa pemohon telah upload revisi
+            ['kode_event' => 'REVISI_UPLOADED', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "📤 *Revisi Diupload*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nPemohon telah mengunggah revisi. Mohon review kembali.", 'is_active' => true],
         ];
 
         foreach ($templates as $t) {

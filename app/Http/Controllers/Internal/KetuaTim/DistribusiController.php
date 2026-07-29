@@ -104,6 +104,9 @@ class DistribusiController extends Controller
         app(NotifikasiService::class)->kirim($permohonan, 'staff', $data['staff_id'], 'email', 'DISTRIBUSI_BARU');
         app(NotifikasiService::class)->kirim($permohonan, 'staff', $data['staff_id'], 'whatsapp', 'DISTRIBUSI_BARU');
 
+        // Konfirmasi ke KT bahwa staff sudah ditugaskan
+        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $user->id, Notifikasi::CHANNEL_WHATSAPP, 'DISTRIBUSI_BARU');
+
         return back()->with('success', 'Permohonan berhasil didistribusikan.');
     }
 }

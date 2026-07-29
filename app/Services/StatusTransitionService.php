@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\PermohonanStatusChanged;
 use App\Models\AuditTrail;
 use App\Models\Permohonan;
 use App\Models\StatusLog;
@@ -88,6 +89,16 @@ class StatusTransitionService
                 'detail' => ['dari' => $statusLama, 'ke' => $statusBaru, 'catatan' => $catatan],
             ]);
         }
+
+        PermohonanStatusChanged::dispatch(
+            $permohonan,
+            $statusLama,
+            $statusBaru,
+            $catatan,
+            $actor,
+            $aktorTipe,
+            $log
+        );
 
         return $log;
     }

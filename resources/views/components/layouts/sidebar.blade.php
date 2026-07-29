@@ -18,6 +18,8 @@ $navItems = collect([
     // Admin IT
     (object)['route' => 'internal.adminit.dashboard', 'label' => 'Dashboard', 'icon' => 'ph-squares-four', 'roles' => ['admin_it']],
     (object)['route' => 'internal.adminit.users.index', 'label' => 'Manajemen User', 'icon' => 'ph-users-three', 'roles' => ['admin_it']],
+    // Shared — Notifikasi (semua role internal)
+    (object)['route' => 'internal.notifikasi.index', 'label' => 'Notifikasi', 'icon' => 'ph-bell', 'roles' => ['kepala_balai', 'ketua_tim', 'staff_sertifikasi', 'admin_it']],
 ])->filter(fn($item) => in_array($role, $item->roles));
 @endphp
 

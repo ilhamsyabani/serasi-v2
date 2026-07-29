@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Events\PermohonanStatusChanged;
+use App\Listeners\PermohonanNotifier;
 use App\Models\Distribusi;
 use App\Models\Permohonan;
 use App\Models\User;
@@ -29,5 +31,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Permohonan::class, PermohonanPolicy::class);
         Gate::policy(Distribusi::class, DistribusiPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+
+        $this->app['events']->listen(
+            PermohonanStatusChanged::class,
+            PermohonanNotifier::class,
+        );
     }
 }
