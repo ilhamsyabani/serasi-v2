@@ -3,14 +3,10 @@
 namespace App\Http\Controllers\Pemohon;
 
 use App\Http\Controllers\Controller;
-use App\Models\Permohonan;
 use App\Models\Pbf;
-use App\Models\Role;
-use App\Models\User;
-use App\Services\StatusTransitionService;
+use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -31,26 +27,29 @@ class AuthController extends Controller
             ? ['email' => $data['identifier'], 'password' => $data['password']]
             : ['no_whatsapp' => $data['identifier'], 'password' => $data['password']];
 
-        if (Auth::guard('pemohon')->attempt($credentials)) {
+        if (! Auth::guard('pemohon')->attempt($credentials)) {
+            throw ValidationException::withMessages([
+                'identifier' => 'Kredensial salah.',
+            ]);
+        }
+
+        $request->session()->regenerate();
+        $pbf = Auth::guard('pemohon')->user();
+
+        Auth::guard('pemohon')->logout();
+        $request->session()->invalidate();
+
+        if ($pbf->otp_terverifikasi) {
+            Auth::guard('pemohon')->login($pbf);
             $request->session()->regenerate();
-            $pbf = Auth::guard('pemohon')->user();
-
-            \Illuminate\Support\Facades\RateLimiter::clear(
-                sha1(($data['identifier'] ?? '') . '|' . $request->ip())
-            );
-
-            if (!$pbf->otp_terverifikasi) {
-                Auth::guard('pemohon')->logout();
-                $request->session()->invalidate();
-                return redirect()->route('pemohon.login')->with('otp_required', true)->with('pbf_id', $pbf->id);
-            }
-
             return redirect()->intended(route('pemohon.dashboard'));
         }
 
-        throw ValidationException::withMessages([
-            'identifier' => 'Kredensial salah.',
-        ]);
+        // Kirim OTP ke WhatsApp pemohon
+        app(OtpService::class)->buatDanKirimOtp($pbf, 'whatsapp');
+
+        $request->session()->put('otp_pbf_id', $pbf->id);
+        return redirect()->route('pemohon.otp')->with('info', 'Kode OTP telah dikirim via WhatsApp.');
     }
 
     public function logout(Request $request)

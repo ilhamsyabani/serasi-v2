@@ -22,6 +22,15 @@
                 <h2 class="text-base font-semibold text-slate-900 mb-1">Masuk</h2>
                 <p class="text-xs text-slate-500 mb-6">Login dengan Email atau No. WhatsApp</p>
 
+                @if(session('info'))
+                    <x-ui.alert type="info" class="mb-4">{{ session('info') }}</x-ui.alert>
+                @endif
+                @if(session('success'))
+                    <x-ui.alert type="success" class="mb-4">{{ session('success') }}</x-ui.alert>
+                @endif
+                @if(session('error'))
+                    <x-ui.alert type="error" class="mb-4">{{ session('error') }}</x-ui.alert>
+                @endif
                 @if(session('otp_required'))
                     <x-ui.alert type="warning" class="mb-4">Akun memerlukan verifikasi OTP. Silakan hubungi Admin IT.</x-ui.alert>
                 @endif

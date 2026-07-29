@@ -29,6 +29,8 @@ class OtpLog extends Model
         'pbf_id',
         'kode_otp',
         'channel',
+        'expires_at',
+        'attempts',
         'status',
         'verified_at',
     ];
@@ -38,7 +40,8 @@ class OtpLog extends Model
     ];
 
     protected $casts = [
-        'verified_at' => 'datetime',
+        'expires_at'  => 'datetime',
+        'verified_at'  => 'datetime',
     ];
 
     public function pbf(): BelongsTo

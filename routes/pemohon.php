@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Pemohon\AuthController;
 use App\Http\Controllers\Pemohon\DashboardController;
+use App\Http\Controllers\Pemohon\OtpController;
 use App\Http\Controllers\Pemohon\PermohonanController;
 use App\Http\Controllers\Pemohon\RevisiController;
 use App\Http\Controllers\DownloadController;
@@ -11,6 +12,11 @@ Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle.login:5,1')->name('login.submit');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // OTP verification (tanpa middleware pbf.auth — session-based)
+    Route::get('/otp', [OtpController::class, 'showForm'])->name('otp');
+    Route::post('/otp', [OtpController::class, 'verify'])->middleware('throttle.login:5,1')->name('otp.verify');
+    Route::post('/otp/resend', [OtpController::class, 'resend'])->middleware('throttle.login:3,5')->name('otp.resend');
 
     Route::middleware('pbf.auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

@@ -80,7 +80,7 @@ class DownloadController extends Controller
         }
 
         if ($user && $user->isKetuaTim()) {
-            return $permohonan->disposisi?->tim_id === $user->tim_id;
+            return $permohonan->disposisi?->ketua_tim_id === $user->id;
         }
 
         $pbf = auth('pbf')->user();

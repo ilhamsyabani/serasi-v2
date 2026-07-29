@@ -166,16 +166,20 @@ class PermohonanController extends Controller
 
     public function show(Permohonan $permohonan)
     {
+        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
         return view('internal.kabalai.permohonan.show', compact('permohonan'));
     }
 
     public function edit(Permohonan $permohonan)
     {
+        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
         return view('internal.kabalai.permohonan.edit', compact('permohonan'));
     }
 
     public function update(Request $request, Permohonan $permohonan)
     {
+        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+
         $data = $request->validate([
             'nama_pbf_snapshot' => 'required|string|max:200',
             'email_snapshot' => 'required|email|max:150',

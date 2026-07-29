@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Internal\Kabalai;
 
 use App\Http\Controllers\Controller;
 use App\Models\Disposisi;
+use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\User;
 use App\Services\NotifikasiService;
@@ -53,6 +54,8 @@ class DisposisiController extends Controller
 
     public function store(Request $request, Permohonan $permohonan)
     {
+        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+
         $data = $request->validate([
             'ketua_tim_id' => 'required|exists:users,id',
             'catatan' => 'nullable|string',

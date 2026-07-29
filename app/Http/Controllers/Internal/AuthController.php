@@ -29,11 +29,6 @@ class AuthController extends Controller
 
         if (Auth::guard('web')->attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
-
-            \Illuminate\Support\Facades\RateLimiter::clear(
-                sha1($request->nip . '|' . $request->ip())
-            );
-
             return redirect()->intended(route('internal.dashboard'));
         }
 

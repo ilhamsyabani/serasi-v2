@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Internal\Staff;
 
 use App\Http\Controllers\Controller;
-use App\Models\Distribusi;
 use App\Models\DokumenPermohonan;
 use App\Models\Evaluasi;
 use App\Models\Notifikasi;
@@ -12,7 +11,6 @@ use App\Services\NotifikasiService;
 use App\Services\StatusTransitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class EvaluasiController extends Controller
 {
@@ -50,18 +48,37 @@ class EvaluasiController extends Controller
         ]);
 
         $transisi = app(StatusTransitionService::class);
+        $notif = app(NotifikasiService::class);
+        $ketuaTimId = $permohonan->disposisi?->ketua_tim_id;
 
         if ($data['hasil'] === 'lengkap') {
             $transisi->transisi($permohonan, Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN, 'Evaluasi lengkap', $user, 'internal');
+
+            if ($ketuaTimId) {
+                $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTimId, Notifikasi::CHANNEL_WHATSAPP, 'SIAP_TERBIT');
+            }
+
             $pesan = 'Evaluasi disimpan. Permohonan siap terbit surat.';
         } else {
             $log = $transisi->mintaRevisiAtauTutup($permohonan, $data['catatan'], $user, 'internal');
-            $pesan = $log->status === Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG
-                ? 'Kuota 3 revisi habis. Permohonan ditutup — pemohon perlu mengajukan ulang.'
-                : 'Evaluasi disimpan. Permohonan dikembalikan untuk revisi.';
 
-            if ($log->status !== Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG) {
-                app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'REVISI_DIMINTA');
+            if ($log->status === Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG) {
+                // Kirim notifikasi penutupan ke pemohon
+                $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'DITUTUP_PENGAJUAN_ULANG');
+
+                if ($ketuaTimId) {
+                    $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTimId, Notifikasi::CHANNEL_WHATSAPP, 'DITUTUP_PENGAJUAN_ULANG');
+                }
+
+                $pesan = 'Kuota 3 revisi habis. Permohonan ditutup — pemohon perlu mengajukan ulang.';
+            } else {
+                $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'REVISI_DIMINTA');
+
+                if ($ketuaTimId) {
+                    $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTimId, Notifikasi::CHANNEL_WHATSAPP, 'REVISI_DIMINTA');
+                }
+
+                $pesan = 'Evaluasi disimpan. Permohonan dikembalikan untuk revisi.';
             }
         }
 

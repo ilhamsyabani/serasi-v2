@@ -46,7 +46,9 @@ class SuratPengesahanController extends Controller
 
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN, 'Surat pengesahan diterbitkan', Auth::user(), 'internal');
 
-        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'SURAT_TERBIT');
+        $notif = app(NotifikasiService::class);
+        $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'SURAT_TERBIT');
+        $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_EMAIL, 'SURAT_TERBIT');
 
         return redirect()->route('internal.staff.dashboard')->with('success', 'Surat pengesahan berhasil diterbitkan.');
     }
