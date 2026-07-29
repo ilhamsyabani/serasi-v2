@@ -102,6 +102,7 @@ class DistribusiController extends Controller
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PROSES_EVALUASI, 'Didistribusikan ke Staff', $user, 'internal');
 
         app(NotifikasiService::class)->kirim($permohonan, 'staff', $data['staff_id'], 'email', 'DISTRIBUSI_BARU');
+        app(NotifikasiService::class)->kirim($permohonan, 'staff', $data['staff_id'], 'whatsapp', 'DISTRIBUSI_BARU');
 
         return back()->with('success', 'Permohonan berhasil didistribusikan.');
     }

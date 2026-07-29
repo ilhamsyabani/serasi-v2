@@ -40,10 +40,11 @@ return [
     ],
 
     'wa_gateway' => [
-        'url' => env('WA_GATEWAY_URL'),
-        'api_key' => env('WA_GATEWAY_API_KEY'),
+        'url'       => env('WA_GATEWAY_URL'),
+        'token'     => env('WA_GATEWAY_TOKEN'),
+        'secret_key' => env('WA_GATEWAY_SECRET_KEY'),
         'sender_number' => env('WA_GATEWAY_SENDER'),
-        'timeout' => env('WA_GATEWAY_TIMEOUT', 30),
+        'timeout'   => env('WA_GATEWAY_TIMEOUT', 30),
     ],
 
     'otp' => [

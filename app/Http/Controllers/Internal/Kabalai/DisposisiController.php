@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Disposisi;
 use App\Models\Permohonan;
 use App\Models\User;
+use App\Services\NotifikasiService;
 use App\Services\StatusTransitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -70,6 +71,8 @@ class DisposisiController extends Controller
         ]);
 
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_DIDISPOSISIKAN, 'Didisposisikan ke Ketua Tim', Auth::user(), 'internal');
+
+        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $data['ketua_tim_id'], Notifikasi::CHANNEL_WHATSAPP, 'DISPOSISI_BARU');
 
         return back()->with('success', 'Disposisi berhasil dikirim.');
     }

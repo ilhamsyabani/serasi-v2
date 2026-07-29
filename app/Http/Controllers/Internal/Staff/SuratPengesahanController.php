@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Internal\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\SuratPengesahan;
+use App\Services\NotifikasiService;
 use App\Services\StatusTransitionService;
 use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
@@ -27,10 +29,11 @@ class SuratPengesahanController extends Controller
             'file_surat' => 'required|file|mimes:pdf|max:10240',
             'nomor_surat' => 'required|string|max:100',
         ]);
+        $file = $request->file('file_surat');
 
-        $this->assertAllowedFileMime($request->file('file_surat'));
+        $this->assertAllowedFileMime($file);
 
-        $path = $request->file('file_surat')->store('surat_pengesahan', 'public');
+        $path = $file->store('surat_pengesahan', 'public');
 
         SuratPengesahan::create([
             'permohonan_id' => $permohonan->id,
@@ -38,9 +41,12 @@ class SuratPengesahanController extends Controller
             'path_file' => $path,
             'nomor_surat' => $request->nomor_surat,
             'tanggal_upload' => now(),
+            'nama_file_asli' => $file->getClientOriginalName(),
         ]);
 
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN, 'Surat pengesahan diterbitkan', Auth::user(), 'internal');
+
+        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'SURAT_TERBIT');
 
         return redirect()->route('internal.staff.dashboard')->with('success', 'Surat pengesahan berhasil diterbitkan.');
     }

@@ -76,7 +76,7 @@ class DownloadController extends Controller
         }
 
         if ($user && $user->isStaffSertifikasi()) {
-            return $permohonan->distribusiAktif?->user_id === $user->id;
+            return $permohonan->distribusiAktif?->staff_id === $user->id;
         }
 
         if ($user && $user->isKetuaTim()) {

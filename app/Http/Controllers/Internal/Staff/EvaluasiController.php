@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Distribusi;
 use App\Models\DokumenPermohonan;
 use App\Models\Evaluasi;
+use App\Models\Notifikasi;
 use App\Models\Permohonan;
+use App\Services\NotifikasiService;
 use App\Services\StatusTransitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -53,11 +55,14 @@ class EvaluasiController extends Controller
             $transisi->transisi($permohonan, Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN, 'Evaluasi lengkap', $user, 'internal');
             $pesan = 'Evaluasi disimpan. Permohonan siap terbit surat.';
         } else {
-            // Keputusan revisi-atau-tutup + penegakan batas 3 revisi ada di service.
             $log = $transisi->mintaRevisiAtauTutup($permohonan, $data['catatan'], $user, 'internal');
             $pesan = $log->status === Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG
                 ? 'Kuota 3 revisi habis. Permohonan ditutup — pemohon perlu mengajukan ulang.'
                 : 'Evaluasi disimpan. Permohonan dikembalikan untuk revisi.';
+
+            if ($log->status !== Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG) {
+                app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'REVISI_DIMINTA');
+            }
         }
 
         return redirect()->route('internal.staff.dashboard')->with('success', $pesan);

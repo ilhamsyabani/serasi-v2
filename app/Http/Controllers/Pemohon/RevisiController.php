@@ -57,6 +57,7 @@ class RevisiController extends Controller
         }
 
         app(NotifikasiService::class)->kirim($permohonan, 'staff', $permohonan->distribusiAktif->staff_id ?? 0, 'email', 'REVISI_DITERIMA');
+        app(NotifikasiService::class)->kirim($permohonan, 'staff', $permohonan->distribusiAktif->staff_id ?? 0, 'whatsapp', 'REVISI_DITERIMA');
         app(\App\Services\StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PROSES_EVALUASI, 'Revisi diupload', null, 'pemohon');
 
         return redirect()->route('pemohon.dashboard')->with('success', 'Revisi berhasil dikirim.');

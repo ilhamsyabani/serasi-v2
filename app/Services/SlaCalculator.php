@@ -124,7 +124,7 @@ class SlaCalculator
         if ($config === null || $config->durasi === null) {
             return $dasar + [
                 'state' => $selesai ? self::STATE_SELESAI : self::STATE_TANPA_SLA,
-                'label' => $selesai ? 'Selesai' : 'Tanpa SLA',
+                'label' => $selesai ? 'Selesai' : 'SELESAI LEBIH AWAL',
             ];
         }
 

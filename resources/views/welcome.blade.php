@@ -214,7 +214,7 @@
             </div>
 
             {{-- Akun Demo --}}
-            <div class="max-w-4xl mx-auto border border-slate-700/50 rounded-2xl overflow-hidden bg-slate-900/30">
+            <!--<div class="max-w-4xl mx-auto border border-slate-700/50 rounded-2xl overflow-hidden bg-slate-900/30">
                 <div class="bg-slate-800/80 px-6 py-4 border-b border-slate-700/50 flex items-center gap-3">
                     <i class="ph-fill ph-info text-slate-400"></i>
                     <h3 class="font-semibold text-slate-300 text-sm">Informasi Akun Demo (Development Mode)</h3>
@@ -238,7 +238,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>-->
 
         </div>
     </section>

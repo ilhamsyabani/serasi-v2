@@ -4,12 +4,18 @@ namespace App\Http\Controllers\Internal\Kabalai;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePermohonanRequest;
+use App\Mail\AkunBaruMail;
 use App\Models\DokumenPermohonan;
+use App\Models\Notifikasi;
 use App\Models\Permohonan;
+use App\Models\Pbf;
+use App\Services\NotifikasiService;
+use App\Services\OtpService;
 use App\Services\StatusTransitionService;
 use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class PermohonanController extends Controller
 {
@@ -71,17 +77,51 @@ class PermohonanController extends Controller
     {
         $data = $request->validated();
 
-        $pbf = \App\Models\Pbf::updateOrCreate(
+        $isBaru = ! Pbf::where('nib', $data['nib'])->exists();
+        $password = OtpService::generatePassword();
+
+        $pbf = Pbf::updateOrCreate(
             ['nib' => $data['nib']],
             [
                 'nama_pbf' => $data['nama_pbf'],
                 'alamat' => $data['alamat'] ?? null,
                 'email' => $data['email'],
                 'no_whatsapp' => $data['no_whatsapp'],
-                'password_hash' => \Illuminate\Support\Facades\Hash::make(\App\Services\OtpService::generatePassword()),
+                'password_hash' => \Illuminate\Support\Facades\Hash::make($password),
                 'otp_terverifikasi' => false,
             ]
         );
+
+        // Kirim kredensial hanya untuk PBF baru (bukan update data)
+        if ($isBaru) {
+            $username = $data['email'];
+
+            try {
+                Mail::to($pbf->email)->send(new AkunBaruMail($username, $password, $pbf->nama_pbf));
+                $statusEmail = Notifikasi::STATUS_TERKIRIM;
+            } catch (\Throwable $e) {
+                $statusEmail = Notifikasi::STATUS_GAGAL;
+            }
+            Notifikasi::create([
+                'permohonan_id' => null,
+                'tujuan_tipe'   => Notifikasi::TUJUAN_PEMOHON,
+                'tujuan_id'     => $pbf->id,
+                'channel'       => Notifikasi::CHANNEL_EMAIL,
+                'template_kode' => 'AKUN_BARU',
+                'status_kirim'  => $statusEmail,
+            ]);
+
+            $waPesan = "🔐 *Akun Portal PBF*\n\n"
+                . "Yth. {$pbf->nama_pbf},\n\n"
+                . "Akun Portal Pelaku Usaha Anda telah dibuat.\n\n"
+                . "Username: {$username}\n"
+                . "Password: {$password}\n\n"
+                . "Login di: " . config('app.url') . "\n\n"
+                . "Pada login pertama, kode OTP akan dikirim via WhatsApp.";
+
+            $waService = app(NotifikasiService::class);
+            $waService->kirim(new Permohonan(), Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_WHATSAPP, null, $waPesan);
+        }
 
         $noReg = 'PBF/DENAH/' . date('Y') . '/' . str_pad(Permohonan::count() + 1, 5, '0', STR_PAD_LEFT);
 

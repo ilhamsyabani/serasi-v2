@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\AuditTrail;
 use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\TemplateNotifikasi;
@@ -21,25 +20,44 @@ class NotifikasiService
             $isi = str_replace('{{nama_pbf}}', $permohonan->nama_pbf_snapshot, $isi);
         }
 
-        $status = 'terkirim';
+        $status = Notifikasi::STATUS_TERKIRIM;
         try {
-            if ($channel === 'email') {
-                $tujuanEmail = $tujuanTipe === 'pemohon' ? $permohonan->pbf->email : \App\Models\User::find($tujuanId)?->email;
+            if ($channel === Notifikasi::CHANNEL_EMAIL) {
+                $tujuanEmail = $tujuanTipe === Notifikasi::TUJUAN_PEMOHON
+                    ? $permohonan->pbf->email
+                    : \App\Models\User::find($tujuanId)?->email;
                 if ($tujuanEmail) {
                     Mail::to($tujuanEmail)->send(new NotifikasiMail($isi, $templateKode));
                 }
+            } elseif ($channel === Notifikasi::CHANNEL_WHATSAPP) {
+                $noWa = $this->resolveNomorWa($permohonan, $tujuanTipe, $tujuanId);
+                if ($noWa) {
+                    $sent = app(WhatsappSender::class)->send($noWa, $isi);
+                    $status = $sent ? Notifikasi::STATUS_TERKIRIM : Notifikasi::STATUS_GAGAL;
+                } else {
+                    $status = Notifikasi::STATUS_GAGAL;
+                }
             }
         } catch (\Throwable $e) {
-            $status = 'gagal';
+            $status = Notifikasi::STATUS_GAGAL;
         }
 
         return Notifikasi::create([
             'permohonan_id' => $permohonan->id,
-            'tujuan_tipe' => $tujuanTipe,
-            'tujuan_id' => $tujuanId,
-            'channel' => $channel,
+            'tujuan_tipe'   => $tujuanTipe,
+            'tujuan_id'     => $tujuanId,
+            'channel'       => $channel,
             'template_kode' => $templateKode,
-            'status_kirim' => $status,
+            'status_kirim'  => $status,
         ]);
+    }
+
+    private function resolveNomorWa(Permohonan $permohonan, string $tujuanTipe, int $tujuanId): ?string
+    {
+        if ($tujuanTipe === Notifikasi::TUJUAN_PEMOHON) {
+            return $permohonan->pbf->no_whatsapp;
+        }
+        $user = \App\Models\User::find($tujuanId);
+        return $user?->no_whatsapp;
     }
 }
