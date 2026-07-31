@@ -12,7 +12,7 @@
 <form method="GET" action="{{ route('internal.kabalai.disposisi.index') }}" class="mb-4">
     <div class="flex flex-wrap items-end gap-4">
         <div class="flex-1">
-            <x-ui.input label="Search" name="search" :value="request('search')" placeholder="Ketik No. Reg atau Nama PBF..." />
+            <x-ui.input label="Search" name="search" :value="request('search')" placeholder="Ketik NIB atau Nama PBF..." />
         </div>
         <div class="w-38">
             <x-ui.input

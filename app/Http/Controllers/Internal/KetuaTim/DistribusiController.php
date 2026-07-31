@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Internal\KetuaTim;
 
 use App\Http\Controllers\Controller;
 use App\Models\Distribusi;
+use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\ReassignmentLog;
 use App\Models\User;
@@ -44,7 +45,8 @@ class DistribusiController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
-                ->orWhere('no_registrasi', 'like', "%{$search}%");
+                ->orWhere('no_registrasi', 'like', "%{$search}%")
+                ->orWhere('nib_snapshot', 'like', "%{$search}%");
             });
         }
 
@@ -75,7 +77,7 @@ class DistribusiController extends Controller
             ->groupBy('staff_id')
             ->pluck('total', 'staff_id');
 
-        return view('internal.ketua_tim.distribusi.index', compact('permohonans', 'staffList', 'bebanKerja', 'sort', 'dir', 'tanggalDari', 'tanggalSampai'));
+        return view('internal.ketua_tim.distribusi.index', compact('permohonans', 'staffList', 'bebanKerja', 'sort', 'dir', 'tanggalDari', 'tanggalSampai', 'search'));
     }
 
     public function store(Request $request, Permohonan $permohonan)

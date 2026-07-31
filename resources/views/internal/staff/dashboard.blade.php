@@ -10,6 +10,20 @@
     <x-ui.stat-card :value="$permohonans->where('status_saat_ini', 'menunggu_surat_pengesahan')->count()" label="Siap Terbit" description="Upload surat" icon="ph-file-text" />
 </div>
 
+<div class="mb-6">
+    <form method="GET" action="{{ route('internal.staff.dashboard') }}" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[200px]">
+            <x-ui.input label="" name="search" :value="request('search')" placeholder="Ketik NIB atau Nama PBF..." />
+        </div>
+        <div class="flex items-end gap-2">
+            <x-ui.button type="submit">Cari</x-ui.button>
+            @if(request('search'))
+                <x-ui.button type="button" variant="ghost" onclick="window.location='{{ url()->current() }}'">Reset</x-ui.button>
+            @endif
+        </div>
+    </form>
+</div>
+
 <x-ui.card>
     <x-ui.card-content class="p-0">
         <table class="w-full text-sm">

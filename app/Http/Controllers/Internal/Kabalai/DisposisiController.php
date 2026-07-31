@@ -35,7 +35,8 @@ class DisposisiController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
-                ->orWhere('no_registrasi', 'like', "%{$search}%");
+                ->orWhere('no_registrasi', 'like', "%{$search}%")
+                ->orWhere('nib_snapshot', 'like', "%{$search}%");
             });
         }
 
@@ -49,7 +50,7 @@ class DisposisiController extends Controller
 
         $permohonans = $query->latest()->paginate(10);
         $ketuaTimList = User::whereHas('role', fn($q) => $q->where('kode', 'ketua_tim'))->get();
-        return view('internal.kabalai.disposisi.index', compact('permohonans', 'ketuaTimList', 'sort', 'dir', 'tanggalDari', 'tanggalSampai'));
+        return view('internal.kabalai.disposisi.index', compact('permohonans', 'ketuaTimList', 'sort', 'dir', 'tanggalDari', 'tanggalSampai', 'search'));
     }
 
     public function store(Request $request, Permohonan $permohonan)

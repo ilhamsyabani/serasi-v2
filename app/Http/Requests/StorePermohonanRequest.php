@@ -26,7 +26,7 @@ class StorePermohonanRequest extends FormRequest
             'nib' => 'required|string|max:30',
             'nama_pbf' => 'required|string|max:200',
             'alamat' => 'nullable|string|max:500',
-            'email' => 'required|email|max:150',
+            'email' => 'required|email|max:150|unique:pbf,email',
             'no_whatsapp' => 'required|string|max:20',
             // Dokumen opsional saat input: kelengkapan diperiksa Staff pada tahap evaluasi.
         ] + DokumenPermohonan::aturanValidasi(wajib: false);

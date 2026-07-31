@@ -49,7 +49,8 @@ class PermohonanController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
-                ->orWhere('no_registrasi', 'like', "%{$search}%");
+                ->orWhere('no_registrasi', 'like', "%{$search}%")
+                ->orWhere('nib_snapshot', 'like', "%{$search}%");
             });
         }
 
@@ -64,7 +65,7 @@ class PermohonanController extends Controller
         $permohonans = $query->latest()->paginate(10);
 
         return view('internal.kabalai.permohonan.index', compact(
-            'permohonans', 'sort', 'dir', 'status', 'tanggalDari', 'tanggalSampai'
+            'permohonans', 'sort', 'dir', 'status', 'tanggalDari', 'tanggalSampai', 'search'
         ));
     }
 
@@ -77,7 +78,6 @@ class PermohonanController extends Controller
     {
         $data = $request->validated();
 
-        $isBaru = ! Pbf::where('nib', $data['nib'])->exists();
         $password = OtpService::generatePassword();
 
         $pbf = Pbf::updateOrCreate(
@@ -92,46 +92,43 @@ class PermohonanController extends Controller
             ]
         );
 
-        // Kirim kredensial hanya untuk PBF baru (bukan update data)
-        if ($isBaru) {
-            $username = $data['email'];
-
-            try {
-                Mail::to($pbf->email)->send(new AkunBaruMail($username, $password, $pbf->nama_pbf));
-                $statusEmail = Notifikasi::STATUS_TERKIRIM;
-            } catch (\Throwable) {
-                $statusEmail = Notifikasi::STATUS_GAGAL;
-            }
-            Notifikasi::create([
-                'permohonan_id' => null,
-                'tujuan_tipe'   => Notifikasi::TUJUAN_PEMOHON,
-                'tujuan_id'     => $pbf->id,
-                'channel'       => Notifikasi::CHANNEL_EMAIL,
-                'template_kode' => 'AKUN_BARU',
-                'status_kirim'  => $statusEmail,
-            ]);
-
-            // WA kredensial via template (kirimAkunBaru butuh permohonan objek dengan pbf)
-            $permTemp = new Permohonan();
-            $permTemp->pbf = $pbf;
-            $permTemp->no_registrasi = 'PENDING';
-            $permTemp->nama_pbf_snapshot = $pbf->nama_pbf;
-            app(NotifikasiService::class)->kirim(
-                $permTemp,
-                Notifikasi::TUJUAN_PEMOHON,
-                $pbf->id,
-                Notifikasi::CHANNEL_WHATSAPP,
-                'AKUN_BARU',
-                null,
-                [
-                    '{{username}}' => $username,
-                    '{{password}}' => $password,
-                    '{{app_url}}'  => config('app.url'),
-                ]
-            );
-        }
+        $username = $data['email'];
 
         $noReg = 'PBF/DENAH/' . date('Y') . '/' . str_pad(Permohonan::count() + 1, 5, '0', STR_PAD_LEFT);
+
+        try {
+            Mail::to($pbf->email)->send(new AkunBaruMail($username, $password, $pbf->nama_pbf));
+            $statusEmail = Notifikasi::STATUS_TERKIRIM;
+        } catch (\Throwable) {
+            $statusEmail = Notifikasi::STATUS_GAGAL;
+        }
+        Notifikasi::create([
+            'permohonan_id' => null,
+            'tujuan_tipe'   => Notifikasi::TUJUAN_PEMOHON,
+            'tujuan_id'     => $pbf->id,
+            'channel'       => Notifikasi::CHANNEL_EMAIL,
+            'template_kode' => 'AKUN_BARU',
+            'status_kirim'  => $statusEmail,
+        ]);
+
+        // WA kredensial via template
+        $permTemp = new Permohonan();
+        $permTemp->pbf = $pbf;
+        $permTemp->no_registrasi = $noReg;
+        $permTemp->nama_pbf_snapshot = $pbf->nama_pbf;
+        app(NotifikasiService::class)->kirim(
+            $permTemp,
+            Notifikasi::TUJUAN_PEMOHON,
+            $pbf->id,
+            Notifikasi::CHANNEL_WHATSAPP,
+            'AKUN_BARU',
+            null,
+            [
+                '{{username}}' => $username,
+                '{{password}}' => $password,
+                '{{app_url}}'  => config('app.url'),
+            ]
+        );
 
         $permohonan = Permohonan::create([
             'no_registrasi' => $noReg,

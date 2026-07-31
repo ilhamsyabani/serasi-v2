@@ -14,11 +14,24 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $permohonans = Permohonan::whereHas('distribusiAktif', fn($q) => $q->where('staff_id', $user->id))->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])->latest()->get();
+        $search = $request->get('search');
 
-        return view('internal.staff.dashboard', compact('user', 'permohonans'));
+        $query = Permohonan::whereHas('distribusiAktif', fn($q) => $q->where('staff_id', $user->id))
+            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff']);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
+                ->orWhere('no_registrasi', 'like', "%{$search}%")
+                ->orWhere('nib_snapshot', 'like', "%{$search}%");
+            });
+        }
+
+        $permohonans = $query->latest()->get();
+
+        return view('internal.staff.dashboard', compact('user', 'permohonans', 'search'));
     }
 }

@@ -56,7 +56,7 @@
                 label="Cari Permohonan"
                 name="search"
                 :value="request('search')"
-                placeholder="Ketik No. Reg atau Nama PBF..." />
+                placeholder="Ketik NIB atau Nama PBF..." />
         </div>
 
         <div class="w-38">
