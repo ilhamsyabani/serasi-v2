@@ -63,10 +63,18 @@ class NotifikasiService
                 }
             } elseif ($channel === Notifikasi::CHANNEL_WHATSAPP) {
                 $noWa = $this->resolveNomorWa($permohonan, $tujuanTipe, $tujuanId);
-                if ($noWa) {
-                    $sent = app(WhatsappSender::class)->send($noWa, $isi);
-                    $status = $sent ? Notifikasi::STATUS_TERKIRIM : Notifikasi::STATUS_GAGAL;
-                } else {
+                if (!$noWa) {
+                    $nama = $tujuanTipe === Notifikasi::TUJUAN_PEMOHON
+                        ? $permohonan->pbf->nama
+                        : \App\Models\User::find($tujuanId)?->nama;
+                    \Illuminate\Support\Facades\Log::warning('NotifikasiService: Nomor WA kosong', [
+                        'permohonan_id' => $permohonan->id,
+                        'tujuan_tipe'  => $tujuanTipe,
+                        'tujuan_id'    => $tujuanId,
+                        'nama'         => $nama,
+                    ]);
+                    $status = Notifikasi::STATUS_GAGAL;
+                } elseif (!$this->whatsappSender()->send($noWa, $isi)) {
                     $status = Notifikasi::STATUS_GAGAL;
                 }
             }
@@ -169,18 +177,27 @@ class NotifikasiService
                 $noWa = $tujuanTipe === Notifikasi::TUJUAN_PEMOHON
                     ? \App\Models\Pbf::find($tujuanId)?->no_whatsapp
                     : \App\Models\User::find($tujuanId)?->no_whatsapp;
-                if ($noWa) {
+                if (!$noWa) {
+                    $nama = $tujuanTipe === Notifikasi::TUJUAN_PEMOHON
+                        ? \App\Models\Pbf::find($tujuanId)?->nama
+                        : \App\Models\User::find($tujuanId)?->nama;
+                    \Illuminate\Support\Facades\Log::warning('NotifikasiService: Nomor WA kosong', [
+                        'tujuan_tipe' => $tujuanTipe,
+                        'tujuan_id'   => $tujuanId,
+                        'nama'        => $nama,
+                    ]);
+                    $status = Notifikasi::STATUS_GAGAL;
+                } else {
                     $sent = app(WhatsappSender::class)->send($noWa, $isi);
                     $status = $sent ? Notifikasi::STATUS_TERKIRIM : Notifikasi::STATUS_GAGAL;
-                } else {
-                    $status = Notifikasi::STATUS_GAGAL;
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('NotifikasiService: Gagal kirim', [
-                'permohonan_id' => $permohonan->id,
+            \Illuminate\Support\Facades\Log::error('NotifikasiService: Gagal kirim tanpa permohonan', [
                 'tujuan_tipe'   => $tujuanTipe,
+                'tujuan_id'    => $tujuanId,
                 'channel'      => $channel,
+                'template_kode' => $templateKode,
                 'error'        => $e->getMessage(),
             ]);
             $status = Notifikasi::STATUS_GAGAL;
@@ -231,5 +248,37 @@ class NotifikasiService
             return $permohonan->pbf->email;
         }
         return \App\Models\User::find($tujuanId)?->email;
+    }
+
+    /**
+     * Kirim notifikasi WA ke staff/ketua_tim. Jika no_whatsapp kosong, lempar
+     * User object agar caller bisa decide — lempar null jika caller tidak mau.
+     * Caller: DistribusiController, DisposisiController, ReassignmentLog, PermohonanNotifier.
+     */
+    public function kirimNotifikasiStaff(
+        \App\Models\User $penerima,
+        Permohonan $permohonan,
+        string $templateKode,
+    ): ?Notifikasi {
+        if (empty($penerima->no_whatsapp)) {
+            return null;
+        }
+        return $this->kirim($permohonan, Notifikasi::TUJUAN_STAFF, $penerima->id, Notifikasi::CHANNEL_WHATSAPP, $templateKode);
+    }
+
+    public function kirimNotifikasiKetuaTim(
+        \App\Models\User $penerima,
+        Permohonan $permohonan,
+        string $templateKode,
+    ): ?Notifikasi {
+        if (empty($penerima->no_whatsapp)) {
+            return null;
+        }
+        return $this->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $penerima->id, Notifikasi::CHANNEL_WHATSAPP, $templateKode);
+    }
+
+    private function whatsappSender(): WhatsappSender
+    {
+        return app(WhatsappSender::class);
     }
 }

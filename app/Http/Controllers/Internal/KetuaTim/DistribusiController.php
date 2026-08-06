@@ -103,11 +103,13 @@ class DistribusiController extends Controller
 
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PROSES_EVALUASI, 'Didistribusikan ke Staff', $user, 'internal');
 
-        app(NotifikasiService::class)->kirim($permohonan, 'staff', $data['staff_id'], 'email', 'DISTRIBUSI_BARU');
-        app(NotifikasiService::class)->kirim($permohonan, 'staff', $data['staff_id'], 'whatsapp', 'DISTRIBUSI_BARU');
+        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_STAFF, $data['staff_id'], Notifikasi::CHANNEL_EMAIL, 'DISTRIBUSI_BARU');
+
+        $staff = User::find($data['staff_id']);
+        app(NotifikasiService::class)->kirimNotifikasiStaff($staff, $permohonan, 'DISTRIBUSI_BARU');
 
         // Konfirmasi ke KT bahwa staff sudah ditugaskan
-        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $user->id, Notifikasi::CHANNEL_WHATSAPP, 'DISTRIBUSI_BARU');
+        app(NotifikasiService::class)->kirimNotifikasiKetuaTim($user, $permohonan, 'DISTRIBUSI_BARU');
 
         return back()->with('success', 'Permohonan berhasil didistribusikan.');
     }

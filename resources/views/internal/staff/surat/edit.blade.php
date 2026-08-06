@@ -38,7 +38,7 @@
 
             <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                 <p class="text-sm text-emerald-800">
-                    <strong>Catatan:</strong> Pastikan surat sudah ditandatangani basah oleh pejabat berwenang sebelum diupload. Surat yang sudah diupload tidak dapat diubah.
+                    <strong>Catatan:</strong> Pastikan surat sudah di TTE dari Srikandi oleh pejabat berwenang sebelum diupload. Surat yang sudah diupload tidak dapat diubah.
                 </p>
             </div>
 

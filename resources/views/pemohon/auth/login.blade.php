@@ -34,17 +34,15 @@
                 @if(session('otp_required'))
                     <x-ui.alert type="warning" class="mb-4">Akun memerlukan verifikasi OTP. Silakan hubungi Admin IT.</x-ui.alert>
                 @endif
-                @isset($errors)
-                    @if($errors->any())
-                        <x-ui.alert type="error" class="mb-4">{{ $errors->first() }}</x-ui.alert>
-                    @endif
-                @endisset
 
                 <form method="POST" action="{{ route('pemohon.login.submit') }}" class="space-y-4">
                     @csrf
                     <x-ui.input label="Email atau No. WhatsApp" name="identifier" :value="old('identifier')" placeholder="email@pbf.id atau 08xxxxxxxxxx" required autofocus />
                     <x-ui.input label="Password" name="password" type="password" placeholder="••••••••" required />
                     <x-ui.button type="submit" variant="default" class="w-full" size="full">Masuk</x-ui.button>
+                    <div class="text-center">
+                        <a href="{{ route('pemohon.password.request') }}" class="text-xs text-emerald-600 hover:text-emerald-700 hover:underline">Lupa password?</a>
+                    </div>
                 </form>
             </x-ui.card-content>
         </x-ui.card>

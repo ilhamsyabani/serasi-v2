@@ -21,9 +21,9 @@
     <x-ui.stat-card :value="$permohonans->where('status_saat_ini', 'menunggu_surat_pengesahan')->count()" label="Menunggu Surat" description="Siap terbit" icon="ph-file-text" />
 </div>
 
-{{-- Status SLA & beban kerja per staff, berdampingan --}}
-<div class="grid gap-4 lg:grid-cols-3 mb-6">
-    <x-ui.card class="lg:col-span-1">
+{{-- Status SLA & Beban Kerja per Staff --}}
+<div class="grid gap-4 lg:grid-cols-2 mb-4">
+    <x-ui.card>
         <x-ui.card-content>
             <h3 class="text-sm font-semibold text-slate-900 mb-3">Status SLA</h3>
             <dl class="space-y-2">
@@ -46,7 +46,7 @@
         </x-ui.card-content>
     </x-ui.card>
 
-    <x-ui.card class="lg:col-span-2">
+    <x-ui.card>
         <x-ui.card-content>
             <h3 class="text-sm font-semibold text-slate-900 mb-3">Beban Kerja Staff</h3>
             @if($staffList->isEmpty())
@@ -61,7 +61,7 @@
                             <div class="min-w-0 flex-1">
                                 <p class="truncate text-sm font-medium text-slate-900">{{ $s->nama }}</p>
                                 <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                                    <div class="h-full rounded-full bg-emerald-700" style="width: {{ round($jumlah / $maks * 100) }}%"></div>
+                                    <div class="h-full rounded-full bg-purple-700" style="width: {{ round($jumlah / $maks * 100) }}%"></div>
                                 </div>
                             </div>
                             <span class="shrink-0 text-sm font-semibold text-slate-700">{{ $jumlah }}</span>
@@ -72,6 +72,13 @@
         </x-ui.card-content>
     </x-ui.card>
 </div>
+
+<x-ui.card class="mb-6">
+    <x-ui.card-content>
+        <h3 class="text-sm font-semibold text-slate-900 mb-3">Rincian Status per Staff</h3>
+        <x-ui.rincian-status :permohonans="$permohonans" role="katim" :staff-list="$staffList" />
+    </x-ui.card-content>
+</x-ui.card>
 
 {{-- Daftar permohonan --}}
 <div class="flex items-center justify-between mb-3">

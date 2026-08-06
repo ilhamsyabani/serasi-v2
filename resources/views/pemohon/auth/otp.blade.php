@@ -27,7 +27,14 @@
                 @endif
 
                 @if($errors->has('kode'))
-                    <x-ui.alert type="error" class="mb-4">{{ $errors->first('kode') }}</x-ui.alert>
+                    <div x-data x-init="
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'OTP Salah',
+                            text: @js($errors->first('kode')),
+                            confirmButtonColor: '#166534'
+                        });
+                    "></div>
                 @endif
 
                 <form method="POST" action="{{ route('pemohon.otp.verify') }}" class="space-y-4">

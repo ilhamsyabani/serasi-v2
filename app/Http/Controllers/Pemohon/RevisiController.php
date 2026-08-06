@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Pemohon;
 
 use App\Http\Controllers\Controller;
 use App\Models\DokumenRevisi;
+use App\Models\Revisi;
 use App\Models\Notifikasi;
 use App\Models\Permohonan;
+use App\Models\User;
 use App\Services\NotifikasiService;
 use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
@@ -42,10 +44,10 @@ class RevisiController extends Controller
 
         $evaluasiTerakhir = $permohonan->evaluasiTerakhir;
 
-        $revisi = \App\Models\Revisi::create([
-            'evaluasi_id' => $evaluasiTerakhir->id,
-            'permohonan_id' => $permohonan->id,
-        ]);
+        $revisi = Revisi::firstOrCreate(
+            ['evaluasi_id' => $evaluasiTerakhir->id],
+            ['permohonan_id' => $permohonan->id]
+        );
 
         foreach ($request->file('dokumen') as $file) {
             $path = $file->store('dokumen_revisi', 'public');
@@ -53,17 +55,27 @@ class RevisiController extends Controller
                 'revisi_id' => $revisi->id,
                 'nama_file_asli' => $file->getClientOriginalName(),
                 'path_file' => $path,
+                'ukuran_file_kb' => round($file->getSize() / 1024, 2),
+                'mime_type' => $file->getMimeType(),
                 'uploaded_at' => now(),
             ]);
         }
 
-        app(NotifikasiService::class)->kirim($permohonan, 'staff', $permohonan->distribusiAktif->staff_id ?? 0, 'email', 'REVISI_DITERIMA');
-        app(NotifikasiService::class)->kirim($permohonan, 'staff', $permohonan->distribusiAktif->staff_id ?? 0, 'whatsapp', 'REVISI_DITERIMA');
+        $staffId = $permohonan->distribusiAktif?->staff_id;
+        $staff = $staffId ? User::find($staffId) : null;
+        $notif = app(NotifikasiService::class);
+
+        if ($staff) {
+            $notif->kirim($permohonan, Notifikasi::TUJUAN_STAFF, $staffId, Notifikasi::CHANNEL_EMAIL, 'REVISI_DITERIMA');
+            $notif->kirimNotifikasiStaff($staff, $permohonan, 'REVISI_DITERIMA');
+        }
 
         // Notify KT bahwa pemohon telah upload revisi
         $ktId = $permohonan->disposisi?->ketua_tim_id;
         if ($ktId) {
-            app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ktId, Notifikasi::CHANNEL_WHATSAPP, 'REVISI_UPLOADED');
+            $kt = User::find($ktId);
+            $notif->kirimNotifikasiKetuaTim($kt, $permohonan, 'REVISI_UPLOADED');
+            $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ktId, Notifikasi::CHANNEL_EMAIL, 'REVISI_UPLOADED');
         }
 
         app(\App\Services\StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PROSES_EVALUASI, 'Revisi diupload', null, 'pemohon');

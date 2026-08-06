@@ -24,7 +24,14 @@
 
                 @isset($errors)
                     @if($errors->any())
-                        <x-ui.alert type="error" class="mb-4">{{ $errors->first() }}</x-ui.alert>
+                        <div x-data x-init="
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Login Gagal',
+                                text: @js($errors->first()),
+                                confirmButtonColor: '#166534'
+                            });
+                        "></div>
                     @endif
                 @endisset
 
@@ -38,6 +45,9 @@
                         Ingat saya di perangkat ini
                     </label>
                     <x-ui.button type="submit" variant="default" size="full" class="w-full">Masuk</x-ui.button>
+                    <div class="text-center">
+                        <a href="{{ route('internal.password.request') }}" class="text-xs text-emerald-600 hover:text-emerald-700 hover:underline">Lupa password?</a>
+                    </div>
                 </form>
             </x-ui.card-content>
         </x-ui.card>

@@ -27,12 +27,14 @@
                     <x-ui.alert type="error" class="mb-4" dismissible>{{ session('error') }}</x-ui.alert>
                 @endif
                 @if($errors->any())
-                    <x-ui.alert type="error" class="mb-4" dismissible>
-                        <strong>Validasi gagal:</strong>
-                        <ul class="mt-1 list-disc list-inside text-xs">
-                            @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
-                        </ul>
-                    </x-ui.alert>
+                    <div x-data x-init="
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validasi Gagal',
+                            text: @js($errors->first()),
+                            confirmButtonColor: '#166534'
+                        });
+                    "></div>
                 @endif
 
                 @yield('content')

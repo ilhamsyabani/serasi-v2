@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Internal\AuthController;
+use App\Http\Controllers\Internal\ForgotPasswordController;
+use App\Http\Controllers\Internal\ResetPasswordController;
 use App\Http\Controllers\Internal\DashboardController;
 use App\Http\Controllers\Internal\Kabalai\DashboardController as KabalaiDashboardController;
 use App\Http\Controllers\Internal\Kabalai\PermohonanController as KabalaiPermohonanController;
@@ -13,6 +15,7 @@ use App\Http\Controllers\Internal\Staff\EvaluasiController;
 use App\Http\Controllers\Internal\Staff\SuratPengesahanController;
 use App\Http\Controllers\Internal\AdminIt\DashboardController as AdminItDashboardController;
 use App\Http\Controllers\Internal\AdminIt\UserController;
+use App\Http\Controllers\Internal\AdminIt\HariLiburController;
 use App\Http\Controllers\Internal\Permohonan\PermohonanController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\Internal\NotifikasiController;
@@ -21,6 +24,11 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle.login:5,1')->name('login.submit');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 
     Route::middleware(['auth', 'role:kepala_balai,ketua_tim,staff_sertifikasi,admin_it'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -53,7 +61,9 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
 
         Route::prefix('admin-it')->middleware('role:admin_it')->name('adminit.')->group(function () {
             Route::get('/dashboard', [AdminItDashboardController::class, 'index'])->name('dashboard');
-            Route::resource('users', UserController::class);
+            Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+            Route::resource('hari-libur', HariLiburController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+            Route::post('/hari-libur/bulk', [HariLiburController::class, 'bulkStore'])->name('hari-libur.bulk-store');
         });
 
         // Detail permohonan lintas-role. Harus di DALAM grup `auth`, agar tamu
@@ -61,6 +71,7 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
         Route::get('/permohonan/{permohonan}', [PermohonanController::class, 'show'])->name('permohonan.show');
         Route::get('/download/dokumen/{permohonan}/{jenisDokumen}', [DownloadController::class, 'dokumen'])->name('download.dokumen');
         Route::get('/download/surat/{permohonan}', [DownloadController::class, 'surat'])->name('download.surat');
+        Route::get('/download/revisi/{revisi}', [DownloadController::class, 'revisi'])->name('download.revisi');
 
         // Notifikasi
         Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');

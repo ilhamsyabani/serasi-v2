@@ -84,13 +84,7 @@ class KirimSlaReminder extends Command
                 continue;
             }
 
-            $result = $notif->kirim(
-                $p,
-                Notifikasi::TUJUAN_STAFF,
-                $staff->id,
-                Notifikasi::CHANNEL_WHATSAPP,
-                'REMINDER'
-            );
+            $result = $notif->kirimNotifikasiStaff($staff, $p, 'REMINDER');
 
             if ($result) {
                 $terkirim++;

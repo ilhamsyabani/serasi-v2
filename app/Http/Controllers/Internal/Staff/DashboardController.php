@@ -3,21 +3,17 @@
 namespace App\Http\Controllers\Internal\Staff;
 
 use App\Http\Controllers\Controller;
-use App\Models\Distribusi;
-use App\Models\Evaluasi;
 use App\Models\Permohonan;
-use App\Models\Revisi;
-use App\Services\NotifikasiService;
-use App\Services\StatusTransitionService;
+use App\Services\SlaCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, SlaCalculator $sla)
     {
         $user = Auth::user();
-        $search = $request->get('search');
+        $search = $request->input('search');
 
         $query = Permohonan::whereHas('distribusiAktif', fn($q) => $q->where('staff_id', $user->id))
             ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff']);
@@ -32,6 +28,11 @@ class DashboardController extends Controller
 
         $permohonans = $query->latest()->get();
 
-        return view('internal.staff.dashboard', compact('user', 'permohonans', 'search'));
+        return view('internal.staff.dashboard', [
+            'user' => $user,
+            'permohonans' => $permohonans,
+            'search' => $search,
+            'slaRingkasan' => $sla->ringkasan($permohonans),
+        ]);
     }
 }

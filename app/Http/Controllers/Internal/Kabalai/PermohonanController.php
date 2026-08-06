@@ -80,6 +80,21 @@ class PermohonanController extends Controller
 
         $password = OtpService::generatePassword();
 
+        $pbfByNib = Pbf::where('nib', $data['nib'])->first();
+
+        if ($pbfByNib && $pbfByNib->no_whatsapp !== $data['no_whatsapp']) {
+            return redirect()->back()
+                ->withInput($request->except('_token', 'no_whatsapp'))
+                ->with('warning', 'NIB sudah terdaftar dengan nomor WhatsApp lain (' . $pbfByNib->no_whatsapp . '). Silakan gunakan nomor yang sama atau hubungi Administrator IT.');
+        }
+
+        $pbfByWa = Pbf::where('no_whatsapp', $data['no_whatsapp'])->first();
+        if ($pbfByWa && $pbfByWa->nib !== $data['nib']) {
+            return redirect()->back()
+                ->withInput($request->except('_token', 'no_whatsapp'))
+                ->with('warning', 'Nomor WhatsApp ini sudah terdaftar untuk NIB lain (' . $pbfByWa->nib . ' — ' . $pbfByWa->nama_pbf . ').');
+        }
+
         $pbf = Pbf::updateOrCreate(
             ['nib' => $data['nib']],
             [
@@ -130,6 +145,16 @@ class PermohonanController extends Controller
             ]
         );
 
+        // Log email AKUN_BARU
+        Notifikasi::create([
+            'permohonan_id' => null,
+            'tujuan_tipe'   => Notifikasi::TUJUAN_PEMOHON,
+            'tujuan_id'     => $pbf->id,
+            'channel'       => Notifikasi::CHANNEL_EMAIL,
+            'template_kode' => 'AKUN_BARU',
+            'status_kirim'  => $statusEmail,
+        ]);
+
         $permohonan = Permohonan::create([
             'no_registrasi' => $noReg,
             'pbf_id' => $pbf->id,
@@ -165,6 +190,10 @@ class PermohonanController extends Controller
         }
 
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PENGAJUAN, 'Pengajuan baru', Auth::user(), 'internal');
+
+        $notif = app(NotifikasiService::class);
+        $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_WHATSAPP, 'PENGAJUAN_BARU');
+        $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_EMAIL, 'PENGAJUAN_BARU');
 
         return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil dibuat.');
     }

@@ -22,8 +22,11 @@
     </x-ui.card>
     <x-ui.card>
         <x-ui.card-header title="Konfigurasi Sistem" description="SLA, hari libur, template" />
-        <x-ui.card-content>
-            <p class="text-sm text-slate-500">Menu konfigurasi sistem akan tersedia di modul M-16.</p>
+        <x-ui.card-content class="space-y-2">
+            <x-ui.button variant="default" href="{{ route('internal.adminit.hari-libur.index') }}" class="w-full justify-start">
+                <i class="ph ph-calendar-x mr-2" aria-hidden="true"></i>
+                Hari Libur & Cuti →
+            </x-ui.button>
         </x-ui.card-content>
     </x-ui.card>
 </div>

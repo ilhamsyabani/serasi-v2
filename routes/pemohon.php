@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Pemohon\AuthController;
+use App\Http\Controllers\Pemohon\ForgotPasswordController;
+use App\Http\Controllers\Pemohon\ResetPasswordController;
 use App\Http\Controllers\Pemohon\DashboardController;
 use App\Http\Controllers\Pemohon\OtpController;
 use App\Http\Controllers\Pemohon\PermohonanController;
@@ -13,6 +15,11 @@ Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle.login:5,1')->name('login.submit');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 
     // OTP verification (tanpa middleware pbf.auth — session-based)
     Route::get('/otp', [OtpController::class, 'showForm'])->name('otp');

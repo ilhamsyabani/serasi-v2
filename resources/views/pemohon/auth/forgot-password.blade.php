@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lupa Password — Portal Pemohon</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.head-assets')
+</head>
+<body class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-emerald-800 text-white font-bold text-lg mb-4">BP</div>
+            <h1 class="text-xl font-bold text-slate-900">Lupa Password</h1>
+            <p class="text-sm text-slate-500 mt-1">Portal Pelaku Usaha</p>
+        </div>
+
+        <x-ui.card>
+            <x-ui.card-content>
+                <p class="text-sm text-slate-600 mb-6">
+                    Masukkan email atau nomor WhatsApp yang terdaftar. Tautan reset password akan dikirim melalui WhatsApp dan/atau email.
+                </p>
+
+                @if(session('success'))
+                    <x-ui.alert type="success" class="mb-4">{{ session('success') }}</x-ui.alert>
+                    <div class="text-center mt-4">
+                        <p class="text-sm text-slate-500 mb-2">Tidak menerima tautan?</p>
+                        <button type="button" onclick="location.reload()" class="text-xs text-emerald-600 hover:text-emerald-700 hover:underline">Kirim ulang</button>
+                    </div>
+                @else
+                    <form method="POST" action="{{ route('pemohon.password.email') }}" class="space-y-4">
+                        @csrf
+                        <x-ui.input
+                            label="Email atau No. WhatsApp"
+                            name="identifier"
+                            :value="old('identifier')"
+                            placeholder="email@pbf.id atau 08xxxxxxxxxx"
+                            :error="$errors->first('identifier')"
+                            required
+                            autofocus
+                        />
+                        <x-ui.button type="submit" variant="default" size="full">Kirim Tautan Reset</x-ui.button>
+                    </form>
+                @endif
+
+                <div class="mt-4 text-center">
+                    <a href="{{ route('pemohon.login') }}" class="text-xs text-emerald-600 hover:text-emerald-700 hover:underline">
+                        ← Kembali ke halaman login
+                    </a>
+                </div>
+            </x-ui.card-content>
+        </x-ui.card>
+
+        <p class="text-center text-xs text-slate-400 mt-6">
+            <a href="{{ route('internal.login') }}" class="hover:text-slate-600">← Portal Internal BBPOM</a>
+        </p>
+    </div>
+</body>
+</html>

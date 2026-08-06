@@ -15,6 +15,10 @@
     $accept = '.' . implode(',.', \App\Models\DokumenPermohonan::EKSTENSI_DIIZINKAN);
 @endphp
 
+@if(session('warning'))
+    <x-ui.alert type="warning" class="mb-5">{{ session('warning') }}</x-ui.alert>
+@endif
+
 @if($errors->any())
     <x-ui.alert type="error" class="mb-5">Periksa kembali isian: {{ $errors->first() }}</x-ui.alert>
 @endif
@@ -32,9 +36,21 @@
 
             <x-ui.textarea label="Alamat" name="alamat" :value="old('alamat')" placeholder="Alamat lengkap PBF" :rows="2" />
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <x-ui.input label="Email PIC" name="email" type="email" :value="old('email')" placeholder="email@pbf.id" :error="$errors->first('email')" required />
-                <x-ui.input label="No. WhatsApp PIC" name="no_whatsapp" type="text" :value="old('no_whatsapp')" placeholder="08xxxxxxxxxx" :error="$errors->first('no_whatsapp')" required />
+            <div x-data="{ waWarning: '', checking: false }">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <x-ui.input label="Email PIC" name="email" type="email" :value="old('email')" placeholder="email@pbf.id" :error="$errors->first('email')" required />
+                    <div>
+                        <x-ui.input label="No. WhatsApp PIC" name="no_whatsapp" type="text" :value="old('no_whatsapp')" placeholder="08xxxxxxxxxx" :error="$errors->first('no_whatsapp')" required
+                            x-on:blur="checking = true; fetch('/api/check-whatsapp?no=' + $event.target.value).then(r => r.json()).then(d => { waWarning = d.warning || ''; checking = false; }).catch(() => { checking = false; })"
+                            x-bind:class="waWarning ? 'ring-2 ring-amber-400' : ''" />
+                        <p x-show="checking" class="text-xs text-slate-400 mt-1">Memeriksa...</p>
+                        <template x-if="waWarning && !checking">
+                            <p class="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                <span>⚠️</span><span x-text="waWarning"></span>
+                            </p>
+                        </template>
+                    </div>
+                </div>
             </div>
 
             {{-- Upload dokumen: 5 input terpisah, bersumber dari DokumenPermohonan::JENIS --}}

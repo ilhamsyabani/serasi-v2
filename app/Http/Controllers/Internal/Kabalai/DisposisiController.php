@@ -76,7 +76,10 @@ class DisposisiController extends Controller
 
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_DIDISPOSISIKAN, 'Didisposisikan ke Ketua Tim', Auth::user(), 'internal');
 
-        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $data['ketua_tim_id'], Notifikasi::CHANNEL_WHATSAPP, 'DISPOSISI_BARU');
+        $ketuaTim = User::find($data['ketua_tim_id']);
+        $notif = app(NotifikasiService::class);
+        $notif->kirimNotifikasiKetuaTim($ketuaTim, $permohonan, 'DISPOSISI_BARU');
+        $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $data['ketua_tim_id'], Notifikasi::CHANNEL_EMAIL, 'DISPOSISI_BARU');
 
         return back()->with('success', 'Disposisi berhasil dikirim.');
     }

@@ -12,7 +12,7 @@ class DashboardController extends Controller
     {
         $pbf = Auth::guard('pemohon')->user();
         $permohonanAktif = Permohonan::where('pbf_id', $pbf->id)->whereNotIn('status_saat_ini', [Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN, Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG])->latest()->first();
-        $riwayat = Permohonan::where('pbf_id', $pbf->id)->orderByDesc('tanggal_pengajuan')->get();
+        $riwayat = Permohonan::where('pbf_id', $pbf->id)->orderByDesc('tanggal_pengajuan')->with('suratPengesahan')->get();
 
         return view('pemohon.dashboard', compact('pbf', 'permohonanAktif', 'riwayat'));
     }

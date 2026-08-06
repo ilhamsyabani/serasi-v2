@@ -124,6 +124,11 @@ class Permohonan extends Model
         return $this->hasOne(Evaluasi::class)->latestOfMany('siklus_ke');
     }
 
+    public function revisi(): HasMany
+    {
+        return $this->hasMany(Revisi::class);
+    }
+
     // ── Penerbitan ────────────────────────────────────
 
     public function suratPengesahan(): HasOne
