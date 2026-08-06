@@ -40,11 +40,14 @@ return [
     ],
 
     'wa_gateway' => [
-        'url'       => env('WA_GATEWAY_URL'),
-        'token'     => env('WA_GATEWAY_TOKEN'),
-        'secret_key' => env('WA_GATEWAY_SECRET_KEY'),
-        'sender_number' => env('WA_GATEWAY_SENDER'),
-        'timeout'   => env('WA_GATEWAY_TIMEOUT', 30),
+        'url'            => env('WA_GATEWAY_URL'),
+        'token'          => env('WA_GATEWAY_TOKEN'),
+        'secret_key'     => env('WA_GATEWAY_SECRET_KEY'),
+        'sender_number'  => env('WA_GATEWAY_SENDER'),
+        'timeout'        => env('WA_GATEWAY_TIMEOUT', 30),
+        'skip_ssl_verify' => env('WA_SKIP_SSL_VERIFY', false),
+        'auth_prefix'     => env('WA_AUTH_PREFIX', 'Bearer '),
+        'phone_suffix'    => env('WA_PHONE_SUFFIX', '@c.us'),
     ],
 
     'otp' => [

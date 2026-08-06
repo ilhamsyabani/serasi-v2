@@ -37,6 +37,13 @@ class ForgotPasswordController extends Controller
 
         OtpService::generateAndSendPasswordResetLink($pbf);
 
-        return back()->with('success', 'Tautan reset password telah dikirim. Silakan cek WhatsApp dan/atau email Anda.');
+        $messages = ['Tautan reset password telah dikirim ke email Anda.'];
+        if (empty($pbf->no_whatsapp)) {
+            $messages[] = 'No. WhatsApp belum terdaftar — gunakan tautan dari email.';
+        } else {
+            $messages[] = 'Silakan cek WhatsApp dan/atau email Anda.';
+        }
+
+        return back()->with('success', implode(' ', $messages));
     }
 }

@@ -11,13 +11,19 @@ class WhatsappSender
     private string $token;
     private string $secretKey;
     private int $timeout;
+    private bool $skipSslVerify;
+    private string $authPrefix;
+    private string $phoneSuffix;
 
     public function __construct()
     {
-        $this->apiUrl    = config('services.wa_gateway.url');
-        $this->token     = config('services.wa_gateway.token');
-        $this->secretKey = config('services.wa_gateway.secret_key');
-        $this->timeout   = config('services.wa_gateway.timeout', 30);
+        $this->apiUrl        = config('services.wa_gateway.url');
+        $this->token         = config('services.wa_gateway.token');
+        $this->secretKey     = config('services.wa_gateway.secret_key');
+        $this->timeout       = config('services.wa_gateway.timeout', 30);
+        $this->skipSslVerify = config('services.wa_gateway.skip_ssl_verify', false);
+        $this->authPrefix    = config('services.wa_gateway.auth_prefix', 'Bearer ');
+        $this->phoneSuffix   = config('services.wa_gateway.phone_suffix', '@c.us');
     }
 
     public function send(string $noWa, string $pesan): bool
@@ -30,16 +36,21 @@ class WhatsappSender
         $noWa = $this->normalizePhone($noWa);
 
         try {
-            $response = Http::timeout($this->timeout)
+            $http = Http::timeout($this->timeout)
                 ->withHeaders([
-                    'Authorization' => $this->token,
-                    'Secret-Key'    => $this->secretKey,
-                    'Content-Type'  => 'application/json',
-                ])
-                ->post($this->apiUrl, [
-                    'phone'   => $noWa,
-                    'message' => $pesan,
+                    'Authorization' => $this->authPrefix . $this->token,
+                    'Secret-Key'   => $this->secretKey,
+                    'Content-Type' => 'application/json',
                 ]);
+
+            if ($this->skipSslVerify) {
+                $http = $http->withoutVerifying();
+            }
+
+            $response = $http->post($this->apiUrl, [
+                'phone'   => $noWa,
+                'message' => $pesan,
+            ]);
 
             if ($response->successful()) {
                 Log::info("WhatsappSender: Pesan berhasil dikirim ke $noWa", [
@@ -49,14 +60,23 @@ class WhatsappSender
             }
 
             Log::error("WhatsappSender: Gagal kirim ke $noWa", [
-                'status'  => $response->status(),
-                'body'    => $response->body(),
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+            return false;
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('WhatsappSender: Connection Exception - WA gateway tidak bisa dijangkau', [
+                'no_wa'   => $noWa,
+                'error'   => $e->getMessage(),
+                'api_url' => $this->apiUrl,
+                'hint'    => 'Cek apakah server hosting bisa mengakses ' . $this->apiUrl,
             ]);
             return false;
         } catch (\Throwable $e) {
             Log::error('WhatsappSender: Exception', [
                 'no_wa' => $noWa,
                 'error' => $e->getMessage(),
+                'class' => get_class($e),
             ]);
             return false;
         }
@@ -84,6 +104,6 @@ class WhatsappSender
         if (!str_starts_with($noWa, '62')) {
             $noWa = '62' . $noWa;
         }
-        return $noWa . '@c.us';
+        return $noWa . $this->phoneSuffix;
     }
 }

@@ -18,7 +18,7 @@
         <x-ui.card>
             <x-ui.card-content>
                 <p class="text-sm text-slate-600 mb-6">
-                    Masukkan email atau nomor WhatsApp yang terdaftar. Tautan reset password akan dikirim melalui WhatsApp dan/atau email.
+                    Masukkan nomor WhatsApp yang terdaftar. Tautan reset password akan dikirim melalui WhatsApp dan/atau email.
                 </p>
 
                 @if(session('success'))
@@ -31,10 +31,10 @@
                     <form method="POST" action="{{ route('pemohon.password.email') }}" class="space-y-4">
                         @csrf
                         <x-ui.input
-                            label="Email atau No. WhatsApp"
+                            label="No. WhatsApp"
                             name="identifier"
                             :value="old('identifier')"
-                            placeholder="email@pbf.id atau 08xxxxxxxxxx"
+                            placeholder="08xxxxxxxxxx"
                             :error="$errors->first('identifier')"
                             required
                             autofocus
