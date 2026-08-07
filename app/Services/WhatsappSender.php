@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class WhatsappSender
@@ -11,19 +10,13 @@ class WhatsappSender
     private string $token;
     private string $secretKey;
     private int $timeout;
-    private bool $skipSslVerify;
-    private string $authPrefix;
-    private string $phoneSuffix;
 
     public function __construct()
     {
-        $this->apiUrl        = config('services.wa_gateway.url');
-        $this->token         = config('services.wa_gateway.token');
-        $this->secretKey     = config('services.wa_gateway.secret_key');
-        $this->timeout       = config('services.wa_gateway.timeout', 30);
-        $this->skipSslVerify = config('services.wa_gateway.skip_ssl_verify', false);
-        $this->authPrefix    = config('services.wa_gateway.auth_prefix', 'Bearer ');
-        $this->phoneSuffix   = config('services.wa_gateway.phone_suffix', '@c.us');
+        $this->apiUrl    = config('services.wa_gateway.url');
+        $this->token     = config('services.wa_gateway.token');
+        $this->secretKey = config('services.wa_gateway.secret_key');
+        $this->timeout   = config('services.wa_gateway.timeout', 30);
     }
 
     public function send(string $noWa, string $pesan): bool
@@ -36,47 +29,55 @@ class WhatsappSender
         $noWa = $this->normalizePhone($noWa);
 
         try {
-            $http = Http::timeout($this->timeout)
-                ->withHeaders([
-                    'Authorization' => $this->authPrefix . $this->token,
-                    'Secret-Key'   => $this->secretKey,
-                    'Content-Type' => 'application/json',
-                ]);
-
-            if ($this->skipSslVerify) {
-                $http = $http->withoutVerifying();
-            }
-
-            $response = $http->post($this->apiUrl, [
+            // Match format API production: x-www-form-urlencoded, Authorization: token+secret
+            $data = [
                 'phone'   => $noWa,
                 'message' => $pesan,
-            ]);
+            ];
 
-            if ($response->successful()) {
-                Log::info("WhatsappSender: Pesan berhasil dikirim ke $noWa", [
-                    'response' => $response->json(),
+            $ch = curl_init($this->apiUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/x-www-form-urlencoded',
+                'Authorization: ' . $this->token . $this->secretKey,
+            ]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+            if (curl_errno($ch)) {
+                $error = curl_error($ch);
+                Log::error('WhatsappSender: cURL Error', [
+                    'no_wa'  => $noWa,
+                    'error'  => $error,
+                    'api_url' => $this->apiUrl,
                 ]);
-                return true;
+                curl_close($ch);
+                return false;
             }
 
-            Log::error("WhatsappSender: Gagal kirim ke $noWa", [
-                'status' => $response->status(),
-                'body'   => $response->body(),
+            curl_close($ch);
+
+            if ($httpCode != 200) {
+                Log::error('WhatsappSender: Gagal kirim', [
+                    'no_wa'    => $noWa,
+                    'http_code' => $httpCode,
+                    'response'  => $response,
+                ]);
+                return false;
+            }
+
+            Log::info("WhatsappSender: Pesan berhasil dikirim ke $noWa", [
+                'response' => $response,
             ]);
-            return false;
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            Log::error('WhatsappSender: Connection Exception - WA gateway tidak bisa dijangkau', [
-                'no_wa'   => $noWa,
-                'error'   => $e->getMessage(),
-                'api_url' => $this->apiUrl,
-                'hint'    => 'Cek apakah server hosting bisa mengakses ' . $this->apiUrl,
-            ]);
-            return false;
+            return true;
         } catch (\Throwable $e) {
             Log::error('WhatsappSender: Exception', [
                 'no_wa' => $noWa,
                 'error' => $e->getMessage(),
-                'class' => get_class($e),
             ]);
             return false;
         }
@@ -104,6 +105,7 @@ class WhatsappSender
         if (!str_starts_with($noWa, '62')) {
             $noWa = '62' . $noWa;
         }
-        return $noWa . $this->phoneSuffix;
+        // Tanpa @c.us — sesuai format API production
+        return $noWa;
     }
 }
