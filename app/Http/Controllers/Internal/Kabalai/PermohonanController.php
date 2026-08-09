@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Internal\Kabalai;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePermohonanRequest;
-use App\Mail\AkunBaruMail;
 use App\Models\DokumenPermohonan;
 use App\Models\Notifikasi;
 use App\Models\Permohonan;
@@ -15,7 +14,6 @@ use App\Services\StatusTransitionService;
 use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 
 class PermohonanController extends Controller
 {
@@ -108,52 +106,7 @@ class PermohonanController extends Controller
         );
 
         $username = $data['email'];
-
         $noReg = 'PBF/DENAH/' . date('Y') . '/' . str_pad(Permohonan::count() + 1, 5, '0', STR_PAD_LEFT);
-
-        try {
-            Mail::to($pbf->email)->send(new AkunBaruMail($username, $password, $pbf->nama_pbf));
-            $statusEmail = Notifikasi::STATUS_TERKIRIM;
-        } catch (\Throwable) {
-            $statusEmail = Notifikasi::STATUS_GAGAL;
-        }
-        Notifikasi::create([
-            'permohonan_id' => null,
-            'tujuan_tipe'   => Notifikasi::TUJUAN_PEMOHON,
-            'tujuan_id'     => $pbf->id,
-            'channel'       => Notifikasi::CHANNEL_EMAIL,
-            'template_kode' => 'AKUN_BARU',
-            'status_kirim'  => $statusEmail,
-        ]);
-
-        // WA kredensial via template
-        $permTemp = new Permohonan();
-        $permTemp->pbf = $pbf;
-        $permTemp->no_registrasi = $noReg;
-        $permTemp->nama_pbf_snapshot = $pbf->nama_pbf;
-        app(NotifikasiService::class)->kirim(
-            $permTemp,
-            Notifikasi::TUJUAN_PEMOHON,
-            $pbf->id,
-            Notifikasi::CHANNEL_WHATSAPP,
-            'AKUN_BARU',
-            null,
-            [
-                '{{username}}' => $username,
-                '{{password}}' => $password,
-                '{{app_url}}'  => config('app.url'),
-            ]
-        );
-
-        // Log email AKUN_BARU
-        Notifikasi::create([
-            'permohonan_id' => null,
-            'tujuan_tipe'   => Notifikasi::TUJUAN_PEMOHON,
-            'tujuan_id'     => $pbf->id,
-            'channel'       => Notifikasi::CHANNEL_EMAIL,
-            'template_kode' => 'AKUN_BARU',
-            'status_kirim'  => $statusEmail,
-        ]);
 
         $permohonan = Permohonan::create([
             'no_registrasi' => $noReg,
@@ -192,8 +145,13 @@ class PermohonanController extends Controller
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PENGAJUAN, 'Pengajuan baru', Auth::user(), 'internal');
 
         $notif = app(NotifikasiService::class);
-        $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_WHATSAPP, 'PENGAJUAN_BARU');
-        $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_EMAIL, 'PENGAJUAN_BARU');
+        // Kirim kredensial akun baru via WA + email
+        $notif->kirimAkunBaru($permohonan, $username, $password);
+        // Kirim notifikasi pengajuan baru via WA + email
+        $notif->kirimBatch($permohonan, [
+            [Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_WHATSAPP],
+            [Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_EMAIL],
+        ], 'PENGAJUAN_BARU');
 
         return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil dibuat.');
     }

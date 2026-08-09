@@ -214,8 +214,9 @@ class NotifikasiService
     }
 
     /**
-     * Kirim kredensial akun baru (AKUN_BARU) — sudah pakai template dengan placeholder.
+     * Kirim kredensial akun baru (AKUN_BARU) — template placeholder.
      * Dipanggil dari Kabalai\PermohonanController::store().
+     * Mengirim ke WA dan email sekaligus.
      */
     public function kirimAkunBaru(Permohonan $permohonan, string $username, string $password): array
     {
@@ -223,12 +224,14 @@ class NotifikasiService
             $permohonan,
             [
                 [Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP],
+                [Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_EMAIL],
             ],
             'AKUN_BARU',
             [
-                '{{username}}' => $username,
-                '{{password}}' => $password,
+                '{{username}}'  => $username,
+                '{{password}}'  => $password,
                 '{{app_url}}'  => config('app.url'),
+                '{{nama_pbf}}' => $permohonan->nama_pbf_snapshot,
             ]
         );
     }
