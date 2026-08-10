@@ -89,8 +89,7 @@
                 <td class="px-4 py-3 font-mono text-xs font-medium text-slate-900">{{ $p->no_registrasi }}</td>
                 <td class="px-4 py-3">
                     <p class="font-medium text-slate-900">{{ $p->nama_pbf_snapshot }}</p>
-                    <p class="text-xs text-slate-400">{{ $p->nib_snapshot }}</p>
-                </td>
+                    <p class="text-xs text-slate-400"><span class="font-mono">NIB : </span>{{ $p->nib_snapshot }}</p>
                 <td class="px-4 py-3"><x-ui.status-badge :status="$p->status_saat_ini" /></td>
                 <td class="px-4 py-3 text-slate-400 text-xs">{{ $p->tanggal_pengajuan?->format('d M Y') }}</td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
