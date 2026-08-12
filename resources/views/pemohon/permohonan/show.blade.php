@@ -5,7 +5,7 @@
 @section('content')
 {{-- Back Button --}}
 <div class="mb-4">
-    <a href="{{ route('pemohon.permohonan.index') }}" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors">
+    <a href="{{ route('pemohon.dashboard') }}" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         Kembali
     </a>
@@ -76,6 +76,41 @@
         </ul>
     </x-ui.card-content>
 </x-ui.card>
+
+@php
+$allRevisiDocs = $permohonan->revisi->flatMap(fn($r) => $r->dokumenRevisi);
+@endphp
+
+@if($allRevisiDocs->isNotEmpty())
+<x-ui.card class="mb-4">
+    <x-ui.card-header title="Dokumen Revisi" description="Dokumen yang telah diupload sebagai hasil revisi" />
+    <x-ui.card-content class="p-0">
+        <ul class="divide-y divide-slate-50">
+            @foreach($permohonan->revisi as $rev)
+                @foreach($rev->dokumenRevisi as $dr)
+            <li class="px-4 py-3 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-800">{{ $dr->nama_file_asli }}</p>
+                    <p class="text-xs text-slate-400">
+                        Revisi ke-{{ $rev->evaluasi->siklus_ke ?? '?' }}
+                        &middot;
+                        {{ number_format($dr->ukuran_file_kb, 2) }} KB
+                        &middot;
+                        {{ $dr->uploaded_at?->format('d M Y H:i') }}
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <x-ui.button variant="ghost" size="sm" href="{{ route('pemohon.download.revisi', $rev) }}" target="_blank">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    </x-ui.button>
+                </div>
+            </li>
+                @endforeach
+            @endforeach
+        </ul>
+    </x-ui.card-content>
+</x-ui.card>
+@endif
 
 {{-- Revisi Info --}}
 @if(in_array($permohonan->status_saat_ini, [\App\Models\Permohonan::STATUS_REVISI_1, \App\Models\Permohonan::STATUS_REVISI_2, \App\Models\Permohonan::STATUS_REVISI_3]))

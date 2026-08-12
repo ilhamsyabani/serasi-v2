@@ -56,9 +56,9 @@
                     <p class="text-xs text-slate-400">{{ number_format($dr->ukuran_file_kb, 2) }} KB &middot; {{ $dr->uploaded_at?->format('d M Y H:i') }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <a href="{{ Storage::url($dr->path_file) }}" target="_blank" class="inline-flex items-center justify-center w-8 h-8 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">
+                    <x-ui.button variant="ghost" size="sm" href="{{ route('internal.download.revisi', $dr->revisi) }}" target="_blank">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    </a>
+                    </x-ui.button>
                 </div>
             </li>
             @endforeach

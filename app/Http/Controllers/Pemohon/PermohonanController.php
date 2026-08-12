@@ -27,6 +27,8 @@ class PermohonanController extends Controller
         $pbf = Auth::guard('pemohon')->user();
         abort_if($permohonan->pbf_id !== $pbf->id, 403);
 
+        $permohonan->load('revisi.dokumenRevisi', 'revisi.evaluasi');
+
         return view('pemohon.permohonan.show', compact('permohonan'));
     }
 
