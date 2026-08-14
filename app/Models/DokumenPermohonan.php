@@ -37,6 +37,7 @@ class DokumenPermohonan extends Model
     public const JENIS = [
         self::JENIS_SURAT_PERMOHONAN => [
             'label' => 'Surat Permohonan',
+            'keterangan' => '',
         ],
         self::JENIS_SURAT_PERNYATAAN => [
             'label' => 'Surat Pernyataan bermaterai',
