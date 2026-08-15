@@ -11,7 +11,33 @@ class TemplateNotifikasiSeeder extends Seeder
     {
         $templates = [
             // ── Email templates ───────────────────────────────────────────────
-            ['kode_event' => 'AKUN_BARU', 'channel' => 'email', 'subjek' => 'Akun Portal Pelaku Usaha - SERASI', 'isi_template' => "Yth. {{nama_pbf}}\n\nAkun Portal Pelaku Usaha Anda telah dibuat.\n\nUsername: {{username}}\nPassword: {{password}}\n\nSilakan login di: {{app_url}}\nPada login pertama, kode OTP akan dikirimkan via WhatsApp.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
+            ['kode_event' => 'AKUN_BARU', 'channel' => 'email', 'subjek' => 'Akun Portal Pelaku Usaha - SERASI', 'isi_template' => "Yth. {{nama_pbf}}
+
+Akun Portal Pelaku Usaha Anda telah dibuat. Berikut informasi akun Anda:
+
+─────────────────────────────────
+DATA PEMOHON
+─────────────────────────────────
+No. Registrasi : {{no_registrasi}}
+NIB            : {{nib}}
+Nama PBF       : {{nama_pbf}}
+Alamat         : {{alamat}}
+Email          : {{email}}
+No. WhatsApp   : {{no_wa}}
+
+─────────────────────────────────
+DATA AKUN LOGIN
+─────────────────────────────────
+Username : {{username}}
+Password : {{password}}
+
+─────────────────────────────────
+
+Silakan login di: {{app_url}}
+Pada login pertama, kode OTP akan dikirimkan via WhatsApp ke nomor yang terdaftar.
+
+Hormat kami,
+Tim BBPOM", 'is_active' => true],
 
             ['kode_event' => 'PENGAJUAN_BARU', 'channel' => 'email', 'subjek' => 'Pengajuan Diterima - SERASI', 'isi_template' => "Yth. {{nama_pbf}}\n\nPengajuan Anda telah diterima dengan detail sebagai berikut:\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nPengajuan Anda sedang dalam proses. Pantau status secara berkala di portal.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
 
@@ -27,12 +53,29 @@ class TemplateNotifikasiSeeder extends Seeder
 
             ['kode_event' => 'REVISI_DITERIMA', 'channel' => 'email', 'subjek' => 'Revisi Permohonan Diterima', 'isi_template' => "Yth. Staff Sertifikasi,\n\nPemohon telah mengunggah revisi untuk permohonan:\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nSilakan review kembali kelengkapan dokumen.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
 
-            ['kode_event' => 'PERMOHONAN_SIAP_TERBIT', 'channel' => 'email', 'subjek' => 'Permohonan Siap Terbit', 'isi_template' => "Yth. Staff Sertifikasi,\n\nPermohonan berikut telah memenuhi persyaratan:\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nMohon upload Surat Pengesahan Denah PBF.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
+            ['kode_event' => 'SIAP_TERBIT', 'channel' => 'email', 'subjek' => 'Permohonan Siap Terbit', 'isi_template' => "Yth. Staff Sertifikasi,\n\nPermohonan berikut telah memenuhi persyaratan:\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nMohon upload Surat Pengesahan Denah PBF.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
 
             ['kode_event' => 'SURAT_TERBIT', 'channel' => 'email', 'subjek' => 'Surat Pengesahan Terbit - SERASI', 'isi_template' => "Yth. {{nama_pbf}}\n\nSelamat! Surat Pengesahan Denah PBF untuk permohonan Anda telah terbit.\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nSilakan login ke portal untuk mengunduh Surat Pengesahan.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
 
             // ── WhatsApp templates ───────────────────────────────────────────
-            ['kode_event' => 'AKUN_BARU', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "🔐 *Akun Portal PBF*\n\nYth. {{nama_pbf}},\n\nAkun Portal Pelaku Usaha Anda telah dibuat.\n\nUsername: {{username}}\nPassword: {{password}}\n\nLogin di: {{app_url}}\n\nPada login pertama, kode OTP akan dikirim via WhatsApp.", 'is_active' => true],
+            ['kode_event' => 'AKUN_BARU', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "🔐 *Akun Portal PBF*
+
+Yth. {{nama_pbf}},
+
+Akun Portal Pelaku Usaha Anda telah dibuat.
+
+📋 *Data Pemohon*
+No. Reg : {{no_registrasi}}
+NIB     : {{nib}}
+Alamat  : {{alamat}}
+
+🔑 *Login*
+User : {{username}}
+Pass : {{password}}
+
+🌐 {{app_url}}
+
+Pada login pertama, kode OTP akan dikirim via WhatsApp.", 'is_active' => true],
 
             ['kode_event' => 'PENGAJUAN_BARU', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "📋 *Pengajuan Diterima*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nPengajuan Anda telah diterima dan sedang dalam proses. Pantau status di portal.", 'is_active' => true],
 

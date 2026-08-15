@@ -27,6 +27,7 @@ class Pbf extends Authenticatable
     protected $fillable = [
         'nib',
         'nama_pbf',
+        'alamat',
         'email',
         'no_whatsapp',
         'password_hash',

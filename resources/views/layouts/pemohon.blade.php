@@ -38,6 +38,9 @@
                 <span class="text-sm text-blue-100 truncate max-w-[180px] flex items-center gap-2">
                     <i class="ph ph-buildings" aria-hidden="true"></i>{{ $pemohon->nama_pbf }}
                 </span>
+                <a href="{{ route('pemohon.password.change') }}" class="text-sm text-blue-200 hover:text-white transition-colors flex items-center gap-1.5">
+                    <i class="ph ph-lock" aria-hidden="true"></i>Ubah Password
+                </a>
                 <form method="POST" action="{{ route('pemohon.logout') }}">
                     @csrf
                     <button type="submit" class="inline-flex items-center gap-1.5 text-sm text-blue-200 hover:text-white transition-colors">
@@ -57,6 +60,9 @@
             </a>
             <a href="{{ route('pemohon.notifikasi.index') }}" @class(['flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm', 'bg-white/15 font-medium' => request()->routeIs('pemohon.notifikasi.index'), 'hover:bg-white/10' => ! request()->routeIs('pemohon.notifikasi.index')])>
                 <i class="ph ph-bell" aria-hidden="true"></i> Notifikasi
+            </a>
+            <a href="{{ route('pemohon.password.change') }}" @class(['flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm', 'bg-white/15 font-medium' => request()->routeIs('pemohon.password.change'), 'hover:bg-white/10' => ! request()->routeIs('pemohon.password.change')])>
+                <i class="ph ph-lock" aria-hidden="true"></i> Ubah Password
             </a>
             <div class="border-t border-white/15 pt-2 mt-2">
                 <p class="px-3 pb-1 text-xs text-blue-200 truncate">{{ $pemohon->nama_pbf }}</p>

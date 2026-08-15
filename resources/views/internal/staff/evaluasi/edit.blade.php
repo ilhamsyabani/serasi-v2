@@ -2,7 +2,34 @@
 
 @section('title', 'Evaluasi')
 @section('content')
-<?php $pageTitle = 'Evaluasi: ' . $permohonan->no_registrasi; ?>
+<?php
+$pageTitle = 'Evaluasi: ' . $permohonan->no_registrasi;
+$statusRevisi = in_array($permohonan->status_saat_ini, [
+    App\Models\Permohonan::STATUS_REVISI_1,
+    App\Models\Permohonan::STATUS_REVISI_2,
+    App\Models\Permohonan::STATUS_REVISI_3,
+]);
+$revisiKe = (int) filter_var($permohonan->status_saat_ini, FILTER_SANITIZE_NUMBER_INT);
+$revisiBerikutnya = $revisiKe + 1;
+$labelRevisiSekarang = $revisiKe > 0 ? "Revisi {$revisiKe}" : "Proses Awal";
+$labelRevisiBerikutnya = "Revisi {$revisiBerikutnya}";
+?>
+
+<div x-data="{
+    showConfirm: false,
+    hasilDipilih: null,
+    confirmRevisi() {
+        this.hasilDipilih = $event.target.closest('form').querySelector('input[name=\'hasil\']:checked').value;
+        if (this.hasilDipilih === 'tidak_lengkap' && {{ $statusRevisi ? 'true' : 'false' }}) {
+            this.showConfirm = true;
+            // Salin nilai catatan ke hidden field di form konfirmasi
+            const mainForm = $event.target.closest('form');
+            const catatanValue = mainForm.querySelector('textarea[name=\'catatan\']').value;
+            document.getElementById('confirm_catatan').value = catatanValue;
+            $event.preventDefault();
+        }
+    }
+}">
 
 <x-ui.card class="mb-6">
     <x-ui.card-header :title="$permohonan->no_registrasi" description="Form evaluasi permohonan" />
@@ -17,6 +44,16 @@
                 <p class="font-mono text-slate-700">{{ $permohonan->nib_snapshot }}</p>
             </div>
         </div>
+        @if($statusRevisi)
+        <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p class="text-sm text-amber-800">
+                <i class="ph ph-warning mr-1" aria-hidden="true"></i>
+                Permohonan saat ini berstatus <strong>{{ $labelRevisiSekarang }}</strong>.
+                Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke <strong>{{ $labelRevisiBerikutnya }}</strong>.
+                Kuota maks. 3 revisi.
+            </p>
+        </div>
+        @endif
     </x-ui.card-content>
 </x-ui.card>
 
@@ -70,7 +107,7 @@
 <x-ui.card class="mt-4">
     <x-ui.card-header title="Form Evaluasi" description="Tentukan kelengkapan permohonan" />
     <x-ui.card-content>
-        <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="space-y-5">
+        <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="space-y-5" @submit="confirmRevisi()">
             @csrf @method('PUT')
 
             <div>
@@ -102,4 +139,60 @@
         </form>
     </x-ui.card-content>
 </x-ui.card>
+
+{{-- Konfirmasi Naik Siklus Revisi --}}
+<div x-show="showConfirm" x-cloak
+    x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+    @click.self="showConfirm = false" @keydown.escape.window="showConfirm = false">
+
+    <div x-show="showConfirm"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+        class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+
+        <div class="bg-red-500 px-6 py-4">
+            <h3 class="text-white font-semibold text-base flex items-center gap-2">
+                <i class="ph ph-warning-circle text-xl" aria-hidden="true"></i>
+                Konfirmasi Siklus Revisi
+            </h3>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-slate-700 mb-1">
+                Revisi sebelumnya <strong>({{ $labelRevisiSekarang }})</strong> belum ditanggapi oleh pemohon.
+            </p>
+            <p class="text-sm text-slate-700 mb-4">
+                Jika Anda mengirim <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke
+                <strong class="text-red-600">{{ $labelRevisiBerikutnya }}</strong>.
+            </p>
+            <div class="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
+                <p class="text-xs text-red-700">
+                    <strong>Perhatian:</strong> Kuota maks. 3 siklus revisi. Setelah Revisi 3 tetap tidak lengkap, permohonan akan <strong>ditutup</strong> dan pemohon harus mengajukan ulang.
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" @click="showConfirm = false" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium text-sm transition-colors">
+                    Batal
+                </button>
+                <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="flex-1" @submit.stop>
+                    @csrf @method('PUT')
+                    <input type="hidden" name="hasil" value="tidak_lengkap">
+                    <input type="hidden" name="catatan" id="confirm_catatan">
+                    <x-ui.button type="submit" variant="destructive" class="w-full">Ya, Kirim</x-ui.button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Spinner overlay --}}
+<div x-data="{ submitting: false }" @submit="submitting = true" x-show="submitting" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <div class="bg-white rounded-xl shadow-xl p-6 flex items-center gap-3">
+        <svg class="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+        <p class="text-sm font-medium text-slate-700">Menyimpan evaluasi...</p>
+    </div>
+</div>
+
+</div>
 @endsection

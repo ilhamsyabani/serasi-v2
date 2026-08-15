@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Internal\AuthController;
+use App\Http\Controllers\Internal\ChangePasswordController;
 use App\Http\Controllers\Internal\ForgotPasswordController;
 use App\Http\Controllers\Internal\ResetPasswordController;
 use App\Http\Controllers\Internal\DashboardController;
@@ -28,7 +29,7 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
     Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
     Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
     Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
-    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.reset-store');
 
     Route::middleware(['auth', 'role:kepala_balai,ketua_tim,staff_sertifikasi,admin_it'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -75,5 +76,9 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
 
         // Notifikasi
         Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+
+        // Ubah password
+        Route::get('/ubah-password', [ChangePasswordController::class, 'show'])->name('password.change');
+        Route::put('/ubah-password', [ChangePasswordController::class, 'update'])->name('password.update');
     });
 });

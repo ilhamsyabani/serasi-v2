@@ -15,7 +15,14 @@ class DashboardController extends Controller
         $user = Auth::user();
         $search = $request->input('search');
 
-        $query = Permohonan::whereHas('distribusiAktif', fn($q) => $q->where('staff_id', $user->id))
+        // Stats: semua permohonan (tanpa filter user)
+        $allPermohonans = Permohonan::query()
+            ->latest()
+            ->get();
+
+        // Table: hanya permohonan yang ditugaskan ke staff ini
+        $query = Permohonan::query()
+            ->whereHas('distribusiAktif', fn ($q) => $q->where('staff_id', $user->id))
             ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff']);
 
         if ($search) {
@@ -31,8 +38,9 @@ class DashboardController extends Controller
         return view('internal.staff.dashboard', [
             'user' => $user,
             'permohonans' => $permohonans,
+            'allPermohonans' => $allPermohonans,
             'search' => $search,
-            'slaRingkasan' => $sla->ringkasan($permohonans),
+            'slaRingkasan' => $sla->ringkasan($allPermohonans),
         ]);
     }
 }

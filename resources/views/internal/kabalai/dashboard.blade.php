@@ -25,26 +25,33 @@ $roleBucket = [
 ];
 foreach ($permohonans as $p) {
     $s = $p->status_saat_ini;
-    if (in_array($s, ['terbit_surat_pengesahan', 'ditutup_pengajuan_ulang'])) {
+    if ($s === 'pengajuan') {
+        // Kabalai: input permohonan, belum didisposisikan
         $roleBucket['kabalai'][] = $p;
-    } elseif (in_array($s, ['revisi_1', 'revisi_2', 'revisi_3'])) {
-        $roleBucket['pemohon'][] = $p;
-    } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan'])) {
-        $roleBucket['staff'][] = $p;
     } elseif ($s === 'didisposisikan') {
+        // Katim: sudah didisposisikan kabalai, belum didistribusikan ke staff
         $roleBucket['katim'][] = $p;
-    } elseif ($s === 'pengajuan') {
-        $roleBucket['kabalai'][] = $p;
+    } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan'])) {
+        // Staff: sudah didistribusikan, sedang diproses
+        $roleBucket['staff'][] = $p;
+    } elseif ($s === 'ditutup_pengajuan_ulang') {
+        // Ditutup: staff menutup karena revisi ke-3 gagal
+        $roleBucket['staff'][] = $p;
+    } elseif (in_array($s, ['revisi_1', 'revisi_2', 'revisi_3'])) {
+        // Revisi: menunggu aksi dari pemohon
+        $roleBucket['pemohon'][] = $p;
+    } elseif ($s === 'terbit_surat_pengesahan') {
+        // Terbit: pemohon mendapatkan surat pengesahan
+        $roleBucket['pemohon'][] = $p;
     }
 }
 
 $counts = $permohonans->countBy('status_saat_ini');
-$bulanIni = $statBulanan->keyBy('bulan');
 $namaBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 @endphp
 
-{{-- Statistik Permohonan Per Bulan (paling atas) --}}
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+{{-- Statistik Permohonan (paling atas) --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
     <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-sm">
         <p class="text-xs font-medium text-blue-100 uppercase tracking-wide">Total {{ now()->year }}</p>
         <p class="text-2xl font-bold mt-1">{{ $statBulanan->sum('total') }}</p>
@@ -55,15 +62,10 @@ $namaBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov',
         <p class="text-2xl font-bold mt-1">{{ $statBulanan->sum('terbit') }}</p>
         <p class="text-xs text-emerald-200 mt-1">surat pengesahan</p>
     </div>
-    <div class="bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl p-4 text-white shadow-sm">
-        <p class="text-xs font-medium text-violet-100 uppercase tracking-wide">Bulan Ini</p>
-        <p class="text-2xl font-bold mt-1">{{ $bulanIni->get(now()->format('Y-m'))?->total ?? 0 }}</p>
-        <p class="text-xs text-violet-200 mt-1">{{ $namaBulan[(int)now()->format('n') - 1] }} {{ now()->year }}</p>
-    </div>
     <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white shadow-sm">
-        <p class="text-xs font-medium text-amber-100 uppercase tracking-wide">Tertutup</p>
-        <p class="text-2xl font-bold mt-1">{{ $statBulanan->sum('ditutup') }}</p>
-        <p class="text-xs text-amber-200 mt-1">pengajuan ulang</p>
+        <p class="text-xs font-medium text-amber-100 uppercase tracking-wide">On Process</p>
+        <p class="text-2xl font-bold mt-1">{{ $onProcess }}</p>
+        <p class="text-xs text-amber-200 mt-1">sedang diproses</p>
     </div>
 </div>
 

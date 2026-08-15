@@ -6,8 +6,8 @@
 
 <div class="flex items-center justify-between mb-6">
     <div>
-        <h2 class="text-lg font-semibold text-slate-900">Permohonan Saya</h2>
-        <p class="text-sm text-slate-500">Permohonan yang saya input</p>
+        <h2 class="text-lg font-semibold text-slate-900">Permohonan</h2>
+        <p class="text-sm text-slate-500">Data Permohonan PBF</p>
     </div>
     <x-ui.button variant="default" href="{{ route('internal.kabalai.permohonan.create') }}">
         + Input Permohonan Baru

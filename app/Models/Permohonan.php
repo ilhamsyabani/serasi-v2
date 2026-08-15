@@ -182,4 +182,25 @@ class Permohonan extends Model
             self::STATUS_DITUTUP_PENGAJUAN_ULANG,
         ], true);
     }
+
+    /**
+     * Generate nomor registrasi unik下一个. Format: PBF/DENAH/{tahun}/{urutan 5 digit}.
+     *urutan dihitung berdasarkan MAX untuk tahun berjalan, jadi aman meski ada record dihapus.
+     */
+    public static function generateNoRegistrasi(): string
+    {
+        $tahun = date('Y');
+        $prefix = "PBF/DENAH/{$tahun}/";
+
+        $last = static::where('no_registrasi', 'LIKE', "{$prefix}%")
+            ->orderByDesc('no_registrasi')
+            ->value('no_registrasi');
+
+        $next = 1;
+        if ($last && preg_match('/(\d{5})$/', $last, $m)) {
+            $next = (int) $m[1] + 1;
+        }
+
+        return $prefix . str_pad($next, 5, '0', STR_PAD_LEFT);
+    }
 }

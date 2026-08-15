@@ -42,5 +42,12 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Ukuran data yang diupload terlalu besar. Maksimum 64MB per request. Pastikan total ukuran file yang diupload tidak melebihi batas tersebut.',
+                ], 413);
+            }
+            return redirect()->back()->with('error', 'Ukuran data yang diupload terlalu besar. Maksimum 64MB per request. Harap upload file dengan ukuran lebih kecil.');
+        });
     })->create();

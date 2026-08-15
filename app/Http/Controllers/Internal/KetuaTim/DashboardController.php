@@ -31,10 +31,15 @@ class DashboardController extends Controller
     {
         $user = Auth::guard('web')->user();
 
+        // Stats: semua permohonan (tanpa filter)
+        $allPermohonans = Permohonan::query()
+            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
+            ->latest()
+            ->get();
+
+        // Table: hanya permohonan yang didisposisikan ke tim katim ini
         $permohonans = Permohonan::query()
             ->whereHas('disposisi', fn ($q) => $q->where('ketua_tim_id', $user->id))
-            ->whereIn('status_saat_ini', self::STATUS_AKTIF)
-            // Eager load: timeline tiap baris membaca statusLog + aktor; tanpa ini N+1.
             ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
             ->latest()
             ->get();
@@ -54,10 +59,11 @@ class DashboardController extends Controller
         return view('internal.ketua_tim.dashboard', [
             'user' => $user,
             'permohonans' => $permohonans,
+            'allPermohonans' => $allPermohonans,
             'perluDistribusi' => $perluDistribusi,
             'staffList' => $staffList,
             'bebanKerja' => $bebanKerja,
-            'slaRingkasan' => $sla->ringkasan($permohonans),
+            'slaRingkasan' => $sla->ringkasan($allPermohonans),
         ]);
     }
 }

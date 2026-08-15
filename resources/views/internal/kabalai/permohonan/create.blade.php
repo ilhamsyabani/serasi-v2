@@ -29,14 +29,31 @@
         <form method="POST" action="{{ route('internal.kabalai.permohonan.store') }}" enctype="multipart/form-data" class="space-y-5">
             @csrf
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <x-ui.input label="NIB" name="nib" :value="old('nib')" placeholder="13 digit NIB" :error="$errors->first('nib')" required />
-                <x-ui.input label="Nama PBF" name="nama_pbf" :value="old('nama_pbf')" placeholder="Nama lengkap usaha" :error="$errors->first('nama_pbf')" required />
-            </div>
+            <div x-data="{ waWarning: '', checking: false, nibWarning: '', nibTouched: false }">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <x-ui.input
+                            label="NIB"
+                            name="nib"
+                            type="text"
+                            :value="old('nib')"
+                            placeholder="13 digit NIB"
+                            :error="$errors->first('nib')"
+                            required
+                            x-on:blur="nibTouched = true; nibWarning = $event.target.value.replace(/\D/g, '').length !== 13 ? 'NIB harus 13 digit angka.' : ''"
+                            x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').slice(0, 13)"
+                            x-bind:class="nibWarning && nibTouched ? 'ring-2 ring-red-400' : ''" />
+                        <template x-if="nibWarning && nibTouched">
+                            <p class="text-xs text-red-600 mt-1 flex items-center gap-1">
+                                <span>⚠️</span><span x-text="nibWarning"></span>
+                            </p>
+                        </template>
+                    </div>
+                    <x-ui.input label="Nama PBF" name="nama_pbf" :value="old('nama_pbf')" placeholder="Nama lengkap usaha" :error="$errors->first('nama_pbf')" required />
+                </div>
 
-            <x-ui.textarea label="Alamat" name="alamat" :value="old('alamat')" placeholder="Alamat lengkap PBF" :rows="2" />
+                <x-ui.textarea label="Alamat" name="alamat" :value="old('alamat')" placeholder="Alamat lengkap PBF" :rows="2" />
 
-            <div x-data="{ waWarning: '', checking: false }">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <x-ui.input label="Email PIC" name="email" type="email" :value="old('email')" placeholder="email@pbf.id" :error="$errors->first('email')" required />
                     <div>

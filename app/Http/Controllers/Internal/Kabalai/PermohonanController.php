@@ -106,20 +106,35 @@ class PermohonanController extends Controller
         );
 
         $username = $data['email'];
-        $noReg = 'PBF/DENAH/' . date('Y') . '/' . str_pad(Permohonan::count() + 1, 5, '0', STR_PAD_LEFT);
 
-        $permohonan = Permohonan::create([
-            'no_registrasi' => $noReg,
-            'pbf_id' => $pbf->id,
-            'nama_pbf_snapshot' => $data['nama_pbf'],
-            'nib_snapshot' => $data['nib'],
-            'email_snapshot' => $data['email'],
-            'no_wa_snapshot' => $data['no_whatsapp'],
-            'status_saat_ini' => Permohonan::STATUS_PENGAJUAN,
-            'tanggal_pengajuan' => now(),
-            'kepala_balai_id' => Auth::id(),
-            'dibuat_oleh_tipe' => Permohonan::DIBUAT_OLEH_KEPALA_BALAI,
-        ]);
+        try {
+            $noReg = Permohonan::generateNoRegistrasi();
+
+            $permohonan = Permohonan::create([
+                'no_registrasi' => $noReg,
+                'pbf_id' => $pbf->id,
+                'nama_pbf_snapshot' => $data['nama_pbf'],
+                'nib_snapshot' => $data['nib'],
+                'email_snapshot' => $data['email'],
+                'no_wa_snapshot' => $data['no_whatsapp'],
+                'status_saat_ini' => Permohonan::STATUS_PENGAJUAN,
+                'tanggal_pengajuan' => now(),
+                'kepala_balai_id' => Auth::id(),
+                'dibuat_oleh_tipe' => Permohonan::DIBUAT_OLEH_KEPALA_BALAI,
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($this->isDuplicateKeyError($e)) {
+                \Illuminate\Support\Facades\Log::critical('Duplikat no_registrasi: ' . ($noReg ?? 'unknown'), [
+                    'nib' => $data['nib'],
+                    'nama_pbf' => $data['nama_pbf'],
+                    'kepala_balai_id' => Auth::id(),
+                ]);
+                return redirect()->back()
+                    ->withInput($request->except('_token'))
+                    ->with('error', "Gagal menyimpan: No. Registrasi '{$noReg}' sudah terdaftar. Harap coba beberapa saat lagi atau hubungi Administrator IT.");
+            }
+            throw $e;
+        }
 
         // Simpan tiap dokumen yang diunggah. Kunci array = jenis_dokumen (dari
         // DokumenPermohonan::JENIS), sehingga field & jenis tidak pernah bergeser.
@@ -181,5 +196,11 @@ class PermohonanController extends Controller
         $permohonan->update($data);
 
         return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil diperbarui.');
+    }
+
+    private function isDuplicateKeyError(\Illuminate\Database\QueryException $e): bool
+    {
+        $code = $e->getCode();
+        return $code === '23000' || $code === '23505';
     }
 }

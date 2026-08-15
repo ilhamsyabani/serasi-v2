@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Pemohon\AuthController;
+use App\Http\Controllers\Pemohon\ChangePasswordController;
 use App\Http\Controllers\Pemohon\ForgotPasswordController;
 use App\Http\Controllers\Pemohon\ResetPasswordController;
 use App\Http\Controllers\Pemohon\DashboardController;
@@ -40,5 +41,9 @@ Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])
 
         // Notifikasi
         Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+
+        // Ubah password
+        Route::get('/ubah-password', [ChangePasswordController::class, 'show'])->name('password.change');
+        Route::put('/ubah-password', [ChangePasswordController::class, 'update'])->name('password.update');
     });
 });

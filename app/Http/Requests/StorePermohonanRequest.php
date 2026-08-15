@@ -23,7 +23,7 @@ class StorePermohonanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nib' => 'required|string|max:30',
+            'nib' => 'required|string|digits:13',
             'nama_pbf' => 'required|string|max:200',
             'alamat' => 'nullable|string|max:500',
             'email' => 'required|email|max:150|unique:pbf,email',
@@ -60,6 +60,7 @@ class StorePermohonanRequest extends FormRequest
         return [
             '*.mimes' => 'Berkas :attribute harus berformat ' . $ekstensi . '.',
             '*.max' => 'Ukuran berkas :attribute maksimal ' . $maksMb . ' MB.',
+            'nib.digits' => 'NIB harus terdiri dari tepat 13 digit angka.',
         ];
     }
 }

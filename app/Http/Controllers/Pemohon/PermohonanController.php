@@ -57,20 +57,32 @@ class PermohonanController extends Controller
             }
         }
 
-        $noReg = 'PBF/DENAH/' . date('Y') . '/' . str_pad(Permohonan::count() + 1, 5, '0', STR_PAD_LEFT);
+        try {
+            $noReg = Permohonan::generateNoRegistrasi();
 
-        $permohonan = Permohonan::create([
-            'no_registrasi' => $noReg,
-            'pbf_id' => $pbf->id,
-            'parent_permohonan_id' => $parent->id,
-            'nama_pbf_snapshot' => $pbf->nama_pbf,
-            'nib_snapshot' => $pbf->nib,
-            'email_snapshot' => $pbf->email,
-            'no_wa_snapshot' => $pbf->no_whatsapp,
-            'status_saat_ini' => Permohonan::STATUS_PENGAJUAN,
-            'tanggal_pengajuan' => now(),
-            'dibuat_oleh_tipe' => Permohonan::DIBUAT_OLEH_PEMOHON,
-        ]);
+            $permohonan = Permohonan::create([
+                'no_registrasi' => $noReg,
+                'pbf_id' => $pbf->id,
+                'parent_permohonan_id' => $parent->id,
+                'nama_pbf_snapshot' => $pbf->nama_pbf,
+                'nib_snapshot' => $pbf->nib,
+                'email_snapshot' => $pbf->email,
+                'no_wa_snapshot' => $pbf->no_whatsapp,
+                'status_saat_ini' => Permohonan::STATUS_PENGAJUAN,
+                'tanggal_pengajuan' => now(),
+                'dibuat_oleh_tipe' => Permohonan::DIBUAT_OLEH_PEMOHON,
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() === '23000' || $e->getCode() === '23505') {
+                \Illuminate\Support\Facades\Log::critical('Duplikat no_registrasi (pemohon): ' . ($noReg ?? 'unknown'), [
+                    'pbf_id' => $pbf->id,
+                    'parent_permohonan_id' => $parent->id,
+                ]);
+                return redirect()->back()
+                    ->with('error', "Gagal menyimpan: No. Registrasi '{$noReg}' sudah terdaftar. Harap coba beberapa saat lagi.");
+            }
+            throw $e;
+        }
 
         if ($request->hasFile('dokumen')) {
             $jenisDokumen = [

@@ -32,8 +32,8 @@
                     @csrf
                     <input type="hidden" name="token" value="{{ $token }}">
 
-                    <x-ui.input label="Password Baru" name="password" type="password" placeholder="Min. 8 karakter" required autofocus />
-                    <x-ui.input label="Konfirmasi Password" name="password_confirmation" type="password" placeholder="Ulangi password baru" required />
+                    <x-ui.input label="Password Baru" name="password" type="password" placeholder="Min. 8 karakter" required autofocus toggle="true" />
+                    <x-ui.input label="Konfirmasi Password" name="password_confirmation" type="password" placeholder="Ulangi password baru" required toggle="true" />
 
                     <x-ui.button type="submit" variant="default" size="full">Reset Password</x-ui.button>
                 </form>

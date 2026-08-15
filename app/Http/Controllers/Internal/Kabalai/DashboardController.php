@@ -32,10 +32,13 @@ class DashboardController extends Controller
             ->orderByRaw("DATE_FORMAT(tanggal_pengajuan, '%Y-%m')")
             ->get();
 
+        $onProcess = $permohonans->whereNotIn('status_saat_ini', ['terbit_surat_pengesahan', 'ditutup_pengajuan_ulang'])->count();
+
         return view('internal.kabalai.dashboard', [
             'permohonans' => $permohonans,
             'slaRingkasan' => $sla->ringkasan($permohonans),
             'statBulanan' => $statBulanan,
+            'onProcess' => $onProcess,
         ]);
     }
 }

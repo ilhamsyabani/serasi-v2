@@ -31,6 +31,11 @@
                     <p class="text-sm font-medium text-slate-800 truncate">{{ $user->nama ?? 'User' }}</p>
                     <p class="text-xs text-slate-400 truncate">{{ $user->role?->nama ?? '' }}</p>
                 </div>
+                <a href="{{ route('internal.password.change') }}"
+                   class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors">
+                    <i class="ph ph-lock text-lg" aria-hidden="true"></i>
+                    Ubah Password
+                </a>
                 <form method="POST" action="{{ route('internal.logout') }}">
                     @csrf
                     <button type="submit"

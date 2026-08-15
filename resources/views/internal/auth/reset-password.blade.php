@@ -17,15 +17,15 @@
 
         <x-ui.card>
             <x-ui.card-content>
-                <form method="POST" action="{{ route('internal.password.update') }}" class="space-y-4">
+                <form method="POST" action="{{ route('internal.password.reset-store') }}" class="space-y-4">
                     @csrf
                     <input type="hidden" name="token" value="{{ $token }}">
                     <input type="hidden" name="email" value="{{ $email }}">
 
                     <x-ui.input label="Email" name="email" type="email" :value="$email" placeholder="email@bbpom.go.id" required readonly />
 
-                    <x-ui.input label="Password Baru" name="password" type="password" placeholder="Min. 8 karakter" required />
-                    <x-ui.input label="Konfirmasi Password" name="password_confirmation" type="password" placeholder="Ulangi password baru" required />
+                    <x-ui.input label="Password Baru" name="password" type="password" placeholder="Min. 8 karakter" required toggle="true" />
+                    <x-ui.input label="Konfirmasi Password" name="password_confirmation" type="password" placeholder="Ulangi password baru" required toggle="true" />
 
                     <x-ui.button type="submit" variant="default" size="full">Reset Password</x-ui.button>
                 </form>
