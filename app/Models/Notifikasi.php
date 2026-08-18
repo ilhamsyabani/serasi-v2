@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,12 +49,16 @@ class Notifikasi extends Model
         'retry_count',
         'sent_at',
         'error_message',
+        'dibaca_at',
     ];
 
     protected $casts = [
         'retry_count' => 'integer',
         'sent_at' => 'datetime',
+        'dibaca_at' => 'datetime',
     ];
+
+    // ── Relasi ─────────────────────────────────────────
 
     public function permohonan(): BelongsTo
     {
@@ -72,4 +77,80 @@ class Notifikasi extends Model
 
         return User::find($this->tujuan_id);
     }
+
+    // ── Scope ──────────────────────────────────────────
+
+    public function scopeUnread(Builder $query): Builder
+    {
+        return $query->whereNull('dibaca_at');
+    }
+
+    // ── Helper ─────────────────────────────────────────
+
+    public function isUnread(): bool
+    {
+        return $this->dibaca_at === null;
+    }
+
+    public function markAsRead(): void
+    {
+        if ($this->dibaca_at === null) {
+            $this->update(['dibaca_at' => now()]);
+        }
+    }
+
+    public function getLabelAttribute(): string
+    {
+        return self::TEMPLATE_LABELS[$this->template_kode] ?? str_replace('_', ' ', ucfirst($this->template_kode ?? 'Notifikasi'));
+    }
+
+    public function getIconAttribute(): string
+    {
+        return self::TEMPLATE_ICONS[$this->template_kode] ?? 'ph-bell';
+    }
+
+    public function getChannelBadgeClassAttribute(): string
+    {
+        return match ($this->channel) {
+            self::CHANNEL_WHATSAPP => 'bg-green-100 text-green-700',
+            self::CHANNEL_EMAIL => 'bg-blue-100 text-blue-700',
+            default => 'bg-slate-100 text-slate-600',
+        };
+    }
+
+    // ── Statis ─────────────────────────────────────────
+
+    /** Label ramah-baca untuk tiap template kode. */
+    public const TEMPLATE_LABELS = [
+        'PENGAJUAN_BARU' => 'Pengajuan Baru',
+        'DISPOSISI' => 'Disposisi Permohonan',
+        'DISTRIBUSI' => 'Distribusi ke Staff',
+        'EVALUASI_LENGKAP' => 'Evaluasi Lengkap',
+        'EVALUASI_TIDAK_LENGKAP' => 'Evaluasi Tidak Lengkap',
+        'REVISI' => 'Permintaan Revisi',
+        'REVISI_UPLOADED' => 'Revisi Diunggah Pemohon',
+        'SIAP_TERBIT' => 'Siap Terbit Surat',
+        'SURAT_TERBIT' => 'Surat Pengesahan Terbit',
+        'REMINDER' => 'Pengingat',
+        'AKUN_BARU' => 'Akun Baru',
+        'PENGAJUAN_ULANG' => 'Pengajuan Ulang',
+        'REASSIGNMENT' => 'Penugasan Ulang Staff',
+    ];
+
+    /** Phosphor icon name untuk tiap template kode. */
+    public const TEMPLATE_ICONS = [
+        'PENGAJUAN_BARU' => 'ph-file-plus',
+        'DISPOSISI' => 'ph-arrow-bend-up-right',
+        'DISTRIBUSI' => 'ph-user-plus',
+        'EVALUASI_LENGKAP' => 'ph-check-circle',
+        'EVALUASI_TIDAK_LENGKAP' => 'ph-x-circle',
+        'REVISI' => 'ph-note-pencil',
+        'REVISI_UPLOADED' => 'ph-upload-simple',
+        'SIAP_TERBIT' => 'ph-seal-check',
+        'SURAT_TERBIT' => 'ph-seal-check-fill',
+        'REMINDER' => 'ph-bell-ringing',
+        'AKUN_BARU' => 'ph-user-circle-plus',
+        'PENGAJUAN_ULANG' => 'ph-arrows-clockwise',
+        'REASSIGNMENT' => 'ph-arrows-left-right',
+    ];
 }

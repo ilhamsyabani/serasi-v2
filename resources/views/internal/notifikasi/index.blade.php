@@ -9,6 +9,15 @@
         <h2 class="text-lg font-semibold text-slate-900">Notifikasi</h2>
         <p class="text-sm text-slate-500">Riwayat notifikasi yang diterima</p>
     </div>
+    @php $unreadCount = $notifikasis->total() > 0 ? $notifikasis->getCollection()->filter(fn($n) => $n->isUnread())->count() : 0; @endphp
+    @if($unreadCount > 0)
+        <form action="{{ route('internal.notifikasi.mark-all-as-read') }}" method="POST" onsubmit="this.querySelector('button').disabled=true;">
+            @csrf
+            <x-ui.button type="submit" variant="outline" size="sm">
+                <i class="ph ph-check-square mr-1.5"></i> Tandai semua dibaca
+            </x-ui.button>
+        </form>
+    @endif
 </div>
 
 <x-ui.card>
@@ -21,11 +30,12 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Template</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Permohonan</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Dibaca</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-50">
                 @forelse($notifikasis as $n)
-                <tr class="hover:bg-slate-50 transition-colors">
+                <tr class="hover:bg-slate-50 transition-colors {{ $n->isUnread() ? 'bg-blue-50/30' : '' }}">
                     <td class="px-4 py-3 text-slate-600 text-xs whitespace-nowrap">
                         {{ $n->created_at->format('d M Y, H:i') }}
                     </td>
@@ -43,7 +53,8 @@
                         </span>
                     </td>
                     <td class="px-4 py-3">
-                        <span class="font-mono text-xs text-slate-700">{{ $n->template_kode ?? '-' }}</span>
+                        <span class="font-medium text-xs text-slate-700">{{ $n->label }}</span>
+                        <span class="block font-mono text-xs text-slate-400">{{ $n->template_kode ?? '-' }}</span>
                     </td>
                     <td class="px-4 py-3">
                         @if($n->permohonan)
@@ -65,14 +76,28 @@
                                 <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Pending
                             </span>
                         @else
-                            <span class="inline-flex items-center gap-1 text-xs text-red-600">
+                            <span class="inline-flex items-center gap-1 text-xs text-red-600" title="{{ $n->error_message }}">
                                 <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Gagal
+                            </span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3">
+                        @if($n->isUnread())
+                            <form action="{{ route('internal.notifikasi.mark-as-read', $n) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                                    <i class="ph ph-circle text-[10px]" aria-hidden="true"></i>Belum
+                                </button>
+                            </form>
+                        @else
+                            <span class="inline-flex items-center gap-1 text-xs text-slate-400">
+                                <i class="ph-fill ph-check-circle text-emerald-500" aria-hidden="true"></i>{{ $n->dibaca_at?->format('d M Y, H:i') ?? '-' }}
                             </span>
                         @endif
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5"><x-ui.empty-state title="Belum ada notifikasi" description="Notifikasi akan muncul di sini." /></td></tr>
+                <tr><td colspan="6"><x-ui.empty-state title="Belum ada notifikasi" description="Notifikasi akan muncul di sini." /></td></tr>
                 @endforelse
             </tbody>
         </table>

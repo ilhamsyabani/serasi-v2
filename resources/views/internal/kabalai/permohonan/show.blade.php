@@ -73,6 +73,12 @@
                             <p class="text-slate-800">{{ $permohonan->no_wa_snapshot }}</p>
                         </div>
                     </div>
+                    @if($permohonan->pbf?->alamat)
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-1">Alamat</p>
+                        <p class="text-sm text-slate-800">{{ $permohonan->pbf->alamat }}</p>
+                    </div>
+                    @endif
                 </x-ui.card-content>
             </x-ui.card>
 

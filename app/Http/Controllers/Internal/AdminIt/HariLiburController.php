@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Internal\AdminIt;
 use App\Http\Controllers\Controller;
 use App\Models\HariLibur;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HariLiburController extends Controller
 {
@@ -20,7 +21,10 @@ class HariLiburController extends Controller
         }
 
         $hariLiburs = $query->orderBy('tanggal')->paginate(15)->withQueryString();
-        $tahunList = HariLibur::selectRaw('YEAR(tanggal) as tahun')
+        // SQLite uses strftime, MySQL uses YEAR
+        $driver = DB::connection()->getDriverName();
+        $yearExpr = $driver === 'sqlite' ? "strftime('%Y', tanggal)" : 'YEAR(tanggal)';
+        $tahunList = HariLibur::selectRaw("{$yearExpr} as tahun")
             ->distinct()
             ->orderByDesc('tahun')
             ->pluck('tahun');

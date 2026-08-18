@@ -94,6 +94,18 @@
                 <td class="px-4 py-3 text-slate-400 text-xs">{{ $p->tanggal_pengajuan?->format('d M Y') }}</td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
                     <x-ui.button variant="ghost" size="sm" href="{{ route('internal.kabalai.permohonan.show', $p) }}">Detail</x-ui.button>
+                    @if($p->kepala_balai_id === auth()->id() && $p->status_saat_ini === 'pengajuan')
+                        <x-ui.button variant="ghost" size="sm" href="{{ route('internal.kabalai.permohonan.edit', $p) }}" class="!text-amber-600 hover:!text-amber-700">
+                            <i class="ph ph-pencil-simple" aria-hidden="true"></i>
+                        </x-ui.button>
+                        <form action="{{ route('internal.kabalai.permohonan.destroy', $p) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus permohonan ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <x-ui.button variant="ghost" size="sm" type="submit" class="!text-red-500 hover:!text-red-700">
+                                <i class="ph ph-trash" aria-hidden="true"></i>
+                            </x-ui.button>
+                        </form>
+                    @endif
                     <x-ui.timeline-toggle />
                 </td>
             </x-ui.permohonan-row>

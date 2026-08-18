@@ -23,7 +23,7 @@ class DashboardController extends Controller
         // Table: hanya permohonan yang ditugaskan ke staff ini
         $query = Permohonan::query()
             ->whereHas('distribusiAktif', fn ($q) => $q->where('staff_id', $user->id))
-            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff']);
+            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff', 'revisi.dokumenRevisi']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {

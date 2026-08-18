@@ -14,6 +14,7 @@ use App\Http\Controllers\Internal\KetuaTim\DistribusiController;
 use App\Http\Controllers\Internal\Staff\DashboardController as StaffDashboardController;
 use App\Http\Controllers\Internal\Staff\EvaluasiController;
 use App\Http\Controllers\Internal\Staff\SuratPengesahanController;
+use App\Http\Controllers\Internal\Staff\PermohonanController as StaffPermohonanController;
 use App\Http\Controllers\Internal\AdminIt\DashboardController as AdminItDashboardController;
 use App\Http\Controllers\Internal\AdminIt\UserController;
 use App\Http\Controllers\Internal\AdminIt\HariLiburController;
@@ -42,6 +43,7 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::get('/permohonan/{permohonan}', [KabalaiPermohonanController::class, 'show'])->name('permohonan.show');
             Route::get('/permohonan/{permohonan}/edit', [KabalaiPermohonanController::class, 'edit'])->name('permohonan.edit');
             Route::put('/permohonan/{permohonan}', [KabalaiPermohonanController::class, 'update'])->name('permohonan.update');
+            Route::delete('/permohonan/{permohonan}', [KabalaiPermohonanController::class, 'destroy'])->name('permohonan.destroy');
             Route::get('/disposisi', [DisposisiController::class, 'index'])->name('disposisi.index');
             Route::post('/disposisi/{permohonan}', [DisposisiController::class, 'store'])->name('disposisi.store');
         });
@@ -54,6 +56,7 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
 
         Route::prefix('staff')->middleware('role:staff_sertifikasi')->name('staff.')->group(function () {
             Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/permohonan', [StaffPermohonanController::class, 'index'])->name('permohonan.index');
             Route::get('/evaluasi/{permohonan}/edit', [EvaluasiController::class, 'edit'])->name('evaluasi.edit');
             Route::put('/evaluasi/{permohonan}', [EvaluasiController::class, 'update'])->name('evaluasi.update');
             Route::get('/surat/{permohonan}/edit', [SuratPengesahanController::class, 'edit'])->name('surat.edit');
@@ -76,6 +79,10 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
 
         // Notifikasi
         Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+        Route::get('/notifikasi/count', [NotifikasiController::class, 'count'])->name('notifikasi.count');
+        Route::get('/notifikasi/dropdown', [NotifikasiController::class, 'dropdown'])->name('notifikasi.dropdown');
+        Route::post('/notifikasi/{notifikasi}/read', [NotifikasiController::class, 'markAsRead'])->name('notifikasi.mark-as-read');
+        Route::post('/notifikasi/read-all', [NotifikasiController::class, 'markAllAsRead'])->name('notifikasi.mark-all-as-read');
 
         // Ubah password
         Route::get('/ubah-password', [ChangePasswordController::class, 'show'])->name('password.change');

@@ -174,12 +174,14 @@ class PermohonanController extends Controller
     public function show(Permohonan $permohonan)
     {
         abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+        $permohonan->load('pbf');
         return view('internal.kabalai.permohonan.show', compact('permohonan'));
     }
 
     public function edit(Permohonan $permohonan)
     {
         abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+        $permohonan->load('dokumen', 'pbf');
         return view('internal.kabalai.permohonan.edit', compact('permohonan'));
     }
 
@@ -191,11 +193,70 @@ class PermohonanController extends Controller
             'nama_pbf_snapshot' => 'required|string|max:200',
             'email_snapshot' => 'required|email|max:150',
             'no_wa_snapshot' => 'required|string|max:20',
+            'alamat' => 'nullable|string|max:500',
         ]);
 
-        $permohonan->update($data);
+        $permohonan->update([
+            'nama_pbf_snapshot' => $data['nama_pbf_snapshot'],
+            'email_snapshot' => $data['email_snapshot'],
+            'no_wa_snapshot' => $data['no_wa_snapshot'],
+        ]);
 
-        return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil diperbarui.');
+        // Update alamat on PBF record
+        if (isset($data['alamat']) && $permohonan->pbf) {
+            $permohonan->pbf->update(['alamat' => $data['alamat']]);
+        }
+
+        // Handle document re-uploads (same as store but updates existing)
+        foreach (array_keys(DokumenPermohonan::JENIS) as $jenis) {
+            if (!$request->hasFile($jenis)) {
+                continue;
+            }
+            $file = $request->file($jenis);
+            $this->assertAllowedFileMime($file);
+
+            $existing = $permohonan->dokumen()->where('jenis_dokumen', $jenis)->first();
+            if ($existing) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($existing->path_file);
+                $existing->update([
+                    'nama_file_asli' => $file->getClientOriginalName(),
+                    'path_file' => $file->store('dokumen_permohonan', 'public'),
+                    'ukuran_file_kb' => (int) ceil($file->getSize() / 1024),
+                    'mime_type' => $file->getMimeType(),
+                    'versi' => ($existing->versi ?? 0) + 1,
+                    'uploaded_by_user_id' => Auth::id(),
+                    'uploaded_at' => now(),
+                ]);
+            } else {
+                DokumenPermohonan::create([
+                    'permohonan_id' => $permohonan->id,
+                    'jenis_dokumen' => $jenis,
+                    'nama_file_asli' => $file->getClientOriginalName(),
+                    'path_file' => $file->store('dokumen_permohonan', 'public'),
+                    'ukuran_file_kb' => (int) ceil($file->getSize() / 1024),
+                    'mime_type' => $file->getMimeType(),
+                    'uploaded_by_user_id' => Auth::id(),
+                    'uploaded_at' => now(),
+                ]);
+            }
+        }
+
+        return redirect()->route('internal.kabalai.permohonan.show', $permohonan)->with('success', 'Permohonan berhasil diperbarui.');
+    }
+
+    public function destroy(Permohonan $permohonan)
+    {
+        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+        abort_unless($permohonan->status_saat_ini === Permohonan::STATUS_PENGAJUAN, 403);
+
+        // Cascade delete related records (no soft deletes on this app)
+        $permohonan->dokumen()->delete();
+        $permohonan->statusLog()->delete();
+        $permohonan->notifikasi()->delete();
+
+        $permohonan->delete();
+
+        return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil dihapus.');
     }
 
     private function isDuplicateKeyError(\Illuminate\Database\QueryException $e): bool

@@ -22,14 +22,22 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
+        // SQLite uses strftime, MySQL uses DATE_FORMAT
+        $driver = DB::connection()->getDriverName();
+        if ($driver === 'sqlite') {
+            $dateFormat = "strftime('%Y-%m', tanggal_pengajuan)";
+        } else {
+            $dateFormat = "DATE_FORMAT(tanggal_pengajuan, '%Y-%m')";
+        }
+
         $statBulanan = Permohonan::query()
-            ->selectRaw("DATE_FORMAT(tanggal_pengajuan, '%Y-%m') as bulan")
+            ->selectRaw("{$dateFormat} as bulan")
             ->selectRaw("COUNT(*) as total")
             ->selectRaw("SUM(CASE WHEN status_saat_ini = 'terbit_surat_pengesahan' THEN 1 ELSE 0 END) as terbit")
             ->selectRaw("SUM(CASE WHEN status_saat_ini = 'ditutup_pengajuan_ulang' THEN 1 ELSE 0 END) as ditutup")
             ->whereYear('tanggal_pengajuan', now()->year)
-            ->groupByRaw("DATE_FORMAT(tanggal_pengajuan, '%Y-%m')")
-            ->orderByRaw("DATE_FORMAT(tanggal_pengajuan, '%Y-%m')")
+            ->groupByRaw($dateFormat)
+            ->orderByRaw($dateFormat)
             ->get();
 
         $onProcess = $permohonans->whereNotIn('status_saat_ini', ['terbit_surat_pengesahan', 'ditutup_pengajuan_ulang'])->count();

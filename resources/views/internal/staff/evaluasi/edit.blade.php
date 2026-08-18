@@ -13,6 +13,8 @@ $revisiKe = (int) filter_var($permohonan->status_saat_ini, FILTER_SANITIZE_NUMBE
 $revisiBerikutnya = $revisiKe + 1;
 $labelRevisiSekarang = $revisiKe > 0 ? "Revisi {$revisiKe}" : "Proses Awal";
 $labelRevisiBerikutnya = "Revisi {$revisiBerikutnya}";
+// Banner hanya muncul saat di siklus revisi (artinya revisi sebelumnya sudah diupload pemohon)
+$showRevisiBanner = $statusRevisi;
 ?>
 
 <div x-data="{
@@ -44,12 +46,12 @@ $labelRevisiBerikutnya = "Revisi {$revisiBerikutnya}";
                 <p class="font-mono text-slate-700">{{ $permohonan->nib_snapshot }}</p>
             </div>
         </div>
-        @if($statusRevisi)
+        @if($showRevisiBanner)
         <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <p class="text-sm text-amber-800">
                 <i class="ph ph-warning mr-1" aria-hidden="true"></i>
-                Permohonan saat ini berstatus <strong>{{ $labelRevisiSekarang }}</strong>.
-                Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke <strong>{{ $labelRevisiBerikutnya }}</strong>.
+                Pemohon telah mengunggah revisi untuk <strong>{{ $labelRevisiSekarang }}.
+                </strong> Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke <strong>{{ $labelRevisiBerikutnya }}</strong>.
                 Kuota maks. 3 revisi.
             </p>
         </div>
@@ -159,10 +161,10 @@ $labelRevisiBerikutnya = "Revisi {$revisiBerikutnya}";
         </div>
         <div class="p-6">
             <p class="text-sm text-slate-700 mb-1">
-                Revisi sebelumnya <strong>({{ $labelRevisiSekarang }})</strong> belum ditanggapi oleh pemohon.
+                Revisi telah diunggah oleh pemohon untuk <strong>{{ $labelRevisiSekarang }}</strong>.
             </p>
             <p class="text-sm text-slate-700 mb-4">
-                Jika Anda mengirim <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke
+                Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke
                 <strong class="text-red-600">{{ $labelRevisiBerikutnya }}</strong>.
             </p>
             <div class="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">

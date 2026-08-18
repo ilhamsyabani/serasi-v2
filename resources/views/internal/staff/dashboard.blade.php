@@ -283,7 +283,7 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                 <td class="px-4 py-3 text-right whitespace-nowrap">
                     @if($p->status_saat_ini === \App\Models\Permohonan::STATUS_PROSES_EVALUASI)
                         <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.evaluasi.edit', $p) }}">Evaluasi</x-ui.button>
-                    @elseif(in_array($p->status_saat_ini, [\App\Models\Permohonan::STATUS_REVISI_1, \App\Models\Permohonan::STATUS_REVISI_2, \App\Models\Permohonan::STATUS_REVISI_3]))
+                    @elseif(in_array($p->status_saat_ini, [\App\Models\Permohonan::STATUS_REVISI_1, \App\Models\Permohonan::STATUS_REVISI_2, \App\Models\Permohonan::STATUS_REVISI_3]) && $p->revisi->flatMap->dokumenRevisi->isNotEmpty())
                         <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.evaluasi.edit', $p) }}">Evaluasi Ulang</x-ui.button>
                     @elseif($p->status_saat_ini === \App\Models\Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN)
                         <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.surat.edit', $p) }}">Upload Surat</x-ui.button>
