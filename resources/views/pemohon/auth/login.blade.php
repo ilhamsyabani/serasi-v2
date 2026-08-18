@@ -8,6 +8,16 @@
     @include('partials.head-assets')
 </head>
 <body class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center p-4" x-data="{ showPass: false }">
+    @if($errors->has('identifier'))
+        <div x-data x-init="
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Gagal',
+                text: @js($errors->first('identifier')),
+                confirmButtonColor: '#166534'
+            });
+        "></div>
+    @endif
     <div class="w-full max-w-sm">
         {{-- Logo Header --}}
         <div class="text-center mb-8">

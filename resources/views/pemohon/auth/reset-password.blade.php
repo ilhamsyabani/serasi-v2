@@ -28,7 +28,7 @@
                     <x-ui.alert type="error" class="mb-4">{{ $errors->first('token') }}</x-ui.alert>
                 @endif
 
-                <form method="POST" action="{{ route('pemohon.password.update') }}" class="space-y-4">
+                <form method="POST" action="{{ route('pemohon.password.store') }}" class="space-y-4">
                     @csrf
                     <input type="hidden" name="token" value="{{ $token }}">
 
