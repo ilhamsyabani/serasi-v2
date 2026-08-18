@@ -8,6 +8,16 @@
     @include('partials.head-assets')
 </head>
 <body class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    @if($errors->has('identifier'))
+        <div x-data x-init="
+            Swal.fire({
+                icon: 'error',
+                title: 'Akun Tidak Ditemukan',
+                text: @js($errors->first('identifier')),
+                confirmButtonColor: '#166534'
+            });
+        "></div>
+    @endif
     <div class="w-full max-w-sm">
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-emerald-800 text-white font-bold text-lg mb-4">BP</div>
