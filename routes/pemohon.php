@@ -44,6 +44,6 @@ Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])
 
         // Ubah password
         Route::get('/ubah-password', [ChangePasswordController::class, 'show'])->name('password.change');
-        Route::put('/ubah-password', [ChangePasswordController::class, 'update'])->name('password.update');
+        Route::match(['put', 'post'], '/ubah-password', [ChangePasswordController::class, 'update'])->name('password.update');
     });
 });

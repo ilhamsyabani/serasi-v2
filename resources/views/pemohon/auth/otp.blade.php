@@ -64,9 +64,12 @@
         </x-ui.card>
 
         <div class="text-center mt-6">
-            <a href="{{ route('pemohon.logout') }}" class="text-sm text-slate-400 hover:text-slate-600">
-                ← Batal dan login ulang
-            </a>
+            <form method="POST" action="{{ route('pemohon.logout') }}" class="inline">
+                @csrf
+                <button type="submit" class="text-sm text-slate-400 hover:text-slate-600">
+                    ← Batal dan login ulang
+                </button>
+            </form>
         </div>
     </div>
 </body>
