@@ -232,10 +232,6 @@ class NotifikasiService
                 '{{password}}'  => $password,
                 '{{app_url}}'  => config('app.url'),
                 '{{nama_pbf}}' => $permohonan->nama_pbf_snapshot,
-                '{{nib}}'      => $permohonan->nib_snapshot,
-                '{{email}}'    => $permohonan->pbf->email,
-                '{{no_wa}}'    => $permohonan->pbf->no_whatsapp,
-                '{{alamat}}'   => $permohonan->pbf->alamat ?? '-',
             ]
         );
     }

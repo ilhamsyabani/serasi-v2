@@ -11,30 +11,22 @@ class TemplateNotifikasiSeeder extends Seeder
     {
         $templates = [
             // ── Email templates ───────────────────────────────────────────────
-            ['kode_event' => 'AKUN_BARU', 'channel' => 'email', 'subjek' => 'Akun Portal Pelaku Usaha - SERASI', 'isi_template' => "Yth. {{nama_pbf}}
+            ['kode_event' => 'AKUN_BARU', 'channel' => 'email', 'subjek' => 'Akun Portal Pelaku Usaha - SERASI', 'isi_template' => "Yth. {{nama_pbf}},
 
-Akun Portal Pelaku Usaha Anda telah dibuat. Berikut informasi akun Anda:
-
-─────────────────────────────────
-DATA PEMOHON
-─────────────────────────────────
-No. Registrasi : {{no_registrasi}}
-NIB            : {{nib}}
-Nama PBF       : {{nama_pbf}}
-Alamat         : {{alamat}}
-Email          : {{email}}
-No. WhatsApp   : {{no_wa}}
+Akun Portal Pelaku Usaha Anda telah dibuat. Silakan login menggunakan kredensial berikut:
 
 ─────────────────────────────────
 DATA AKUN LOGIN
 ─────────────────────────────────
 Username : {{username}}
 Password : {{password}}
-
 ─────────────────────────────────
 
 Silakan login di: {{app_url}}
-Pada login pertama, kode OTP akan dikirimkan via WhatsApp ke nomor yang terdaftar.
+
+Pada login pertama, Anda akan diminta memasukkan kode OTP yang dikirim via WhatsApp ke nomor yang terdaftar.
+
+Jangan berikan kredensial ini kepada siapapun.
 
 Hormat kami,
 Tim BBPOM", 'is_active' => true],

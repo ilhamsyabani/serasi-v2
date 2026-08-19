@@ -8,6 +8,7 @@
     <p style="color: #374151; line-height: 1.6;">Akun Portal Pelaku Usaha Anda telah dibuat. Silakan login menggunakan kredensial berikut:</p>
 
     <div style="margin: 24px 0; padding: 20px; background: #f3f4f6; border-radius: 8px; border-left: 4px solid #166534;">
+        <p style="color: #6b7280; font-size: 12px; font-weight: bold; margin: 0 0 12px 0;">DATA AKUN LOGIN</p>
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
                 <td style="padding: 6px 0; color: #6b7280; font-size: 14px; width: 100px;">Username</td>
@@ -20,13 +21,8 @@
         </table>
     </div>
 
-    <p style="color: #374151; line-height: 1.6;"><strong>Petunjuk Login:</strong></p>
-    <ol style="color: #374151; line-height: 1.8; padding-left: 20px;">
-        <li>Buka portal di <strong>{{ config('app.url') }}</strong></li>
-        <li>Login menggunakan <strong>email</strong> atau <strong>nomor WhatsApp</strong> Anda sebagai username.</li>
-        <li>Masukkan password di atas.</li>
-        <li>Pada login pertama, Anda akan diminta memasukkan kode OTP yang dikirim via WhatsApp.</li>
-    </ol>
+    <p style="color: #374151; line-height: 1.6;">Silakan login di: <strong>{{ config('app.url') }}</strong></p>
+    <p style="color: #374151; line-height: 1.6;">Pada login pertama, Anda akan diminta memasukkan kode OTP yang dikirim via WhatsApp ke nomor yang terdaftar.</p>
 
     <p style="color: #dc2626; font-weight: bold; font-size: 14px; margin-top: 16px;">Jangan berikan kredensial ini kepada siapapun.</p>
 
