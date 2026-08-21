@@ -159,13 +159,8 @@ class PermohonanController extends Controller
 
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PENGAJUAN, 'Pengajuan baru', Auth::user(), 'internal');
 
-        $notif = app(NotifikasiService::class);
-        // Kirim kredensial akun baru via WA + email
-        $notif->kirimAkunBaru($permohonan, $username, $password);
-        // Kirim notifikasi pengajuan baru via WA saja
-        $notif->kirimBatch($permohonan, [
-            [Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_WHATSAPP],
-        ], 'PENGAJUAN_BARU');
+        // Kirim info akun baru via WA + email (sekali saja)
+        app(NotifikasiService::class)->kirimAkunBaru($permohonan, $username, $password);
 
         return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil dibuat.');
     }

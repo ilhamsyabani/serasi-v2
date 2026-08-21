@@ -36,7 +36,6 @@ class AkunBaruMail extends Mailable
     public function build()
     {
         return $this->subject('Akun Portal Pelaku Usaha — Aplikasi Pengesahan Denah PBF')
-                    ->to($this->username)
                     ->view('emails.akun_baru');
     }
 }

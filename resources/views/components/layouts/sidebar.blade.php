@@ -50,7 +50,8 @@ $navItems = collect([
     (object)[
         'section' => 'Lainnya',
         'items' => collect([
-            (object)['route' => 'internal.notifikasi.index', 'label' => 'Notifikasi', 'icon' => 'ph-bell', 'roles' => ['kepala_balai', 'ketua_tim', 'staff_sertifikasi', 'admin_it']],
+            (object)['route' => 'internal.notifikasi.index', 'label' => 'Notifikasi Saya', 'icon' => 'ph-bell', 'roles' => ['kepala_balai', 'ketua_tim', 'staff_sertifikasi', 'admin_it']],
+            (object)['route' => 'internal.kabalai.notifikasi-log.index', 'label' => 'Log Notifikasi', 'icon' => 'ph-list-checks', 'roles' => ['kepala_balai']],
         ])
     ],
 ]);

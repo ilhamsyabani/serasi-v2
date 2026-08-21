@@ -9,6 +9,7 @@ use App\Http\Controllers\Internal\DashboardController;
 use App\Http\Controllers\Internal\Kabalai\DashboardController as KabalaiDashboardController;
 use App\Http\Controllers\Internal\Kabalai\PermohonanController as KabalaiPermohonanController;
 use App\Http\Controllers\Internal\Kabalai\DisposisiController;
+use App\Http\Controllers\Internal\Kabalai\NotifikasiLogController;
 use App\Http\Controllers\Internal\KetuaTim\DashboardController as KetuaTimDashboardController;
 use App\Http\Controllers\Internal\KetuaTim\DistribusiController;
 use App\Http\Controllers\Internal\Staff\DashboardController as StaffDashboardController;
@@ -46,6 +47,9 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::delete('/permohonan/{permohonan}', [KabalaiPermohonanController::class, 'destroy'])->name('permohonan.destroy');
             Route::get('/disposisi', [DisposisiController::class, 'index'])->name('disposisi.index');
             Route::post('/disposisi/{permohonan}', [DisposisiController::class, 'store'])->name('disposisi.store');
+            Route::get('/notifikasi-log', [NotifikasiLogController::class, 'index'])->name('notifikasi-log.index');
+            Route::post('/notifikasi-log/{notifikasi}/resend', [NotifikasiLogController::class, 'resend'])->name('notifikasi-log.resend');
+            Route::post('/notifikasi-log/resend-all', [NotifikasiLogController::class, 'resendAll'])->name('notifikasi-log.resend-all');
         });
 
         Route::prefix('ketua-tim')->middleware('role:ketua_tim')->name('ketua_tim.')->group(function () {

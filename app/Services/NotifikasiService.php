@@ -242,7 +242,7 @@ class NotifikasiService
             ]
         );
 
-        // Email via AkunBaruMail (styled, queued)
+        // Email via AkunBaruMail (styled, sync — langsung terkirim)
         $results[] = $this->kirimAkunBaruEmail($permohonan, $username, $password);
 
         return $results;
@@ -257,7 +257,7 @@ class NotifikasiService
         $status = Notifikasi::STATUS_TERKIRIM;
 
         try {
-            Mail::to($email)->queue(new AkunBaruMail(
+            Mail::to($email)->send(new AkunBaruMail(
                 $username,
                 $password,
                 $permohonan->nama_pbf_snapshot,
