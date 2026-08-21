@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Pemohon;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pbf;
+use App\Models\ConfigSetting;
 use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +36,12 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $pbf = Auth::guard('pemohon')->user();
 
+        // Cek apakah OTP diaktifkan dari Admin IT
+        if (! ConfigSetting::get('otp_pemohon_enabled', false)) {
+            return redirect()->intended(route('pemohon.dashboard'));
+        }
+
+        // OTP aktif — cek apakah sudah terverifikasi
         Auth::guard('pemohon')->logout();
         $request->session()->invalidate();
 
@@ -45,9 +51,7 @@ class AuthController extends Controller
             return redirect()->intended(route('pemohon.dashboard'));
         }
 
-        // Kirim OTP ke WhatsApp pemohon
         app(OtpService::class)->buatDanKirimOtp($pbf, 'whatsapp');
-
         $request->session()->put('otp_pbf_id', $pbf->id);
         return redirect()->route('pemohon.otp')->with('info', 'Kode OTP telah dikirim via WhatsApp.');
     }

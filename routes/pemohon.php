@@ -22,7 +22,7 @@ Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])
     Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
     Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.store');
 
-    // OTP verification (tanpa middleware pbf.auth — session-based)
+    // OTP verification (hanya aktif jika setting otp_pemohon_enabled = true)
     Route::get('/otp', [OtpController::class, 'showForm'])->name('otp');
     Route::post('/otp', [OtpController::class, 'verify'])->middleware('throttle.login:5,1')->name('otp.verify');
     Route::post('/otp/resend', [OtpController::class, 'resend'])->middleware('throttle.login:3,5')->name('otp.resend');

@@ -138,8 +138,13 @@ use Illuminate\Support\Str;
                             @if($tujuan)
                                 @if($log->tujuan_tipe === 'pemohon')
                                     <div class="text-xs">
+                                        @if($isEmail)
                                         <span class="font-medium text-slate-700">{{ $log->permohonan->pbf->nama_pbf ?? '-' }}</span>
                                         <span class="block text-slate-400">{{ $log->permohonan->pbf->email ?? '-' }}</span>
+                                        @else
+                                        <span class="font-medium text-slate-700">{{ $log->permohonan->pbf->nama_pbf ?? '-' }}</span>
+                                        <span class="block text-slate-400">{{ $log->permohonan->pbf ?? '-' }}</span>
+                                        @endif
                                     </div>
                                 @else
                                     <div class="text-xs">

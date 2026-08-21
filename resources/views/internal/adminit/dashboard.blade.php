@@ -52,6 +52,43 @@ $onProcess = $permohonans->whereNotIn('status_saat_ini', ['terbit_surat_pengesah
     </div>
 </div>
 
+{{-- Pengaturan OTP Pemohon --}}
+<div class="mb-4">
+    <form action="{{ route('internal.adminit.config-setting.update') }}" method="POST">
+        @csrf
+        <input type="hidden" name="key" value="otp_pemohon_enabled">
+        <input type="hidden" name="value" x-model="otpEnabled" @click="otpEnabled = !otpEnabled">
+        <x-ui.card>
+            <div class="flex items-center justify-between px-4 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                        <i class="ph ph-shield-check text-amber-600 text-xl" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-900">Verifikasi OTP Login Pemohon</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Jika aktif, pemohon wajib verifikasi OTP via WhatsApp saat login pertama kali.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-medium"
+                          :class="otpEnabled ? 'text-emerald-600' : 'text-slate-400'"
+                          x-text="otpEnabled ? 'Aktif' : 'Nonaktif'">
+                    </span>
+                    <button type="submit"
+                            @click.prevent="$event.target.closest('form').querySelector('input[name=value]').value = !otpEnabled"
+                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                            :class="otpEnabled ? 'bg-emerald-500' : 'bg-slate-300'"
+                            x-data="{ otpEnabled: {{ $otpPemohonEnabled ? 'true' : 'false' }} }"
+                            title="Klik untuktoggle">
+                        <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                              :class="otpEnabled ? 'translate-x-6' : 'translate-x-1'"></span>
+                    </button>
+                </div>
+            </div>
+        </x-ui.card>
+    </form>
+</div>
+
 {{-- Keterangan Status --}}
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
     <x-ui.card>

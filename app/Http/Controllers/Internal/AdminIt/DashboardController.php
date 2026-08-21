@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Internal\AdminIt;
 
 use App\Http\Controllers\Controller;
+use App\Models\ConfigSetting;
 use App\Models\Notifikasi;
 use App\Models\Pbf;
 use App\Models\Permohonan;
@@ -29,6 +30,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'permohonans' => $permohonans,
             'slaRingkasan' => $sla->ringkasan($permohonans),
+            'otpPemohonEnabled' => ConfigSetting::get('otp_pemohon_enabled', false),
         ]);
     }
 }

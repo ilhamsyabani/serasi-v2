@@ -17,6 +17,7 @@ use App\Http\Controllers\Internal\Staff\EvaluasiController;
 use App\Http\Controllers\Internal\Staff\SuratPengesahanController;
 use App\Http\Controllers\Internal\Staff\PermohonanController as StaffPermohonanController;
 use App\Http\Controllers\Internal\AdminIt\DashboardController as AdminItDashboardController;
+use App\Http\Controllers\Internal\AdminIt\ConfigSettingController;
 use App\Http\Controllers\Internal\AdminIt\UserController;
 use App\Http\Controllers\Internal\AdminIt\HariLiburController;
 use App\Http\Controllers\Internal\Permohonan\PermohonanController;
@@ -69,6 +70,8 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
 
         Route::prefix('admin-it')->middleware('role:admin_it')->name('adminit.')->group(function () {
             Route::get('/dashboard', [AdminItDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/pengaturan', [ConfigSettingController::class, 'index'])->name('config-setting.index');
+            Route::post('/pengaturan', [ConfigSettingController::class, 'update'])->name('config-setting.update');
             Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
             Route::resource('hari-libur', HariLiburController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
             Route::post('/hari-libur/bulk', [HariLiburController::class, 'bulkStore'])->name('hari-libur.bulk-store');
