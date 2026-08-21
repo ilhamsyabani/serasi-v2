@@ -1,6 +1,6 @@
 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 24px;">
-        <div style="display: inline-block; background: #166534; color: white; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 18px; margin-bottom: 4px;">BBPOM</div>
+        <div style="display: inline-block; background: #166534; color: white; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 18px; margin-bottom: 4px;">BBPOM Surabaya</div>
         <p style="color: #6b7280; font-size: 12px; margin: 0;">Pengesahan Denah PBF</p>
     </div>
 
@@ -46,7 +46,7 @@
 
     <div style="margin-top: 24px; padding: 16px; background: #f3f4f6; border-radius: 8px;">
         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-            Email ini dikirim secara otomatis oleh Sistem Pengesahan Denah PBF — BBPOM.<br>
+            Email ini dikirim secara otomatis oleh Sistem Pengesahan Denah PBF — BBPOM Surabaya.<br>
             Mohon jangan membalas email ini.
         </p>
     </div>
