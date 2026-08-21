@@ -13,7 +13,14 @@ class TemplateNotifikasiSeeder extends Seeder
             // ── Email templates ───────────────────────────────────────────────
             ['kode_event' => 'AKUN_BARU', 'channel' => 'email', 'subjek' => 'Akun Portal Pelaku Usaha - SERASI', 'isi_template' => "Yth. {{nama_pbf}},
 
-Akun Portal Pelaku Usaha Anda telah dibuat. Silakan login menggunakan kredensial berikut:
+Akun Portal Pelaku Usaha Anda telah dibuat.
+
+─────────────────────────────────
+DATA PEMOHON
+─────────────────────────────────
+No. Registrasi : {{no_registrasi}}
+NIB            : {{nib}}
+Alamat         : {{alamat}}
 
 ─────────────────────────────────
 DATA AKUN LOGIN
@@ -24,7 +31,7 @@ Password : {{password}}
 
 Silakan login di: {{app_url}}
 
-Pada login pertama, Anda akan diminta memasukkan kode OTP yang dikirim via WhatsApp ke nomor yang terdaftar.
+Pada login pertama, kode OTP akan dikirim via WhatsApp.
 
 Jangan berikan kredensial ini kepada siapapun.
 

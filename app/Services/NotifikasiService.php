@@ -6,6 +6,7 @@ use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\TemplateNotifikasi;
 use App\Mail\NotifikasiMail;
+use App\Mail\AkunBaruMail;
 use Illuminate\Support\Facades\Mail;
 
 class NotifikasiService
@@ -220,20 +221,67 @@ class NotifikasiService
      */
     public function kirimAkunBaru(Permohonan $permohonan, string $username, string $password): array
     {
-        return $this->kirimBatch(
+        $results = [];
+
+        // WhatsApp via template
+        $results[] = $this->kirim(
             $permohonan,
-            [
-                [Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP],
-                [Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_EMAIL],
-            ],
+            Notifikasi::TUJUAN_PEMOHON,
+            $permohonan->pbf_id,
+            Notifikasi::CHANNEL_WHATSAPP,
             'AKUN_BARU',
+            null,
             [
                 '{{username}}'  => $username,
                 '{{password}}'  => $password,
                 '{{app_url}}'  => config('app.url'),
                 '{{nama_pbf}}' => $permohonan->nama_pbf_snapshot,
+                '{{no_registrasi}}' => $permohonan->no_registrasi,
+                '{{nib}}'      => $permohonan->nib_snapshot,
+                '{{alamat}}'   => $permohonan->pbf->alamat ?? '-',
             ]
         );
+
+        // Email via AkunBaruMail (styled, queued)
+        $results[] = $this->kirimAkunBaruEmail($permohonan, $username, $password);
+
+        return $results;
+    }
+
+    /**
+     * Kirim email akun baru via queue menggunakan AkunBaruMail (styled template).
+     */
+    private function kirimAkunBaruEmail(Permohonan $permohonan, string $username, string $password): Notifikasi
+    {
+        $email = $permohonan->pbf->email;
+        $status = Notifikasi::STATUS_TERKIRIM;
+
+        try {
+            Mail::to($email)->queue(new AkunBaruMail(
+                $username,
+                $password,
+                $permohonan->nama_pbf_snapshot,
+                $permohonan->no_registrasi,
+                $permohonan->nib_snapshot,
+                $permohonan->pbf->alamat ?? '-',
+            ));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('NotifikasiService: Gagal queue email akun baru', [
+                'permohonan_id' => $permohonan->id,
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
+            $status = Notifikasi::STATUS_GAGAL;
+        }
+
+        return Notifikasi::create([
+            'permohonan_id' => $permohonan->id,
+            'tujuan_tipe'   => Notifikasi::TUJUAN_PEMOHON,
+            'tujuan_id'     => $permohonan->pbf_id,
+            'channel'       => Notifikasi::CHANNEL_EMAIL,
+            'template_kode' => 'AKUN_BARU',
+            'status_kirim'  => $status,
+        ]);
     }
 
     private function resolveNomorWa(Permohonan $permohonan, string $tujuanTipe, int $tujuanId): ?string

@@ -162,10 +162,9 @@ class PermohonanController extends Controller
         $notif = app(NotifikasiService::class);
         // Kirim kredensial akun baru via WA + email
         $notif->kirimAkunBaru($permohonan, $username, $password);
-        // Kirim notifikasi pengajuan baru via WA + email
+        // Kirim notifikasi pengajuan baru via WA saja
         $notif->kirimBatch($permohonan, [
             [Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_WHATSAPP],
-            [Notifikasi::TUJUAN_PEMOHON, $pbf->id, Notifikasi::CHANNEL_EMAIL],
         ], 'PENGAJUAN_BARU');
 
         return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil dibuat.');
@@ -249,12 +248,21 @@ class PermohonanController extends Controller
         abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
         abort_unless($permohonan->status_saat_ini === Permohonan::STATUS_PENGAJUAN, 403);
 
-        // Cascade delete related records (no soft deletes on this app)
-        $permohonan->dokumen()->delete();
-        $permohonan->statusLog()->delete();
-        $permohonan->notifikasi()->delete();
+        \DB::transaction(function () use ($permohonan) {
+            // Hapus semua relasi terkait
+            $permohonan->dokumen()->delete();
+            $permohonan->disposisi()->delete();
+            $permohonan->distribusi()->delete();
+            $permohonan->evaluasi()->delete();
+            $permohonan->revisi()->delete();
+            $permohonan->suratPengesahan()->delete();
+            $permohonan->statusLog()->delete();
+            $permohonan->notifikasi()->delete();
+            $permohonan->reassignmentLog()->delete();
+            \DB::table('audit_trail')->where('permohonan_id', $permohonan->id)->delete();
 
-        $permohonan->delete();
+            $permohonan->delete();
+        });
 
         return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil dihapus.');
     }
