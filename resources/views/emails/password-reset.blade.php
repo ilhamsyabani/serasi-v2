@@ -1,7 +1,6 @@
 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 24px;">
-        <div style="display: inline-block; background: #166534; color: white; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 18px; margin-bottom: 4px;">BBPOM</div>
-        <p style="color: #6b7280; font-size: 12px; margin: 0;">Pengesahan Denah PBF</p>
+        <img src="https://tppom-sby.bbpomsurabaya.com/assets/images/bpom.png" alt="Logo BBPOM" style="width: 80px; height: auto; margin-bottom: 8px;">        <p style="color: #6b7280; font-size: 12px; margin: 0;">Pengesahan Denah PBF</p>
     </div>
 
     <p style="color: #374151; line-height: 1.6;">Yth. Pemohon,</p>
