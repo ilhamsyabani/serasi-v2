@@ -7,7 +7,7 @@
 --}}
 @props(['sla' => null])
 
-@if($sla)
+@if($sla && $sla['state'] !== \App\Services\SlaCalculator::STATE_TANPA_SLA)
     @php
         // Warna + ikon Phosphor per state (design_system.md §2 semantik & §4).
         $gaya = [

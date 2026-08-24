@@ -129,7 +129,7 @@
                         <span class="inline-flex items-center rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-inset ring-slate-300/60">Belum Dimulai</span>
                     @endif
 
-                    @if($slaTahap && ($isDone || $isCurrent) && $slaTahap['state'] !== \App\Services\SlaCalculator::STATE_TANPA_SLA)
+                    @if($slaTahap && ($isDone || $isCurrent))
                         <x-ui.sla-badge :sla="$slaTahap" />
                     @endif
                 </div>
