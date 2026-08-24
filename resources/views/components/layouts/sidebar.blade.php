@@ -42,6 +42,7 @@ $navItems = collect([
         'section' => 'Manajemen',
         'items' => collect([
             (object)['route' => 'internal.adminit.users.index', 'label' => 'Manajemen User', 'icon' => 'ph-users-three', 'roles' => ['admin_it']],
+            (object)['route' => 'internal.adminit.sla-config.index', 'label' => 'Konfigurasi SLA', 'icon' => 'ph-clock-countdown', 'roles' => ['admin_it']],
             (object)['route' => 'internal.adminit.hari-libur.index', 'label' => 'Hari Libur & Cuti', 'icon' => 'ph-calendar-x', 'roles' => ['admin_it']],
             (object)['route' => 'internal.adminit.config-setting.index', 'label' => 'Pengaturan', 'icon' => 'ph-gear', 'roles' => ['admin_it']],
         ])

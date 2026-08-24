@@ -20,6 +20,7 @@ use App\Http\Controllers\Internal\AdminIt\DashboardController as AdminItDashboar
 use App\Http\Controllers\Internal\AdminIt\ConfigSettingController;
 use App\Http\Controllers\Internal\AdminIt\UserController;
 use App\Http\Controllers\Internal\AdminIt\HariLiburController;
+use App\Http\Controllers\Internal\AdminIt\SlaConfigController;
 use App\Http\Controllers\Internal\Permohonan\PermohonanController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\Internal\NotifikasiController;
@@ -75,6 +76,7 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
             Route::resource('hari-libur', HariLiburController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
             Route::post('/hari-libur/bulk', [HariLiburController::class, 'bulkStore'])->name('hari-libur.bulk-store');
+            Route::resource('sla-config', SlaConfigController::class)->only(['index', 'edit', 'update']);
         });
 
         // Detail permohonan lintas-role. Harus di DALAM grup `auth`, agar tamu
