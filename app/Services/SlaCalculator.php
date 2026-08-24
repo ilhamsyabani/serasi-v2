@@ -30,6 +30,7 @@ class SlaCalculator
     public const STATE_CLOCK_OFF = 'clock_off';
     public const STATE_SELESAI = 'selesai';
     public const STATE_TANPA_SLA = 'tanpa_sla';
+    public const STATE_SELESAI_LEBIH_AWAL = 'selesai_lebih_awal';
 
     /** Sisa hari kerja <= nilai ini dianggap "at risk" (kuning). */
     private const AMBANG_AT_RISK = 1;
@@ -122,10 +123,10 @@ class SlaCalculator
         }
 
         if ($config === null || $config->durasi === null) {
-            return $dasar + [
-                'state' => $selesai ? self::STATE_SELESAI : self::STATE_TANPA_SLA,
-                'label' => $selesai ? 'Selesai' : 'SELESAI LEBIH AWAL',
-            ];
+            if ($selesai) {
+                return $dasar + ['state' => self::STATE_SELESAI, 'label' => 'Selesai'];
+            }
+            return $dasar + ['state' => self::STATE_TANPA_SLA, 'label' => 'Tanpa SLA'];
         }
 
         $deadline = $config->satuan === SlaConfig::SATUAN_HARI_KALENDER
@@ -137,9 +138,15 @@ class SlaCalculator
         $dasar['deadline'] = $deadline;
 
         if ($selesai) {
+            if ($sisa > 0) {
+                return $dasar + [
+                    'state' => self::STATE_SELESAI_LEBIH_AWAL,
+                    'label' => 'Selesai ' . abs($sisa) . ' hari lebih awal',
+                ];
+            }
             return $dasar + [
-                'state' => $sisa < 0 ? self::STATE_LATE : self::STATE_SELESAI,
-                'label' => $sisa < 0 ? 'Terlambat ' . abs($sisa) . ' hari' : 'Tepat waktu',
+                'state' => self::STATE_SELESAI,
+                'label' => 'Tepat waktu',
             ];
         }
 
@@ -154,23 +161,28 @@ class SlaCalculator
         return $dasar + ['state' => self::STATE_ON_TIME, 'label' => 'Sisa ' . $sisa . ' hari'];
     }
 
-    /** Evaluasi SLA tahap yang sedang berjalan pada sebuah permohonan. */
+    /** Evaluasi SLA permohonan — tahap berjalan, atau tahap akhir jika sudah selesai. */
     public function evaluasiPermohonan(Permohonan $permohonan): ?array
     {
         $berjalan = $permohonan->statusLog->firstWhere('waktu_selesai', null);
+        if ($berjalan) {
+            return $this->evaluasiLog($berjalan);
+        }
 
-        return $berjalan ? $this->evaluasiLog($berjalan) : null;
+        // Permohonan selesai: ambil tahap terakhir yang sudah memiliki waktu_selesai.
+        $terakhir = $permohonan->statusLog->sortBy(fn ($log) => $log->waktu_mulai)->last();
+        return $terakhir ? $this->evaluasiLog($terakhir) : null;
     }
 
     /**
      * Ringkasan jumlah permohonan per state SLA — dipakai kartu statistik dashboard.
      *
      * @param  Collection<int,Permohonan>  $permohonans
-     * @return array{on_time:int,at_risk:int,late:int,clock_off:int}
+     * @return array{on_time:int,at_risk:int,late:int,clock_off:int,selesai:int,selesai_lebih_awal:int,tanpa_sla:int}
      */
     public function ringkasan(Collection $permohonans): array
     {
-        $ringkasan = ['on_time' => 0, 'at_risk' => 0, 'late' => 0, 'clock_off' => 0];
+        $ringkasan = ['on_time' => 0, 'at_risk' => 0, 'late' => 0, 'clock_off' => 0, 'selesai' => 0, 'selesai_lebih_awal' => 0, 'tanpa_sla' => 0];
 
         foreach ($permohonans as $permohonan) {
             $state = $this->evaluasiPermohonan($permohonan)['state'] ?? null;

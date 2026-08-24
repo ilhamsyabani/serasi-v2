@@ -66,6 +66,14 @@ class StatusTransitionService
             'durasi_hari_kerja' => null,
         ]);
 
+        // Tahap akhir terbit_surat_pengesahan: segera tutup, tidak ada tahap setelahnya.
+        if ($statusBaru === Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN) {
+            $log->update([
+                'waktu_selesai' => now(),
+                'durasi_hari_kerja' => 0,
+            ]);
+        }
+
         // save() (bukan update([])) agar revisi_ke yang di-set di atas ikut tersimpan.
         $permohonan->status_saat_ini = $statusBaru;
         $permohonan->save();

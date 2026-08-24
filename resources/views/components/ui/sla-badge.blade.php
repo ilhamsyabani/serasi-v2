@@ -16,7 +16,8 @@
             \App\Services\SlaCalculator::STATE_LATE      => ['bg-red-50 text-red-700 ring-red-600/20', 'ph-warning-octagon'],
             \App\Services\SlaCalculator::STATE_CLOCK_OFF => ['bg-amber-50 text-amber-700 ring-amber-600/20', 'ph-pause-circle'],
             \App\Services\SlaCalculator::STATE_SELESAI   => ['bg-slate-50 text-slate-600 ring-slate-500/20', 'ph-check'],
-            \App\Services\SlaCalculator::STATE_TANPA_SLA => ['bg-slate-50 text-slate-500 ring-slate-500/20', 'ph-minus'],
+            \App\Services\SlaCalculator::STATE_SELESAI_LEBIH_AWAL => ['bg-teal-50 text-teal-700 ring-teal-600/30', 'ph-rocket-launch'],
+            \App\Services\SlaCalculator::STATE_TANPA_SLA => ['bg-gray-500 text-gray-500 ring-gray-500/20', 'ph-minus'],
         ];
         [$kelas, $ikon] = $gaya[$sla['state']] ?? $gaya[\App\Services\SlaCalculator::STATE_TANPA_SLA];
     @endphp
