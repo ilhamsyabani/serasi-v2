@@ -161,7 +161,10 @@ class SlaCalculator
         return $dasar + ['state' => self::STATE_ON_TIME, 'label' => 'Sisa ' . $sisa . ' hari'];
     }
 
-    /** Evaluasi SLA permohonan — tahap berjalan, atau tahap akhir jika sudah selesai. */
+    /**
+     * Evaluasi SLA permohonan — tahap berjalan, atau tahap akhir jika sudah selesai.
+     * Badge hanya untuk tahap aktif atau tahap terbit_surat_pengesahan (tahap akhir).
+     */
     public function evaluasiPermohonan(Permohonan $permohonan): ?array
     {
         $berjalan = $permohonan->statusLog->firstWhere('waktu_selesai', null);
@@ -169,9 +172,12 @@ class SlaCalculator
             return $this->evaluasiLog($berjalan);
         }
 
-        // Permohonan selesai: ambil tahap terakhir yang sudah memiliki waktu_selesai.
+        // Permohonan selesai: hanya tampilkan badge untuk tahap akhir terbit_surat_pengesahan.
         $terakhir = $permohonan->statusLog->sortBy(fn ($log) => $log->waktu_mulai)->last();
-        return $terakhir ? $this->evaluasiLog($terakhir) : null;
+        if (!$terakhir || $terakhir->status !== \App\Models\Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN) {
+            return null;
+        }
+        return $this->evaluasiLog($terakhir);
     }
 
     /**
