@@ -18,7 +18,7 @@ class SlaConfigSeeder extends Seeder
             ['kode_tahap' => 'revisi_3', 'nama_tahap' => 'Revisi ke-3', 'durasi' => null, 'satuan' => 'hari_kerja', 'clock_off' => true, 'is_active' => true],
             ['kode_tahap' => 'ditutup_pengajuan_ulang', 'nama_tahap' => 'Ditutup – Perlu Pengajuan Ulang', 'durasi' => null, 'satuan' => 'hari_kerja', 'clock_off' => false, 'is_active' => true],
             ['kode_tahap' => 'menunggu_surat_pengesahan', 'nama_tahap' => 'Menunggu Surat Pengesahan', 'durasi' => 3, 'satuan' => 'hari_kerja', 'clock_off' => false, 'is_active' => true],
-            ['kode_tahap' => 'terbit_surat_pengesahan', 'nama_tahap' => 'Terbit Surat Pengesahan', 'durasi' => 1, 'satuan' => 'hari_kerja', 'clock_off' => false, 'is_active' => true],
+            ['kode_tahap' => 'terbit_surat_pengesahan', 'nama_tahap' => 'Terbit Surat Pengesahan', 'durasi' => 3, 'satuan' => 'hari_kerja', 'clock_off' => false, 'is_active' => true],
         ];
 
         foreach ($slas as $sla) {
