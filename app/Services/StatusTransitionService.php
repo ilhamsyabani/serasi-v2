@@ -66,11 +66,18 @@ class StatusTransitionService
             'durasi_hari_kerja' => null,
         ]);
 
-        // Tahap akhir terbit_surat_pengesahan: segera tutup, tidak ada tahap setelahnya.
+        // Tahap akhir terbit_surat_pengesahan: segera tutup.
+        // Durasi dihitung dari mulai 'menunggu_surat_pengesahan' sampai terbit.
         if ($statusBaru === Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN) {
+            $mulaiMenunggu = StatusLog::where('permohonan_id', $permohonan->id)
+                ->where('status', Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN)
+                ->value('waktu_mulai');
+            $durasiHk = $mulaiMenunggu
+                ? app(SlaCalculator::class)->hitungHariKerja($mulaiMenunggu, now())
+                : 0;
             $log->update([
                 'waktu_selesai' => now(),
-                'durasi_hari_kerja' => 0,
+                'durasi_hari_kerja' => $durasiHk,
             ]);
         }
 
