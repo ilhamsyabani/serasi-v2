@@ -49,9 +49,6 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::delete('/permohonan/{permohonan}', [KabalaiPermohonanController::class, 'destroy'])->name('permohonan.destroy');
             Route::get('/disposisi', [DisposisiController::class, 'index'])->name('disposisi.index');
             Route::post('/disposisi/{permohonan}', [DisposisiController::class, 'store'])->name('disposisi.store');
-            Route::get('/notifikasi-log', [NotifikasiLogController::class, 'index'])->name('notifikasi-log.index');
-            Route::post('/notifikasi-log/{notifikasi}/resend', [NotifikasiLogController::class, 'resend'])->name('notifikasi-log.resend');
-            Route::post('/notifikasi-log/resend-all', [NotifikasiLogController::class, 'resendAll'])->name('notifikasi-log.resend-all');
         });
 
         Route::prefix('ketua-tim')->middleware('role:ketua_tim')->name('ketua_tim.')->group(function () {
@@ -77,6 +74,9 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::resource('hari-libur', HariLiburController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
             Route::post('/hari-libur/bulk', [HariLiburController::class, 'bulkStore'])->name('hari-libur.bulk-store');
             Route::resource('sla-config', SlaConfigController::class)->only(['index', 'edit', 'update']);
+            Route::resource('notifikasi-log', NotifikasiLogController::class)->only(['index']);
+            Route::post('/notifikasi-log/{notifikasi}/resend', [NotifikasiLogController::class, 'resend'])->name('notifikasi-log.resend');
+            Route::post('/notifikasi-log/resend-all', [NotifikasiLogController::class, 'resendAll'])->name('notifikasi-log.resend-all');
         });
 
         // Detail permohonan lintas-role. Harus di DALAM grup `auth`, agar tamu

@@ -15,14 +15,6 @@
     $accept = '.' . implode(',.', \App\Models\DokumenPermohonan::EKSTENSI_DIIZINKAN);
 @endphp
 
-@if(session('warning'))
-    <x-ui.alert type="warning" class="mb-5">{{ session('warning') }}</x-ui.alert>
-@endif
-
-@if($errors->any())
-    <x-ui.alert type="error" class="mb-5">Periksa kembali isian: {{ $errors->first() }}</x-ui.alert>
-@endif
-
 <x-ui.card>
     <x-ui.card-header title="Data Pemohon" description="Isi informasi PBF dan dokumen pendukung" />
     <x-ui.card-content>

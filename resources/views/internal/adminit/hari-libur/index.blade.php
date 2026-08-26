@@ -15,10 +15,6 @@
     </div>
 </div>
 
-@if(session('success'))
-    <x-ui.alert type="success" class="mb-5">{{ session('success') }}</x-ui.alert>
-@endif
-
 {{-- Bulk Modal --}}
 <div x-data="{ open: false }"
      @open-bulk.window="open = true"

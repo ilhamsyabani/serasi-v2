@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
         <p class="text-sm text-slate-500">Riwayat pengiriman Email & WhatsApp untuk semua permohonan</p>
     </div>
     @if($stats['gagal'] > 0)
-        <form action="{{ route('internal.kabalai.notifikasi-log.resend-all') }}" method="POST">
+        <form action="{{ route('internal.adminit.notifikasi-log.resend-all') }}" method="POST">
             @csrf
             <button type="submit"
                     onclick="if(!confirm('Kirim ulang semua notifikasi yang gagal?')) return false; this.disabled=true; this.innerHTML='<i class=\'ph ph-circle-notch animate-spin mr-1\'></i>Mengirim...';"
@@ -35,7 +35,7 @@ use Illuminate\Support\Str;
 </div>
 
 {{-- Filter --}}
-<form method="GET" action="{{ route('internal.kabalai.notifikasi-log.index') }}" class="mb-4">
+<form method="GET" action="{{ route('internal.adminit.notifikasi-log.index') }}" class="mb-4">
     <div class="flex flex-wrap items-end gap-3">
         <div class="flex-1 min-w-[140px]">
             <x-ui.input label="Search" name="search" :value="request('search')" placeholder="Nama PBF atau No. Reg..." />
@@ -69,7 +69,7 @@ use Illuminate\Support\Str;
         </div>
         <div class="flex gap-2 items-end">
             <x-ui.button variant="default" type="submit">Terapkan</x-ui.button>
-            <a href="{{ route('internal.kabalai.notifikasi-log.index') }}">
+            <a href="{{ route('internal.adminit.notifikasi-log.index') }}">
                 <x-ui.button variant="outline" type="button">Reset</x-ui.button>
             </a>
         </div>
@@ -109,7 +109,7 @@ use Illuminate\Support\Str;
                         {{-- Permohonan --}}
                         <td class="px-4 py-3">
                             @if($log->permohonan)
-                                <a href="{{ route('internal.kabalai.permohonan.show', $log->permohonan) }}"
+                                <a href="{{ route('internal.permohonan.show', $log->permohonan) }}"
                                    class="font-mono text-xs text-blue-600 hover:underline" title="{{ $log->permohonan->nama_pbf_snapshot }}">
                                     {{ $log->permohonan->no_registrasi }}
                                 </a>
@@ -194,7 +194,7 @@ use Illuminate\Support\Str;
                         {{-- Aksi --}}
                         <td class="px-4 py-3 text-right whitespace-nowrap">
                             @if($isGagal)
-                                <form action="{{ route('internal.kabalai.notifikasi-log.resend', $log) }}" method="POST" class="inline">
+                                <form action="{{ route('internal.adminit.notifikasi-log.resend', $log) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="submit"
                                             onclick="if(!confirm('Kirim ulang notifikasi ini?')) return false; this.disabled=true; this.querySelector('i').classList.add('animate-spin');"

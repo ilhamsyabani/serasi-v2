@@ -11,10 +11,6 @@
     </div>
 </div>
 
-@if(session('success'))
-    <x-ui.alert type="success" class="mb-5">{{ session('success') }}</x-ui.alert>
-@endif
-
 <x-ui.card>
     <x-ui.card-content class="p-0">
         <div class="overflow-x-auto">

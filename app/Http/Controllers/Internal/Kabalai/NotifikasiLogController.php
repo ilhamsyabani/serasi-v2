@@ -15,14 +15,17 @@ class NotifikasiLogController extends Controller
     {
         $user = Auth::user();
 
-        // Ambil permohonan yang dibuat oleh kabalai ini
-        $permohonanIds = Permohonan::where('kepala_balai_id', $user->id)
-            ->pluck('id');
+        // Admin IT melihat semua notifikasi; kepala_balai hanya melihat miliknya
+        $isAdminIt = $user->role?->kode === 'admin_it';
 
         $query = Notifikasi::query()
-            ->whereIn('permohonan_id', $permohonanIds)
             ->with(['permohonan:id,no_registrasi,nama_pbf_snapshot', 'permohonan.pbf:id,nama_pbf,email,no_whatsapp'])
             ->latest();
+
+        if (!$isAdminIt) {
+            $permohonanIds = Permohonan::where('kepala_balai_id', $user->id)->pluck('id');
+            $query->whereIn('permohonan_id', $permohonanIds);
+        }
 
         // Filter status
         if ($request->get('status') === 'gagal') {
@@ -51,19 +54,34 @@ class NotifikasiLogController extends Controller
 
         $logs = $query->paginate(20)->withQueryString();
 
-        // Dropdown permohonan untuk filter
-        $permohonanList = Permohonan::where('kepala_balai_id', $user->id)
-            ->orderByDesc('tanggal_pengajuan')
-            ->get(['id', 'no_registrasi', 'nama_pbf_snapshot']);
+        // Dropdown permohonan untuk filter — Admin IT lihat semua
+        if ($isAdminIt) {
+            $permohonanList = Permohonan::orderByDesc('tanggal_pengajuan')->get(['id', 'no_registrasi', 'nama_pbf_snapshot']);
+        } else {
+            $permohonanList = Permohonan::where('kepala_balai_id', $user->id)
+                ->orderByDesc('tanggal_pengajuan')
+                ->get(['id', 'no_registrasi', 'nama_pbf_snapshot']);
+        }
 
         // Statistik ringkasan
-        $stats = [
-            'total' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->count(),
-            'terkirim' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->where('status_kirim', Notifikasi::STATUS_TERKIRIM)->count(),
-            'gagal' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->where('status_kirim', Notifikasi::STATUS_GAGAL)->count(),
-            'email' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->where('channel', Notifikasi::CHANNEL_EMAIL)->count(),
-            'whatsapp' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->where('channel', Notifikasi::CHANNEL_WHATSAPP)->count(),
-        ];
+        if ($isAdminIt) {
+            $stats = [
+                'total' => Notifikasi::count(),
+                'terkirim' => Notifikasi::where('status_kirim', Notifikasi::STATUS_TERKIRIM)->count(),
+                'gagal' => Notifikasi::where('status_kirim', Notifikasi::STATUS_GAGAL)->count(),
+                'email' => Notifikasi::where('channel', Notifikasi::CHANNEL_EMAIL)->count(),
+                'whatsapp' => Notifikasi::where('channel', Notifikasi::CHANNEL_WHATSAPP)->count(),
+            ];
+        } else {
+            $permohonanIds = Permohonan::where('kepala_balai_id', $user->id)->pluck('id');
+            $stats = [
+                'total' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->count(),
+                'terkirim' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->where('status_kirim', Notifikasi::STATUS_TERKIRIM)->count(),
+                'gagal' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->where('status_kirim', Notifikasi::STATUS_GAGAL)->count(),
+                'email' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->where('channel', Notifikasi::CHANNEL_EMAIL)->count(),
+                'whatsapp' => Notifikasi::whereIn('permohonan_id', $permohonanIds)->where('channel', Notifikasi::CHANNEL_WHATSAPP)->count(),
+            ];
+        }
 
         return view('internal.kabalai.notifikasi-log.index', compact('logs', 'stats', 'permohonanList'));
     }
@@ -71,13 +89,16 @@ class NotifikasiLogController extends Controller
     public function resend(Notifikasi $notifikasi)
     {
         $user = Auth::user();
+        $isAdminIt = $user->role?->kode === 'admin_it';
 
-        // Cek kepemilikan: notifikasi harus dari permohonan yang dibuat kabalai ini
-        abort_unless(
-            $notifikasi->permohonan
-                && $notifikasi->permohonan->kepala_balai_id === $user->id,
-            403
-        );
+        // Admin IT bisa resend semua; kepala_balai hanya miliknya
+        if (!$isAdminIt) {
+            abort_unless(
+                $notifikasi->permohonan
+                    && $notifikasi->permohonan->kepala_balai_id === $user->id,
+                403
+            );
+        }
 
         $permohonan = $notifikasi->permohonan;
 
@@ -181,14 +202,19 @@ class NotifikasiLogController extends Controller
     public function resendAll(Request $request)
     {
         $user = Auth::user();
+        $isAdminIt = $user->role?->kode === 'admin_it';
 
-        $permohonanIds = Permohonan::where('kepala_balai_id', $user->id)
-            ->pluck('id');
-
-        $failedLogs = Notifikasi::whereIn('permohonan_id', $permohonanIds)
-            ->where('status_kirim', Notifikasi::STATUS_GAGAL)
-            ->with('permohonan.pbf')
-            ->get();
+        if ($isAdminIt) {
+            $failedLogs = Notifikasi::where('status_kirim', Notifikasi::STATUS_GAGAL)
+                ->with('permohonan.pbf')
+                ->get();
+        } else {
+            $permohonanIds = Permohonan::where('kepala_balai_id', $user->id)->pluck('id');
+            $failedLogs = Notifikasi::whereIn('permohonan_id', $permohonanIds)
+                ->where('status_kirim', Notifikasi::STATUS_GAGAL)
+                ->with('permohonan.pbf')
+                ->get();
+        }
 
         if ($failedLogs->isEmpty()) {
             return back()->with('info', 'Tidak ada notifikasi yang gagal.');

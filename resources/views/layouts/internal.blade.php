@@ -20,28 +20,25 @@
 
             {{-- Content --}}
             <main class="flex-1 overflow-y-auto p-6">
-                {{-- Flash Messages --}}
-                @if(session('success'))
-                    <x-ui.alert type="success" class="mb-4" dismissible>{{ session('success') }}</x-ui.alert>
-                @endif
-                @if(session('error'))
-                    <x-ui.alert type="error" class="mb-4" dismissible>{{ session('error') }}</x-ui.alert>
-                @endif
-                @if($errors->any())
-                    <div x-data x-init="
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Validasi Gagal',
-                            text: @js($errors->first()),
-                            confirmButtonColor: '#166534'
-                        });
-                    "></div>
-                @endif
-
                 @yield('content')
             </main>
         </div>
     </div>
+
+    {{-- Flash Messages (SweetAlert2) --}}
+    @if(session('success'))
+        <script>document.addEventListener('DOMContentLoaded',function(){Swal.fire({icon:'success',title:'Berhasil',text:{!! json_encode(session('success')) !!},confirmButtonColor:'#059669',timer:4000,timerProgressBar:true})});</script>
+    @endif
+    @if(session('error'))
+        <script>document.addEventListener('DOMContentLoaded',function(){Swal.fire({icon:'error',title:'Gagal',text:{!! json_encode(session('error')) !!},confirmButtonColor:'#dc2626',timer:5000,timerProgressBar:true})});</script>
+    @endif
+    @if(session('warning'))
+        <script>document.addEventListener('DOMContentLoaded',function(){Swal.fire({icon:'warning',title:'Perhatian',text:{!! json_encode(session('warning')) !!},confirmButtonColor:'#d97706',timer:6000,timerProgressBar:true})});</script>
+    @endif
+    @if($errors->any())
+        <script>document.addEventListener('DOMContentLoaded',function(){Swal.fire({icon:'error',title:'Validasi Gagal',text:{!! json_encode($errors->first()) !!},confirmButtonColor:'#dc2626'})});</script>
+    @endif
+
     @stack('scripts')
 </body>
 </html>

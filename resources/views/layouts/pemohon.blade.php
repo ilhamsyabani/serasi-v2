@@ -78,22 +78,16 @@
 
     {{-- Konten utama. pb-24 menyisakan ruang untuk bottom-nav di mobile. --}}
     <main class="max-w-3xl mx-auto px-4 py-6 pb-24 sm:pb-6">
-        @if(session('success'))
-            <x-ui.alert type="success" class="mb-4" dismissible>{{ session('success') }}</x-ui.alert>
-        @endif
-        @if(session('error'))
-            <x-ui.alert type="error" class="mb-4" dismissible>{{ session('error') }}</x-ui.alert>
-        @endif
-        @if($errors->any())
-            <div x-data x-init="
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validasi Gagal',
-                    text: @js($errors->first()),
-                    confirmButtonColor: '#166534'
-                });
-            "></div>
-        @endif
+    {{-- Flash Messages (SweetAlert2) --}}
+    @if(session('success'))
+        <script>document.addEventListener('DOMContentLoaded',function(){Swal.fire({icon:'success',title:'Berhasil',text:{!! json_encode(session('success')) !!},confirmButtonColor:'#059669',timer:4000,timerProgressBar:true})});</script>
+    @endif
+    @if(session('error'))
+        <script>document.addEventListener('DOMContentLoaded',function(){Swal.fire({icon:'error',title:'Gagal',text:{!! json_encode(session('error')) !!},confirmButtonColor:'#dc2626',timer:5000,timerProgressBar:true})});</script>
+    @endif
+    @if($errors->any())
+        <script>document.addEventListener('DOMContentLoaded',function(){Swal.fire({icon:'error',title:'Validasi Gagal',text:{!! json_encode($errors->first()) !!},confirmButtonColor:'#dc2626'})});</script>
+    @endif
 
         @yield('content')
     </main>

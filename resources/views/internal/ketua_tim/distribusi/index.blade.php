@@ -13,10 +13,6 @@
     </div>
 </div>
 
-@if(session('success'))
-<x-ui.alert type="success" class="mb-6 shadow-sm">{{ session('success') }}</x-ui.alert>
-@endif
-
 {{-- Ringkasan Beban Kerja Staff --}}
 <x-ui.card class="mb-6 shadow-sm border-slate-200">
     <x-ui.card-content>

@@ -12,10 +12,6 @@
     <x-ui.button variant="default" href="{{ route('internal.adminit.users.create') }}">+ Tambah User</x-ui.button>
 </div>
 
-@if(session('success'))
-    <x-ui.alert type="success" class="mb-5">{{ session('success') }}</x-ui.alert>
-@endif
-
 <x-ui.card>
     <x-ui.card-content class="p-0">
         {{-- Filter Bar --}}
