@@ -54,6 +54,7 @@ $navItems = collect([
         'items' => collect([
             (object)['route' => 'internal.notifikasi.index', 'label' => 'Notifikasi Saya', 'icon' => 'ph-bell', 'roles' => ['kepala_balai', 'ketua_tim', 'staff_sertifikasi', 'admin_it']],
             (object)['route' => 'internal.adminit.notifikasi-log.index', 'label' => 'Log Notifikasi', 'icon' => 'ph-list-checks', 'roles' => ['admin_it']],
+            (object)['route' => 'internal.adminit.audit-trail.index', 'label' => 'Audit Trail', 'icon' => 'ph-clipboard-text', 'roles' => ['admin_it']],
         ])
     ],
 ]);

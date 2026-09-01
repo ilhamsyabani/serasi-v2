@@ -21,6 +21,7 @@ use App\Http\Controllers\Internal\AdminIt\ConfigSettingController;
 use App\Http\Controllers\Internal\AdminIt\UserController;
 use App\Http\Controllers\Internal\AdminIt\HariLiburController;
 use App\Http\Controllers\Internal\AdminIt\SlaConfigController;
+use App\Http\Controllers\Internal\AdminIt\AuditTrailController;
 use App\Http\Controllers\Internal\Permohonan\PermohonanController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\Internal\NotifikasiController;
@@ -77,6 +78,7 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::resource('notifikasi-log', NotifikasiLogController::class)->only(['index']);
             Route::post('/notifikasi-log/{notifikasi}/resend', [NotifikasiLogController::class, 'resend'])->name('notifikasi-log.resend');
             Route::post('/notifikasi-log/resend-all', [NotifikasiLogController::class, 'resendAll'])->name('notifikasi-log.resend-all');
+            Route::resource('audit-trail', AuditTrailController::class)->only(['index']);
         });
 
         // Detail permohonan lintas-role. Harus di DALAM grup `auth`, agar tamu

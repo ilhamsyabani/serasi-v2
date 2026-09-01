@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Portal Pemohon') — {{ config('app.name') }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ Vite::asset('resources/css/app.css') }}">
+    <script type="module" src="{{ Vite::asset('resources/js/app.js') }}" defer></script>
     @include('partials.head-assets')
 </head>
 <body class="bg-slate-50 antialiased min-h-screen">
