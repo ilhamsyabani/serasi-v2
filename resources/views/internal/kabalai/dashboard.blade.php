@@ -53,7 +53,7 @@ $namaBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov',
 {{-- Statistik Permohonan (paling atas) --}}
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
     <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-sm">
-        <p class="text-xs font-medium text-blue-100 uppercase tracking-wide">Total {{ now()->year }}</p>
+        <p class="text-xs font-medium text-blue-100 uppercase tracking-wide">Total {{ $selectedYear }}</p>
         <p class="text-2xl font-bold mt-1">{{ $statBulanan->sum('total') }}</p>
         <p class="text-xs text-blue-200 mt-1">permohonan masuk</p>
     </div>
@@ -74,37 +74,33 @@ $namaBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov',
 $labels = $statBulanan->pluck('bulan')->map(fn($b) => $namaBulan[(int)(explode('-',$b)[1] ?? 1) - 1] ?? $b)->toArray();
 $totalData = $statBulanan->pluck('total')->map(fn($v) => (int)$v)->toArray();
 $terbitData = $statBulanan->pluck('terbit')->map(fn($v) => (int)$v)->toArray();
-$ditutupData = $statBulanan->pluck('ditutup')->map(fn($v) => (int)$v)->toArray();
 
-$maxVal = max(array_merge($totalData, $terbitData, $ditutupData, [1]));
+$maxVal = max(array_merge($totalData, $terbitData, [1]));
 $w = 800; $h = 220;
 $padL = 36; $padR = 24; $padT = 16; $padB = 36;
 $plotW = $w - $padL - $padR;
 $plotH = $h - $padT - $padB;
 $ptCount = count($labels);
-$stepX = $ptCount > 1 ? $plotW / ($ptCount - 1) : 0;
-
-function pt($v, $maxV, $h, $padT) { return $h - $padT - ($maxV > 0 ? ($v / $maxV) * $h : 0); }
-function polyline($data, $maxV, $stepX, $plotH, $padL, $padT) {
-    $pts = [];
-    foreach ($data as $i => $v) { $pts[] = ($padL + $i * $stepX) . ',' . pt($v, $maxV, $plotH, $padT); }
-    return implode(' ', $pts);
-}
-function areaPts($data, $maxV, $stepX, $plotH, $padL, $padT, $padB) {
-    $pts = [];
-    foreach ($data as $i => $v) { $pts[] = ($padL + $i * $stepX) . ',' . pt($v, $maxV, $plotH, $padT); }
-    $last = count($data) - 1;
-    $pts[] = ($padL + $last * $stepX) . ',' . ($plotH + $padT);
-    $pts[] = $padL . ',' . ($plotH + $padT);
-    return implode(' ', $pts);
-}
+$barW = $ptCount > 0 ? min(max(($plotW / $ptCount) * 0.30, 6), 28) : 28;
+$groupW = $ptCount > 0 ? ($plotW - $barW * 2 * $ptCount) / max($ptCount - 1, 1) : 0;
+$stepX = $barW * 2 + $groupW;
 @endphp
 
 <x-ui.card class="mb-4">
-    <x-ui.card-header title="Statistik Per Bulan {{ now()->year }}" />
+    <div class="flex items-center justify-between p-6 pb-4">
+        <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Statistik Per Bulan</h3>
+        <form method="GET" action="" class="flex items-center gap-2">
+            <select name="tahun" onchange="this.form.submit()"
+                class="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                @foreach($availableYears as $y)
+                    <option value="{{ $y }}" {{ $y === $selectedYear ? 'selected' : '' }}>{{ $y }}</option>
+                @endforeach
+            </select>
+        </form>
+    </div>
     <x-ui.card-content>
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {{-- Grafik Line Chart SVG --}}
+            {{-- Grafik Bar Chart SVG --}}
             <div class="xl:col-span-2" x-data="{
                 tooltip: null, ttX: 0, ttY: 0,
                 show(bulan, idx, mx, my) {
@@ -115,18 +111,8 @@ function areaPts($data, $maxV, $stepX, $plotH, $padL, $padT, $padB) {
             }">
                 <div class="relative" style="width:100%;max-width:800px">
                     <svg viewBox="0 0 {{ $w }} {{ $h }}" class="w-full" style="overflow:visible"
-                        @mousemove.prevent="let r=$refs.grafik.getBoundingClientRect(),m=$refs.grafik.createSVGPoint();m.x=$event.clientX;m.y=$event.clientY;let p=m.matrixTransform($refs.grafik.getScreenCTM().inverse());let idx=Math.round((p.x-{{ $padL }})/{{ $stepX }});idx=Math.max(0,Math.min(idx,{{ $ptCount-1 }}));let bx={{ $padL }}+idx*{{ $stepX }};let by=p.y;this.show(['{{ implode("','", $labels) }}'][idx],idx,((bx/{{ $w }})*100+'%'),((by/{{ $h }})*100+'%'))"
+                        @mousemove.prevent="let r=$refs.grafik.getBoundingClientRect(),m=$refs.grafik.createSVGPoint();m.x=$event.clientX;m.y=$event.clientY;let p=m.matrixTransform($refs.grafik.getScreenCTM().inverse());let idx=Math.round((p.x-{{ $padL }})/{{ $stepX }});idx=Math.max(0,Math.min(idx,{{ $ptCount-1 }}));let bx={{ $padL }}+idx*{{ $stepX }}+{{ $barW/2 }};this.show(['{{ implode("','", $labels) }}'][idx],idx,((bx/{{ $w }})*100+'%'),((p.y/{{ $h }})*100+'%'))"
                         @mouseleave="hide()">
-                        <defs>
-                            <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#256abf" stop-opacity="0.20"/>
-                                <stop offset="100%" stop-color="#256abf" stop-opacity="0.02"/>
-                            </linearGradient>
-                            <linearGradient id="gradTerbit" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#059669" stop-opacity="0.20"/>
-                                <stop offset="100%" stop-color="#059669" stop-opacity="0.02"/>
-                            </linearGradient>
-                        </defs>
                         <g x-ref="grafik">
                             {{-- gridlines --}}
                             @for($i=0;$i<=4;$i++)
@@ -134,35 +120,32 @@ function areaPts($data, $maxV, $stepX, $plotH, $padL, $padT, $padB) {
                                 <line x1="{{ $padL }}" y1="{{ $gy }}" x2="{{ $w-$padR }}" y2="{{ $gy }}" stroke="#e1e0d9" stroke-width="1"/>
                                 <text x="{{ $padL - 6 }}" y="{{ $gy + 4 }}" text-anchor="end" font-size="11" fill="#898781" font-family="system-ui,sans-serif">{{ round($gv) }}</text>
                             @endfor
-                            {{-- area fills --}}
-                            <polygon points="{{ areaPts($totalData, $maxVal, $stepX, $plotH, $padL, $padT, $padB) }}" fill="url(#gradTotal)"/>
-                            <polygon points="{{ areaPts($terbitData, $maxVal, $stepX, $plotH, $padL, $padT, $padB) }}" fill="url(#gradTerbit)"/>
-                            {{-- lines --}}
-                            <polyline points="{{ polyline($totalData, $maxVal, $stepX, $plotH, $padL, $padT) }}" fill="none" stroke="#256abf" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-                            <polyline points="{{ polyline($terbitData, $maxVal, $stepX, $plotH, $padL, $padT) }}" fill="none" stroke="#059669" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-                            <polyline points="{{ polyline($ditutupData, $maxVal, $stepX, $plotH, $padL, $padT) }}" fill="none" stroke="#dc2626" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="4,3"/>
-                            {{-- x-axis labels --}}
+                            {{-- bars --}}
                             @foreach($labels as $i => $lbl)
-                                <text x="{{ $padL + $i*$stepX }}" y="{{ $h - 8 }}" text-anchor="middle" font-size="11" fill="#898781" font-family="system-ui,sans-serif">{{ $lbl }}</text>
+                                @php
+                                    $xBase = $padL + $i * ($barW * 2 + $groupW);
+                                    $barTotalH = $maxVal > 0 ? ($totalData[$i] / $maxVal) * $plotH : 0;
+                                    $barTerbitH = $maxVal > 0 ? ($terbitData[$i] / $maxVal) * $plotH : 0;
+                                    $barY = $plotH + $padT;
+                                @endphp
+                                {{-- Total bar --}}
+                                <rect x="{{ $xBase }}" y="{{ $barY - $barTotalH }}" width="{{ $barW }}" height="{{ $barTotalH }}" rx="3" fill="#256abf" class="hover:opacity-80 transition-opacity cursor-pointer" @mouseenter="show('{{ $lbl }}', {{ $i }}, 0, 0)" @mouseleave="hide()"/>
+                                {{-- Terbit bar --}}
+                                <rect x="{{ $xBase + $barW }}" y="{{ $barY - $barTerbitH }}" width="{{ $barW }}" height="{{ $barTerbitH }}" rx="3" fill="#059669" class="hover:opacity-80 transition-opacity cursor-pointer" @mouseenter="show('{{ $lbl }}', {{ $i }}, 0, 0)" @mouseleave="hide()"/>
+                                {{-- x-axis label --}}
+                                <text x="{{ $xBase + $barW }}" y="{{ $h - 8 }}" text-anchor="middle" font-size="11" fill="#898781" font-family="system-ui,sans-serif">{{ $lbl }}</text>
                             @endforeach
-                            {{-- end dots + labels --}}
-                            @if($ptCount > 0)
-                                <circle cx="{{ $padL + ($ptCount-1)*$stepX }}" cy="{{ pt(end($totalData), $maxVal, $plotH, $padT) }}" r="4" fill="#256abf"/>
-                                <text x="{{ $padL + ($ptCount-1)*$stepX + 8 }}" y="{{ pt(end($totalData), $maxVal, $plotH, $padT) + 4 }}" font-size="11" font-weight="600" fill="#256abf" font-family="system-ui,sans-serif">{{ end($totalData) }}</text>
-                                <circle cx="{{ $padL + ($ptCount-1)*$stepX }}" cy="{{ pt(end($terbitData), $maxVal, $plotH, $padT) }}" r="4" fill="#059669"/>
-                                <text x="{{ $padL + ($ptCount-1)*$stepX + 8 }}" y="{{ pt(end($terbitData), $maxVal, $plotH, $padT) + 4 }}" font-size="11" font-weight="600" fill="#059669" font-family="system-ui,sans-serif">{{ end($terbitData) }}</text>
-                            @endif
                         </g>
                         {{-- tooltip --}}
                         <template x-if="tooltip !== null">
                             <g>
-                                <rect x="0" y="0" width="160" height="78" fill="white" stroke="#e1e0d9" stroke-width="1" rx="6" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"/>
+                                <rect x="0" y="0" width="160" height="62" fill="white" stroke="#e1e0d9" stroke-width="1" rx="6" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"/>
                                 <text x="10" y="20" font-size="12" font-weight="600" fill="#0b0b0b" font-family="system-ui,sans-serif" x-text="tooltip"></text>
-                                <template x-for="(row, idx) in [['Total','#256abf',{{ json_encode($totalData) }}[tooltip?.[1]]],['Terbit','#059669',{{ json_encode($terbitData) }}[tooltip?.[1]]],['Ditutup','#dc2626',{{ json_encode($ditutupData) }}[tooltip?.[1]]]]" :key="idx">
+                                <template x-for="(row, idx) in [['Total','#256abf',{{ json_encode($totalData) }}[tooltip?.[1]]],['Terbit','#059669',{{ json_encode($terbitData) }}[tooltip?.[1]]]]" :key="idx">
                                     <g>
-                                        <circle cx="18" cy="36+idx*14" r="4" :fill="row[1]"/>
-                                        <text x="28" y="40+idx*14" font-size="11" fill="#52514e" font-family="system-ui,sans-serif" x-text="row[0]"></text>
-                                        <text x="145" y="40+idx*14" text-anchor="end" font-size="11" font-weight="600" fill="#0b0b0b" font-family="system-ui,sans-serif" x-text="row[2] ?? 0"></text>
+                                        <rect :x="10" :y="28+idx*14" width="8" :height="8" rx="2" :fill="row[1]"/>
+                                        <text x="24" y="36+idx*14" font-size="11" fill="#52514e" font-family="system-ui,sans-serif" x-text="row[0]"></text>
+                                        <text x="150" y="36+idx*14" text-anchor="end" font-size="11" font-weight="600" fill="#0b0b0b" font-family="system-ui,sans-serif" x-text="row[2] ?? 0"></text>
                                     </g>
                                 </template>
                             </g>
@@ -172,16 +155,12 @@ function areaPts($data, $maxV, $stepX, $plotH, $padL, $padT, $padB) {
                 {{-- Legend --}}
                 <div class="flex items-center gap-6 mt-3">
                     <div class="flex items-center gap-2">
-                        <span class="inline-block w-6 h-0.5 rounded-full" style="background:#256abf"></span>
+                        <span class="inline-block w-4 h-4 rounded" style="background:#256abf"></span>
                         <span class="text-xs text-slate-600">Total</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="inline-block w-6 h-0.5 rounded-full" style="background:#059669"></span>
+                        <span class="inline-block w-4 h-4 rounded" style="background:#059669"></span>
                         <span class="text-xs text-slate-600">Terbit</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-6 h-0.5 rounded-full" style="background:#dc2626;border-top:2px dashed #dc2626"></span>
-                        <span class="text-xs text-slate-600">Ditutup</span>
                     </div>
                 </div>
             </div>
@@ -193,7 +172,6 @@ function areaPts($data, $maxV, $stepX, $plotH, $padL, $padT, $padB) {
                             <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Bulan</th>
                             <th class="px-3 py-2 text-center text-xs font-semibold text-slate-500 uppercase">Total</th>
                             <th class="px-3 py-2 text-center text-xs font-semibold text-slate-500 uppercase">Terbit</th>
-                            <th class="px-3 py-2 text-center text-xs font-semibold text-slate-500 uppercase">Ditutup</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
@@ -207,13 +185,6 @@ function areaPts($data, $maxV, $stepX, $plotH, $padL, $padT, $padB) {
                             </td>
                             <td class="px-3 py-2 text-center">
                                 <span class="inline-flex items-center justify-center min-w-[24px] h-5 rounded-full bg-emerald-100 px-1.5 text-xs font-semibold text-emerald-800">{{ $s->terbit }}</span>
-                            </td>
-                            <td class="px-3 py-2 text-center">
-                                @if($s->ditutup > 0)
-                                    <span class="inline-flex items-center justify-center min-w-[24px] h-5 rounded-full bg-red-100 px-1.5 text-xs font-semibold text-red-800">{{ $s->ditutup }}</span>
-                                @else
-                                    <span class="text-slate-300">0</span>
-                                @endif
                             </td>
                         </tr>
                         @endforeach

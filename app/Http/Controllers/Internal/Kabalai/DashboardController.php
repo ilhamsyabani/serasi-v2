@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Internal\Kabalai;
 use App\Http\Controllers\Controller;
 use App\Models\Permohonan;
 use App\Services\SlaCalculator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -15,8 +16,10 @@ use Illuminate\Support\Facades\DB;
  */
 class DashboardController extends Controller
 {
-    public function index(SlaCalculator $sla)
+    public function index(Request $request, SlaCalculator $sla)
     {
+        $year = $request->get('tahun', now()->year);
+
         $permohonans = Permohonan::query()
             ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
             ->latest()
@@ -35,18 +38,39 @@ class DashboardController extends Controller
             ->selectRaw("COUNT(*) as total")
             ->selectRaw("SUM(CASE WHEN status_saat_ini = 'terbit_surat_pengesahan' THEN 1 ELSE 0 END) as terbit")
             ->selectRaw("SUM(CASE WHEN status_saat_ini = 'ditutup_pengajuan_ulang' THEN 1 ELSE 0 END) as ditutup")
-            ->whereYear('tanggal_pengajuan', now()->year)
+            ->whereYear('tanggal_pengajuan', $year)
             ->groupByRaw($dateFormat)
             ->orderByRaw($dateFormat)
             ->get();
 
-        $onProcess = $permohonans->whereNotIn('status_saat_ini', ['terbit_surat_pengesahan', 'ditutup_pengajuan_ulang'])->count();
+        // Available years (from earliest record to current year)
+        $yearExpr = $driver === 'sqlite'
+            ? "CAST(strftime('%Y', tanggal_pengajuan) AS INTEGER)"
+            : 'YEAR(tanggal_pengajuan)';
+
+        $availableYears = Permohonan::query()
+            ->selectRaw("{$yearExpr} as year")
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->filter()
+            ->values();
+
+        if ($availableYears->isEmpty() || !$availableYears->contains(now()->year)) {
+            $availableYears = $availableYears->push(now()->year)->sortDesc()->values();
+        }
+
+        $onProcess = Permohonan::whereYear('tanggal_pengajuan', $year)
+            ->whereNotIn('status_saat_ini', ['terbit_surat_pengesahan', 'ditutup_pengajuan_ulang'])
+            ->count();
 
         return view('internal.kabalai.dashboard', [
             'permohonans' => $permohonans,
             'slaRingkasan' => $sla->ringkasan($permohonans),
             'statBulanan' => $statBulanan,
             'onProcess' => $onProcess,
+            'selectedYear' => (int) $year,
+            'availableYears' => $availableYears,
         ]);
     }
 }
