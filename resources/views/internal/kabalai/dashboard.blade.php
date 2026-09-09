@@ -40,10 +40,8 @@ foreach ($permohonans as $p) {
     } elseif (in_array($s, ['revisi_1', 'revisi_2', 'revisi_3'])) {
         // Revisi: menunggu aksi dari pemohon
         $roleBucket['pemohon'][] = $p;
-    } elseif ($s === 'terbit_surat_pengesahan') {
-        // Terbit: pemohon mendapatkan surat pengesahan
-        $roleBucket['pemohon'][] = $p;
     }
+    // terbit_surat_pengesahan = selesai, tidak masuk bucket mana pun
 }
 
 $counts = $permohonans->countBy('status_saat_ini');
@@ -88,7 +86,7 @@ $stepX = $barW * 2 + $groupW;
 
 <x-ui.card class="mb-4">
     <div class="flex items-center justify-between p-6 pb-4">
-        <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Statistik Per Bulan</h3>
+        <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Layanan Denah PBF Per Bulan</h3>
         <form method="GET" action="" class="flex items-center gap-2">
             <select name="tahun" onchange="this.form.submit()"
                 class="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
@@ -156,7 +154,7 @@ $stepX = $barW * 2 + $groupW;
                 <div class="flex items-center gap-6 mt-3">
                     <div class="flex items-center gap-2">
                         <span class="inline-block w-4 h-4 rounded" style="background:#256abf"></span>
-                        <span class="text-xs text-slate-600">Total</span>
+                        <span class="text-xs text-slate-600">Pengajuan</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="inline-block w-4 h-4 rounded" style="background:#059669"></span>
@@ -382,7 +380,7 @@ $stepX = $barW * 2 + $groupW;
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">PBF</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">SLA</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Tanggal</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Tanggal Pengajuan</th>
                     <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Aksi</th>
                 </tr>
             </thead>
