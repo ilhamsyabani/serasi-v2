@@ -269,17 +269,6 @@ $stepX = $barW * 2 + $groupW;
                         </td>
                     </tr>
                     <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Didiposisisikan</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['didisposisikan'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-purple-100 px-2 text-xs font-semibold text-purple-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
                         <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Proses Evaluasi</td>
                         <td class="px-4 py-2.5 text-right">
                             @php $j = $counts['proses_evaluasi'] ?? 0; @endphp
