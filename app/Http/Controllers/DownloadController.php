@@ -23,8 +23,7 @@ class DownloadController extends Controller
 
     public function revisi(int $revisiId)
     {
-        $dokumen = \App\Models\DokumenRevisi::where('revisi_id', $revisiId)
-            ->firstOrFail();
+        $dokumen = \App\Models\DokumenRevisi::findOrFail($revisiId);
 
         abort_unless(
             $this->canAccessPermohonan($dokumen->revisi->permohonan),
