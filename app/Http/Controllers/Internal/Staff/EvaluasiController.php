@@ -23,11 +23,12 @@ class EvaluasiController extends Controller
         abort_if(!$aktif || $aktif->staff_id !== $user->id, 403);
 
         $dokumen = DokumenPermohonan::where('permohonan_id', $permohonan->id)->get();
+        $evaluasi = Evaluasi::where('permohonan_id', $permohonan->id)->latest()->first();
 
         $revisi = $permohonan->revisi()->with('dokumenRevisi')->get();
         $dokumenRevisi = $revisi->flatMap(fn($r) => $r->dokumenRevisi);
 
-        return view('internal.staff.evaluasi.edit', compact('permohonan', 'dokumen', 'dokumenRevisi'));
+        return view('internal.staff.evaluasi.edit', compact('permohonan', 'dokumen', 'dokumenRevisi', 'evaluasi'));
     }
 
     public function update(Request $request, Permohonan $permohonan)

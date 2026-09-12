@@ -102,6 +102,11 @@ $showRevisiBanner = $statusRevisi;
             </li>
             @endforeach
         </ul>
+
+        <div class="mt-4 p-4 border border-orange-400 bg-orange-50 rounded-lg">
+         <span class="text-sm font-bold text-slate-700 mb-2">Catatan</span>
+         <p class="text-[14px] text-slate-500">{{ $evaluasi->catatan }}</p>
+        </div>
     </x-ui.card-content>
 </x-ui.card>
 @endif
