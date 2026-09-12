@@ -70,6 +70,7 @@
                             @endif
                         </a>
                     </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">SLA</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
                         <a href="{{ request()->fullUrlWithQuery(['sort' => 'tanggal_pengajuan', 'dir' => ($sort === 'tanggal_pengajuan' && $dir === 'asc') ? 'desc' : 'asc']) }}"
                            class="inline-flex items-center gap-1 hover:text-slate-700">
@@ -91,6 +92,7 @@
                     <p class="font-medium text-slate-900">{{ $p->nama_pbf_snapshot }}</p>
                     <p class="text-xs text-slate-400"><span class="font-mono">NIB : </span>{{ $p->nib_snapshot }}</p>
                 <td class="px-4 py-3"><x-ui.status-badge :status="$p->status_saat_ini" /></td>
+                <td class="px-4 py-3"><x-ui.sla-badge :sla="app(\App\Services\SlaCalculator::class)->evaluasiPermohonan($p)" /></td>
                 <td class="px-4 py-3 text-slate-400 text-xs">{{ $p->tanggal_pengajuan?->format('d M Y') }}</td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
                     <x-ui.button variant="ghost" size="sm" href="{{ route('internal.kabalai.permohonan.show', $p) }}">Detail</x-ui.button>
