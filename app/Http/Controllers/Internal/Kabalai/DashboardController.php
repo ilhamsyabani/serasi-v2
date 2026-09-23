@@ -19,11 +19,10 @@ class DashboardController extends Controller
     public function index(Request $request, SlaCalculator $sla)
     {
         $year = $request->get('tahun', now()->year);
-
-        $permohonans = Permohonan::query()
-            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
-            ->latest()
-            ->get();
+        $search = $request->get('search');
+        $status = $request->get('status');
+        $dari = $request->get('dari');
+        $sampai = $request->get('sampai');
 
         // SQLite uses strftime, MySQL uses DATE_FORMAT
         $driver = DB::connection()->getDriverName();
@@ -32,6 +31,28 @@ class DashboardController extends Controller
         } else {
             $dateFormat = "DATE_FORMAT(tanggal_pengajuan, '%Y-%m')";
         }
+
+        // Permohonan paginated + filtered
+        $permohonans = Permohonan::query()
+            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
+            ->whereYear('tanggal_pengajuan', $year)
+            ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
+                  ->orWhere('no_registrasi', 'like', "%{$search}%")
+                  ->orWhere('nib_snapshot', 'like', "%{$search}%");
+            }))
+            ->when($status, fn ($q) => $q->where('status_saat_ini', $status))
+            ->when($dari, fn ($q) => $q->whereDate('tanggal_pengajuan', '>=', $dari))
+            ->when($sampai, fn ($q) => $q->whereDate('tanggal_pengajuan', '<=', $sampai))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        // Permohonan untuk statistik (filter tahun saja, tanpa filter search/status/tanggal)
+        $allPerms = Permohonan::query()
+            ->whereYear('tanggal_pengajuan', $year)
+            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
+            ->get();
 
         $statBulanan = Permohonan::query()
             ->selectRaw("{$dateFormat} as bulan")
@@ -64,13 +85,31 @@ class DashboardController extends Controller
             ->whereNotIn('status_saat_ini', ['terbit_surat_pengesahan', 'ditutup_pengajuan_ulang'])
             ->count();
 
+        $statusOptions = [
+            'pengajuan' => 'Pengajuan',
+            'didisposisikan' => 'Didiposisisikan',
+            'proses_evaluasi' => 'Proses Evaluasi',
+            'revisi_1' => 'Revisi 1',
+            'revisi_2' => 'Revisi 2',
+            'revisi_3' => 'Revisi 3',
+            'menunggu_surat_pengesahan' => 'Menunggu Surat',
+            'terbit_surat_pengesahan' => 'Terbit Surat',
+            'ditutup_pengajuan_ulang' => 'Ditutup',
+        ];
+
         return view('internal.kabalai.dashboard', [
             'permohonans' => $permohonans,
-            'slaRingkasan' => $sla->ringkasan($permohonans),
+            'allPermohonans' => $allPerms,
+            'slaRingkasan' => $sla->ringkasan($allPerms),
             'statBulanan' => $statBulanan,
             'onProcess' => $onProcess,
             'selectedYear' => (int) $year,
             'availableYears' => $availableYears,
+            'search' => $search,
+            'statusFilter' => $status,
+            'dari' => $dari,
+            'sampai' => $sampai,
+            'statusOptions' => $statusOptions,
         ]);
     }
 }
