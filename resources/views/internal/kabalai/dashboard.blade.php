@@ -23,7 +23,7 @@ $roleBucket = [
     'staff'   => [],
     'pemohon' => [],
 ];
-foreach ($permohonans as $p) {
+foreach ($allPermohonans as $p) {
     $s = $p->status_saat_ini;
     if ($s === 'pengajuan') {
         // Kabalai: input permohonan, belum didisposisikan
@@ -44,7 +44,7 @@ foreach ($permohonans as $p) {
     // terbit_surat_pengesahan = selesai, tidak masuk bucket mana pun
 }
 
-$counts = $permohonans->countBy('status_saat_ini');
+$counts = $allPermohonans->countBy('status_saat_ini');
 $namaBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 @endphp
 
@@ -318,17 +318,61 @@ $stepX = $barW * 2 + $groupW;
     </x-ui.card>
 </div>
 
-{{-- Permohonan Terbaru --}}
+{{-- Permohonan --}}
 <x-ui.card>
     <div class="flex items-center justify-between gap-3 px-6 pb-4">
         <div>
-            <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Permohonan Terbaru</h3>
-            <p class="mt-1.5 text-sm text-slate-500">10 permohonan terakhir</p>
+            <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Permohonan</h3>
+            <p class="mt-1.5 text-sm text-slate-500">{{ $permohonans->total() }} permohonan di tahun {{ $selectedYear }}</p>
         </div>
         <x-ui.button variant="default" size="sm" href="{{ route('internal.kabalai.permohonan.create') }}">
             <i class="ph ph-plus" aria-hidden="true"></i> Input Permohonan
         </x-ui.button>
     </div>
+
+    {{-- Filter --}}
+    <form method="GET" action="" class="flex flex-wrap gap-3 items-end px-6 py-4 border-t border-slate-100 bg-slate-50/60">
+        <input type="hidden" name="tahun" value="{{ $selectedYear }}">
+
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Cari</label>
+            <input type="text" name="search" value="{{ $search }}"
+                placeholder="No. Registrasi, NIB, atau Nama PBF..."
+                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <div class="min-w-[180px]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Status</label>
+            <select name="status"
+                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                <option value="">Semua Status</option>
+                @foreach($statusOptions as $value => $label)
+                    <option value="{{ $value }}" {{ $statusFilter === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="min-w-[150px]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Dari Tanggal</label>
+            <input type="date" name="dari" value="{{ $dari }}"
+                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <div class="min-w-[150px]">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Sampai Tanggal</label>
+            <input type="date" name="sampai" value="{{ $sampai }}"
+                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <div class="flex items-end gap-2">
+            <x-ui.button type="submit" variant="default">
+                <i class="ph ph-funnel" aria-hidden="true"></i> Terapkan
+            </x-ui.button>
+            @if($search || $statusFilter || $dari || $sampai)
+                <x-ui.button type="button" variant="ghost" onclick="window.location='?tahun={{ $selectedYear }}'">Reset</x-ui.button>
+            @endif
+        </div>
+    </form>
     <x-ui.card-content class="p-0">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -342,7 +386,7 @@ $stepX = $barW * 2 + $groupW;
                     <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Aksi</th>
                 </tr>
             </thead>
-            @forelse($permohonans->take(10) as $p)
+            @forelse($permohonans as $p)
             <x-ui.permohonan-row :permohonan="$p" :colspan="6">
                 <td class="px-4 py-3 font-mono text-xs font-medium text-slate-900">{{ $p->no_registrasi }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ $p->nama_pbf_snapshot }}</td>
@@ -372,6 +416,11 @@ $stepX = $barW * 2 + $groupW;
             </tbody>
             @endforelse
         </table>
+        @if($permohonans->hasPages())
+        <div class="px-4 py-3 border-t border-slate-100">
+            {{ $permohonans->links('vendor.pagination.tailwind') }}
+        </div>
+        @endif
         </div>
     </x-ui.card-content>
 </x-ui.card>
