@@ -78,14 +78,6 @@ class PermohonanController extends Controller
 
         $password = OtpService::generatePassword();
 
-        $pbfByNib = Pbf::where('nib', $data['nib'])->first();
-
-        if ($pbfByNib && $pbfByNib->no_whatsapp !== $data['no_whatsapp']) {
-            return redirect()->back()
-                ->withInput($request->except('_token', 'no_whatsapp'))
-                ->with('warning', 'NIB sudah terdaftar dengan nomor WhatsApp lain (' . $pbfByNib->no_whatsapp . '). Silakan gunakan nomor yang sama atau hubungi Administrator IT.');
-        }
-
         $pbfByWa = Pbf::where('no_whatsapp', $data['no_whatsapp'])->first();
         if ($pbfByWa && $pbfByWa->nib !== $data['nib']) {
             return redirect()->back()
@@ -93,17 +85,15 @@ class PermohonanController extends Controller
                 ->with('warning', 'Nomor WhatsApp ini sudah terdaftar untuk NIB lain (' . $pbfByWa->nib . ' — ' . $pbfByWa->nama_pbf . ').');
         }
 
-        $pbf = Pbf::updateOrCreate(
-            ['nib' => $data['nib']],
-            [
-                'nama_pbf' => $data['nama_pbf'],
-                'alamat' => $data['alamat'] ?? null,
-                'email' => $data['email'],
-                'no_whatsapp' => $data['no_whatsapp'],
-                'password_hash' => \Illuminate\Support\Facades\Hash::make($password),
-                'otp_terverifikasi' => false,
-            ]
-        );
+        $pbf = Pbf::create([
+            'nib' => $data['nib'],
+            'nama_pbf' => $data['nama_pbf'],
+            'alamat' => $data['alamat'] ?? null,
+            'email' => $data['email'],
+            'no_whatsapp' => $data['no_whatsapp'],
+            'password_hash' => \Illuminate\Support\Facades\Hash::make($password),
+            'otp_terverifikasi' => false,
+        ]);
 
         $username = $data['email'];
 

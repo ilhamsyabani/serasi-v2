@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\DokumenPermohonan;
 use App\Models\Permohonan;
+use App\Models\Pbf;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -22,11 +23,17 @@ class StorePermohonanRequest extends FormRequest
 
     public function rules(): array
     {
+        $nib = $this->input('nib');
+        $pbfExists = $nib ? Pbf::where('nib', $nib)->exists() : false;
+
         return [
             'nib' => 'required|string|digits:13',
             'nama_pbf' => 'required|string|max:200',
             'alamat' => 'nullable|string|max:500',
-            'email' => 'required|email|max:150|unique:pbf,email',
+            // Jika NIB sudah ada (resubmit), email uniqueness diabaikan
+            'email' => $pbfExists
+                ? 'required|email|max:150'
+                : 'required|email|max:150|unique:pbf,email',
             'no_whatsapp' => [
                 'required',
                 'string',
