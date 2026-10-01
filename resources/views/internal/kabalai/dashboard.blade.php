@@ -48,27 +48,58 @@ $counts = $allPermohonans->countBy('status_saat_ini');
 $namaBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 @endphp
 
-{{-- Statistik Permohonan (paling atas) --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-sm">
-        <p class="text-xs font-medium text-blue-100 uppercase tracking-wide">Total {{ $selectedYear }}</p>
-        <p class="text-2xl font-bold mt-1">{{ $statBulanan->sum('total') }}</p>
-        <p class="text-xs text-blue-200 mt-1">permohonan masuk</p>
+{{-- Statistik Permohonan --}}
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium text-blue-100 uppercase tracking-wide">Total {{ $selectedYear }}</p>
+                <p class="text-3xl font-bold mt-1">{{ $statBulanan->sum('total') }}</p>
+            </div>
+            <div class="rounded-xl bg-white/15 p-2.5"><i class="ph ph-files text-xl" aria-hidden="true"></i></div>
+        </div>
+        <p class="text-xs text-blue-100 mt-2">permohonan masuk</p>
     </div>
-    <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white shadow-sm">
-        <p class="text-xs font-medium text-emerald-100 uppercase tracking-wide">Terbit</p>
-        <p class="text-2xl font-bold mt-1">{{ $statBulanan->sum('terbit') }}</p>
-        <p class="text-xs text-emerald-200 mt-1">surat pengesahan</p>
+    <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium text-emerald-100 uppercase tracking-wide">Terbit</p>
+                <p class="text-3xl font-bold mt-1">{{ $statBulanan->sum('terbit') }}</p>
+            </div>
+            <div class="rounded-xl bg-white/15 p-2.5"><i class="ph ph-seal-check text-xl" aria-hidden="true"></i></div>
+        </div>
+        <p class="text-xs text-emerald-100 mt-2">surat pengesahan</p>
     </div>
-    <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white shadow-sm">
-        <p class="text-xs font-medium text-amber-100 uppercase tracking-wide">On Process</p>
-        <p class="text-2xl font-bold mt-1">{{ $onProcess }}</p>
-        <p class="text-xs text-amber-200 mt-1">sedang diproses</p>
+    <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium text-amber-100 uppercase tracking-wide">On Process</p>
+                <p class="text-3xl font-bold mt-1">{{ $onProcess }}</p>
+            </div>
+            <div class="rounded-xl bg-white/15 p-2.5"><i class="ph ph-hourglass-medium text-xl" aria-hidden="true"></i></div>
+        </div>
+        <p class="text-xs text-amber-100 mt-2">sedang diproses</p>
     </div>
 </div>
 
-@if($statBulanan->isNotEmpty())
-@php
+{{-- Grafik (2/3) + Keterangan Role & Status (1/3) --}}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 items-start">
+    {{-- Grafik Layanan Per Bulan --}}
+    <x-ui.card class="lg:col-span-2">
+        <div class="flex items-center justify-between gap-3 px-6 pb-4">
+            <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Layanan Denah PBF Per Bulan</h3>
+            <form method="GET" action="">
+                <select name="tahun" onchange="this.form.submit()"
+                    class="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                    @foreach($availableYears as $y)
+                        <option value="{{ $y }}" {{ $y === $selectedYear ? 'selected' : '' }}>{{ $y }}</option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
+        <x-ui.card-content>
+            @if($statBulanan->isNotEmpty())
+            @php
 $labels = $statBulanan->pluck('bulan')->map(fn($b) => $namaBulan[(int)(explode('-',$b)[1] ?? 1) - 1] ?? $b)->toArray();
 $totalData = $statBulanan->pluck('total')->map(fn($v) => (int)$v)->toArray();
 $terbitData = $statBulanan->pluck('terbit')->map(fn($v) => (int)$v)->toArray();
@@ -82,298 +113,234 @@ $ptCount = count($labels);
 $barW = $ptCount > 0 ? min(max(($plotW / $ptCount) * 0.30, 6), 28) : 28;
 $groupW = $ptCount > 0 ? ($plotW - $barW * 2 * $ptCount) / max($ptCount - 1, 1) : 0;
 $stepX = $barW * 2 + $groupW;
-@endphp
-
-<x-ui.card class="mb-4">
-    <div class="flex items-center justify-between p-6 pb-4">
-        <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Layanan Denah PBF Per Bulan</h3>
-        <form method="GET" action="" class="flex items-center gap-2">
-            <select name="tahun" onchange="this.form.submit()"
-                class="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
-                @foreach($availableYears as $y)
-                    <option value="{{ $y }}" {{ $y === $selectedYear ? 'selected' : '' }}>{{ $y }}</option>
-                @endforeach
-            </select>
-        </form>
-    </div>
-    <x-ui.card-content>
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {{-- Grafik Bar Chart SVG --}}
-            <div class="xl:col-span-2" x-data="{
-                tooltip: null, ttX: 0, ttY: 0,
+            @endphp
+            <div x-data="{
+                tooltip: null, ttX: 0, ttY: 0, showTable: false,
                 show(bulan, idx, mx, my) {
                     this.tooltip = bulan;
                     this.ttX = mx; this.ttY = my;
                 },
                 hide() { this.tooltip = null; }
             }">
-                <div class="relative" style="width:100%;max-width:800px">
-                    <svg viewBox="0 0 {{ $w }} {{ $h }}" class="w-full" style="overflow:visible"
-                        @mousemove.prevent="let r=$refs.grafik.getBoundingClientRect(),m=$refs.grafik.createSVGPoint();m.x=$event.clientX;m.y=$event.clientY;let p=m.matrixTransform($refs.grafik.getScreenCTM().inverse());let idx=Math.round((p.x-{{ $padL }})/{{ $stepX }});idx=Math.max(0,Math.min(idx,{{ $ptCount-1 }}));let bx={{ $padL }}+idx*{{ $stepX }}+{{ $barW/2 }};this.show(['{{ implode("','", $labels) }}'][idx],idx,((bx/{{ $w }})*100+'%'),((p.y/{{ $h }})*100+'%'))"
-                        @mouseleave="hide()">
-                        <g x-ref="grafik">
-                            {{-- gridlines --}}
-                            @for($i=0;$i<=4;$i++)
-                                @php $gy = $padT + ($plotH/4)*$i; $gv = $maxVal - ($maxVal/4)*$i; @endphp
-                                <line x1="{{ $padL }}" y1="{{ $gy }}" x2="{{ $w-$padR }}" y2="{{ $gy }}" stroke="#e1e0d9" stroke-width="1"/>
-                                <text x="{{ $padL - 6 }}" y="{{ $gy + 4 }}" text-anchor="end" font-size="11" fill="#898781" font-family="system-ui,sans-serif">{{ round($gv) }}</text>
-                            @endfor
-                            {{-- bars --}}
-                            @foreach($labels as $i => $lbl)
-                                @php
-                                    $xBase = $padL + $i * ($barW * 2 + $groupW);
-                                    $barTotalH = $maxVal > 0 ? ($totalData[$i] / $maxVal) * $plotH : 0;
-                                    $barTerbitH = $maxVal > 0 ? ($terbitData[$i] / $maxVal) * $plotH : 0;
-                                    $barY = $plotH + $padT;
-                                @endphp
-                                {{-- Total bar --}}
-                                <rect x="{{ $xBase }}" y="{{ $barY - $barTotalH }}" width="{{ $barW }}" height="{{ $barTotalH }}" rx="3" fill="#256abf" class="hover:opacity-80 transition-opacity cursor-pointer" @mouseenter="show('{{ $lbl }}', {{ $i }}, 0, 0)" @mouseleave="hide()"/>
-                                {{-- Terbit bar --}}
-                                <rect x="{{ $xBase + $barW }}" y="{{ $barY - $barTerbitH }}" width="{{ $barW }}" height="{{ $barTerbitH }}" rx="3" fill="#059669" class="hover:opacity-80 transition-opacity cursor-pointer" @mouseenter="show('{{ $lbl }}', {{ $i }}, 0, 0)" @mouseleave="hide()"/>
-                                {{-- x-axis label --}}
-                                <text x="{{ $xBase + $barW }}" y="{{ $h - 8 }}" text-anchor="middle" font-size="11" fill="#898781" font-family="system-ui,sans-serif">{{ $lbl }}</text>
-                            @endforeach
-                        </g>
-                        {{-- tooltip --}}
-                        <template x-if="tooltip !== null">
+        <div class="relative" style="width:100%;max-width:800px">
+            <svg viewBox="0 0 {{ $w }} {{ $h }}" class="w-full" style="overflow:visible"
+                @mousemove.prevent="let r=$refs.grafik.getBoundingClientRect(),m=$refs.grafik.createSVGPoint();m.x=$event.clientX;m.y=$event.clientY;let p=m.matrixTransform($refs.grafik.getScreenCTM().inverse());let idx=Math.round((p.x-{{ $padL }})/{{ $stepX }});idx=Math.max(0,Math.min(idx,{{ $ptCount-1 }}));let bx={{ $padL }}+idx*{{ $stepX }}+{{ $barW/2 }};this.show(['{{ implode("','", $labels) }}'][idx],idx,((bx/{{ $w }})*100+'%'),((p.y/{{ $h }})*100+'%'))"
+                @mouseleave="hide()">
+                <g x-ref="grafik">
+                    {{-- gridlines --}}
+                    @for($i=0;$i<=4;$i++)
+                        @php $gy = $padT + ($plotH/4)*$i; $gv = $maxVal - ($maxVal/4)*$i; @endphp
+                        <line x1="{{ $padL }}" y1="{{ $gy }}" x2="{{ $w-$padR }}" y2="{{ $gy }}" stroke="#e1e0d9" stroke-width="1"/>
+                        <text x="{{ $padL - 6 }}" y="{{ $gy + 4 }}" text-anchor="end" font-size="11" fill="#898781" font-family="system-ui,sans-serif">{{ round($gv) }}</text>
+                    @endfor
+                    {{-- bars --}}
+                    @foreach($labels as $i => $lbl)
+                        @php
+                            $xBase = $padL + $i * ($barW * 2 + $groupW);
+                            $barTotalH = $maxVal > 0 ? ($totalData[$i] / $maxVal) * $plotH : 0;
+                            $barTerbitH = $maxVal > 0 ? ($terbitData[$i] / $maxVal) * $plotH : 0;
+                            $barY = $plotH + $padT;
+                        @endphp
+                        {{-- Total bar --}}
+                        <rect x="{{ $xBase }}" y="{{ $barY - $barTotalH }}" width="{{ $barW }}" height="{{ $barTotalH }}" rx="3" fill="#256abf" class="hover:opacity-80 transition-opacity cursor-pointer" @mouseenter="show('{{ $lbl }}', {{ $i }}, 0, 0)" @mouseleave="hide()"/>
+                        {{-- Terbit bar --}}
+                        <rect x="{{ $xBase + $barW }}" y="{{ $barY - $barTerbitH }}" width="{{ $barW }}" height="{{ $barTerbitH }}" rx="3" fill="#059669" class="hover:opacity-80 transition-opacity cursor-pointer" @mouseenter="show('{{ $lbl }}', {{ $i }}, 0, 0)" @mouseleave="hide()"/>
+                        {{-- x-axis label --}}
+                        <text x="{{ $xBase + $barW }}" y="{{ $h - 8 }}" text-anchor="middle" font-size="11" fill="#898781" font-family="system-ui,sans-serif">{{ $lbl }}</text>
+                    @endforeach
+                </g>
+                {{-- tooltip --}}
+                <template x-if="tooltip !== null">
+                    <g>
+                        <rect x="0" y="0" width="160" height="62" fill="white" stroke="#e1e0d9" stroke-width="1" rx="6" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"/>
+                        <text x="10" y="20" font-size="12" font-weight="600" fill="#0b0b0b" font-family="system-ui,sans-serif" x-text="tooltip"></text>
+                        <template x-for="(row, idx) in [['Total','#256abf',{{ json_encode($totalData) }}[tooltip?.[1]]],['Terbit','#059669',{{ json_encode($terbitData) }}[tooltip?.[1]]]]" :key="idx">
                             <g>
-                                <rect x="0" y="0" width="160" height="62" fill="white" stroke="#e1e0d9" stroke-width="1" rx="6" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"/>
-                                <text x="10" y="20" font-size="12" font-weight="600" fill="#0b0b0b" font-family="system-ui,sans-serif" x-text="tooltip"></text>
-                                <template x-for="(row, idx) in [['Total','#256abf',{{ json_encode($totalData) }}[tooltip?.[1]]],['Terbit','#059669',{{ json_encode($terbitData) }}[tooltip?.[1]]]]" :key="idx">
-                                    <g>
-                                        <rect :x="10" :y="28+idx*14" width="8" :height="8" rx="2" :fill="row[1]"/>
-                                        <text x="24" y="36+idx*14" font-size="11" fill="#52514e" font-family="system-ui,sans-serif" x-text="row[0]"></text>
-                                        <text x="150" y="36+idx*14" text-anchor="end" font-size="11" font-weight="600" fill="#0b0b0b" font-family="system-ui,sans-serif" x-text="row[2] ?? 0"></text>
-                                    </g>
-                                </template>
+                                <rect :x="10" :y="28+idx*14" width="8" :height="8" rx="2" :fill="row[1]"/>
+                                <text x="24" y="36+idx*14" font-size="11" fill="#52514e" font-family="system-ui,sans-serif" x-text="row[0]"></text>
+                                <text x="150" y="36+idx*14" text-anchor="end" font-size="11" font-weight="600" fill="#0b0b0b" font-family="system-ui,sans-serif" x-text="row[2] ?? 0"></text>
                             </g>
                         </template>
-                    </svg>
-                </div>
-                {{-- Legend --}}
-                <div class="flex items-center gap-6 mt-3">
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-4 h-4 rounded" style="background:#256abf"></span>
-                        <span class="text-xs text-slate-600">Pengajuan</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-4 h-4 rounded" style="background:#059669"></span>
-                        <span class="text-xs text-slate-600">Terbit</span>
-                    </div>
-                </div>
-            </div>
-            {{-- Tabel data --}}
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-50 border-b border-slate-100">
-                        <tr>
-                            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Bulan</th>
-                            <th class="px-3 py-2 text-center text-xs font-semibold text-slate-500 uppercase">Total</th>
-                            <th class="px-3 py-2 text-center text-xs font-semibold text-slate-500 uppercase">Terbit</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50">
-                        @foreach($statBulanan as $s)
-                        <tr class="hover:bg-slate-50/50">
-                            <td class="px-3 py-2 text-sm font-medium text-slate-700">
-                                {{ $namaBulan[(int)(explode('-',$s->bulan)[1] ?? 1) - 1] ?? $s->bulan }}
-                            </td>
-                            <td class="px-3 py-2 text-center">
-                                <span class="inline-flex items-center justify-center min-w-[24px] h-5 rounded-full bg-blue-100 px-1.5 text-xs font-semibold text-blue-800">{{ $s->total }}</span>
-                            </td>
-                            <td class="px-3 py-2 text-center">
-                                <span class="inline-flex items-center justify-center min-w-[24px] h-5 rounded-full bg-emerald-100 px-1.5 text-xs font-semibold text-emerald-800">{{ $s->terbit }}</span>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                    </g>
+                </template>
+            </svg>
         </div>
-    </x-ui.card-content>
-</x-ui.card>
-@endif
+                {{-- Legend + toggle tabel --}}
+                <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
+                    <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded" style="background:#256abf"></span>
+                            <span class="text-xs text-slate-600">Pengajuan</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded" style="background:#059669"></span>
+                            <span class="text-xs text-slate-600">Terbit</span>
+                        </div>
+                    </div>
+                    <button type="button" @click="showTable = !showTable"
+                        class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900"
+                        :aria-expanded="showTable">
+                        <i class="ph ph-table" aria-hidden="true"></i>
+                        <span x-text="showTable ? 'Sembunyikan data per bulan' : 'Lihat data per bulan'"></span>
+                        <i class="ph ph-caret-down transition-transform" :class="showTable && 'rotate-180'" aria-hidden="true"></i>
+                    </button>
+                </div>
 
-{{-- Keterangan Role & Status (2 kolom) --}}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-    {{-- Keterangan Role --}}
-    <x-ui.card>
-        <x-ui.card-header title="Keterangan Role" />
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <tbody class="divide-y divide-slate-100">
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Kepala Balai</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = count($roleBucket['kabalai']); @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-blue-100 px-2 text-xs font-semibold text-blue-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Ketua Tim Sertifikasi</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = count($roleBucket['katim']); @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-purple-100 px-2 text-xs font-semibold text-purple-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Staff Sertifikasi</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = count($roleBucket['staff']); @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-cyan-100 px-2 text-xs font-semibold text-cyan-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Pemohon (PBF)</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = count($roleBucket['pemohon']); @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-amber-100 px-2 text-xs font-semibold text-amber-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                {{-- Tabel data per bulan (buka/tutup) --}}
+                <div x-show="showTable" x-cloak x-transition.opacity class="mt-4 overflow-x-auto rounded-lg border border-slate-100">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-100">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Bulan</th>
+                                <th class="px-3 py-2 text-center text-xs font-semibold text-slate-500 uppercase">Total</th>
+                                <th class="px-3 py-2 text-center text-xs font-semibold text-slate-500 uppercase">Terbit</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            @foreach($statBulanan as $s)
+                            <tr class="hover:bg-slate-50/50">
+                                <td class="px-3 py-2 text-sm font-medium text-slate-700">
+                                    {{ $namaBulan[(int)(explode('-',$s->bulan)[1] ?? 1) - 1] ?? $s->bulan }}
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    <span class="inline-flex items-center justify-center min-w-[24px] h-5 rounded-full bg-blue-100 px-1.5 text-xs font-semibold text-blue-800">{{ $s->total }}</span>
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    <span class="inline-flex items-center justify-center min-w-[24px] h-5 rounded-full bg-emerald-100 px-1.5 text-xs font-semibold text-emerald-800">{{ $s->terbit }}</span>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @else
+                <div class="py-12 text-center text-sm text-slate-400">
+                    <i class="ph ph-chart-bar text-3xl text-slate-300" aria-hidden="true"></i>
+                    <p class="mt-2">Belum ada data permohonan di tahun {{ $selectedYear }}.</p>
+                </div>
+            @endif
+        </x-ui.card-content>
     </x-ui.card>
 
-    {{-- Keterangan Status --}}
-    <x-ui.card>
-        <x-ui.card-header title="Keterangan Status" />
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <tbody class="divide-y divide-slate-100">
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Pengajuan</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['pengajuan'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-blue-100 px-2 text-xs font-semibold text-blue-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Proses Evaluasi</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['proses_evaluasi'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-cyan-100 px-2 text-xs font-semibold text-cyan-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Revisi 1</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['revisi_1'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-amber-100 px-2 text-xs font-semibold text-amber-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Revisi 2</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['revisi_2'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-amber-100 px-2 text-xs font-semibold text-amber-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Revisi 3</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['revisi_3'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-amber-100 px-2 text-xs font-semibold text-amber-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Menunggu Surat</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['menunggu_surat_pengesahan'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-violet-100 px-2 text-xs font-semibold text-violet-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Terbit Surat</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['terbit_surat_pengesahan'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-emerald-100 px-2 text-xs font-semibold text-emerald-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/50">
-                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Ditutup</td>
-                        <td class="px-4 py-2.5 text-right">
-                            @php $j = $counts['ditutup_pengajuan_ulang'] ?? 0; @endphp
-                            @if($j > 0)
-                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-red-100 px-2 text-xs font-semibold text-red-800">{{ $j }}</span>
-                            @else
-                                <span class="text-slate-400">0</span>
-                            @endif
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+    {{-- Keterangan Role & Status --}}
+    @php
+    $ketRoles = [
+        ['label' => 'Kepala Balai',          'icon' => 'ph-user-circle-gear', 'count' => count($roleBucket['kabalai']), 'color' => 'bg-blue-100 text-blue-800',     'children' => []],
+        ['label' => 'Ketua Tim Sertifikasi', 'icon' => 'ph-users-three',      'count' => count($roleBucket['katim']),   'color' => 'bg-purple-100 text-purple-800', 'children' => []],
+        ['label' => 'Staff Sertifikasi',     'icon' => 'ph-user-list',        'count' => count($roleBucket['staff']),   'color' => 'bg-cyan-100 text-cyan-800',     'children' => [
+            ['label' => 'Verifikasi / Evaluasi', 'count' => $counts['proses_evaluasi'] ?? 0,           'color' => 'bg-cyan-100 text-cyan-800'],
+            ['label' => 'Menunggu Surat',        'count' => $counts['menunggu_surat_pengesahan'] ?? 0, 'color' => 'bg-violet-100 text-violet-800'],
+        ]],
+        ['label' => 'Pemohon (PBF)',         'icon' => 'ph-storefront',       'count' => count($roleBucket['pemohon']), 'color' => 'bg-amber-100 text-amber-800',   'children' => [
+            ['label' => 'Revisi 1', 'count' => $counts['revisi_1'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
+            ['label' => 'Revisi 2', 'count' => $counts['revisi_2'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
+            ['label' => 'Revisi 3', 'count' => $counts['revisi_3'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
+        ]],
+    ];
+    $ketAkhir = [
+        ['label' => 'Terbit Surat', 'icon' => 'ph-seal-check', 'count' => $counts['terbit_surat_pengesahan'] ?? 0, 'color' => 'bg-emerald-100 text-emerald-800'],
+        ['label' => 'Ditutup',      'icon' => 'ph-x-circle',   'count' => $counts['ditutup_pengajuan_ulang'] ?? 0, 'color' => 'bg-red-100 text-red-800'],
+    ];
+    @endphp
+    <x-ui.card class="pb-2">
+        <div class="px-6 pb-4">
+            <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Keterangan Role &amp; Status</h3>
+            <p class="mt-1.5 text-sm text-slate-500">Posisi permohonan saat ini</p>
         </div>
+        <ul class="divide-y divide-slate-100 border-t border-slate-100">
+            @foreach($ketRoles as $role)
+            <li x-data="{ open: false }">
+                @if($role['children'])
+                <button type="button" @click="open = !open" :aria-expanded="open"
+                    class="w-full flex items-center justify-between gap-3 px-6 py-3 text-left hover:bg-slate-50/70 transition-colors">
+                @else
+                <div class="flex items-center justify-between gap-3 px-6 py-3">
+                @endif
+                    <span class="flex items-center gap-2.5 text-sm font-medium text-slate-700">
+                        <i class="ph {{ $role['icon'] }} text-lg text-slate-400" aria-hidden="true"></i>
+                        {{ $role['label'] }}
+                    </span>
+                    <span class="flex items-center gap-2">
+                        @if($role['count'] > 0)
+                            <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full px-2 text-xs font-semibold {{ $role['color'] }}">{{ $role['count'] }}</span>
+                        @else
+                            <span class="min-w-[28px] text-center text-sm text-slate-400">0</span>
+                        @endif
+                        @if($role['children'])
+                            <i class="ph ph-caret-down text-slate-400 transition-transform" :class="open && 'rotate-180'" aria-hidden="true"></i>
+                        @else
+                            <span class="w-4" aria-hidden="true"></span>
+                        @endif
+                    </span>
+                @if($role['children'])
+                </button>
+                <ul x-show="open" x-cloak x-transition.opacity class="bg-slate-50/60 pb-1">
+                    @foreach($role['children'] as $child)
+                    <li class="flex items-center justify-between gap-3 py-2 pl-12 pr-12">
+                        <span class="flex items-center gap-1.5 text-sm text-slate-500">
+                            <i class="ph ph-arrow-elbow-down-right text-slate-300" aria-hidden="true"></i>{{ $child['label'] }}
+                        </span>
+                        @if($child['count'] > 0)
+                            <span class="inline-flex items-center justify-center min-w-[24px] h-5 rounded-full px-1.5 text-xs font-semibold {{ $child['color'] }}">{{ $child['count'] }}</span>
+                        @else
+                            <span class="min-w-[24px] text-center text-xs text-slate-400">0</span>
+                        @endif
+                    </li>
+                    @endforeach
+                </ul>
+                @else
+                </div>
+                @endif
+            </li>
+            @endforeach
+        </ul>
+
+        <p class="px-6 pt-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Status Akhir</p>
+        <ul class="divide-y divide-slate-100 border-t border-slate-100">
+            @foreach($ketAkhir as $item)
+            <li class="flex items-center justify-between gap-3 px-6 py-3">
+                <span class="flex items-center gap-2.5 text-sm font-medium text-slate-700">
+                    <i class="ph {{ $item['icon'] }} text-lg text-slate-400" aria-hidden="true"></i>
+                    {{ $item['label'] }}
+                </span>
+                <span class="flex items-center gap-2">
+                    @if($item['count'] > 0)
+                        <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full px-2 text-xs font-semibold {{ $item['color'] }}">{{ $item['count'] }}</span>
+                    @else
+                        <span class="min-w-[28px] text-center text-sm text-slate-400">0</span>
+                    @endif
+                    <span class="w-4" aria-hidden="true"></span>
+                </span>
+            </li>
+            @endforeach
+        </ul>
     </x-ui.card>
 </div>
 
 {{-- Permohonan --}}
-<div class="flex items-center justify-between mb-3">
-    <h2 class="text-base font-semibold text-blue-900">Permohonan</h2>
-    <x-ui.button variant="default" size="sm" href="{{ route('internal.kabalai.permohonan.create') }}">
-        <i class="ph ph-plus" aria-hidden="true"></i> Input Permohonan
-    </x-ui.button>
-</div>
+<x-ui.card>
+    <div class="flex items-center justify-between gap-3 px-6 pb-4">
+        <div>
+            <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Permohonan</h3>
+            <p class="mt-1.5 text-sm text-slate-500">{{ $permohonans->total() }} permohonan di tahun {{ $selectedYear }}</p>
+        </div>
+        <x-ui.button variant="default" size="sm" href="{{ route('internal.kabalai.permohonan.create') }}">
+            <i class="ph ph-plus" aria-hidden="true"></i> Input Permohonan
+        </x-ui.button>
+    </div>
 
-{{-- Filter --}}
-<div class="bg-white rounded-xl border border-slate-200 p-4 mb-4">
-    <form method="GET" action="" class="flex flex-wrap gap-4 items-end">
-        {{-- Tahun --}}
+    {{-- Filter --}}
+    <form method="GET" action="" class="flex flex-wrap gap-3 items-end px-6 py-4 border-t border-slate-100 bg-slate-50/60">
         <input type="hidden" name="tahun" value="{{ $selectedYear }}">
 
-        {{-- Search --}}
         <div class="flex-1 min-w-[200px]">
-            <label class="block text-xs font-medium text-slate-600 mb-1">Search</label>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Cari</label>
             <input type="text" name="search" value="{{ $search }}"
-                placeholder="Ketik NIB atau Nama PBF..."
-                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                placeholder="No. Registrasi, NIB, atau Nama PBF..."
+                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         </div>
 
-        {{-- Status Filter --}}
         <div class="min-w-[180px]">
             <label class="block text-xs font-medium text-slate-600 mb-1">Status</label>
             <select name="status"
@@ -385,42 +352,27 @@ $stepX = $barW * 2 + $groupW;
             </select>
         </div>
 
-        {{-- Dari Tanggal --}}
         <div class="min-w-[150px]">
             <label class="block text-xs font-medium text-slate-600 mb-1">Dari Tanggal</label>
             <input type="date" name="dari" value="{{ $dari }}"
-                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         </div>
 
-        {{-- Sampai Tanggal --}}
         <div class="min-w-[150px]">
             <label class="block text-xs font-medium text-slate-600 mb-1">Sampai Tanggal</label>
             <input type="date" name="sampai" value="{{ $sampai }}"
-                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         </div>
 
-        {{-- Buttons --}}
         <div class="flex items-end gap-2">
-            <x-ui.button type="submit" variant="default">Terapkan</x-ui.button>
+            <x-ui.button type="submit" variant="default">
+                <i class="ph ph-funnel" aria-hidden="true"></i> Terapkan
+            </x-ui.button>
             @if($search || $statusFilter || $dari || $sampai)
                 <x-ui.button type="button" variant="ghost" onclick="window.location='?tahun={{ $selectedYear }}'">Reset</x-ui.button>
             @endif
         </div>
     </form>
-</div>
-
-<x-ui.card>
-    <div class="flex items-center justify-between px-4 pt-4 pb-0">
-        <h3 class="text-sm font-semibold text-slate-700">{{ $permohonans->total() }} Permohonan</h3>
-        <form method="GET" action="" class="flex items-center gap-2">
-            <select name="tahun" onchange="this.form.submit()"
-                class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
-                @foreach($availableYears as $y)
-                    <option value="{{ $y }}" {{ $y === $selectedYear ? 'selected' : '' }}>{{ $y }}</option>
-                @endforeach
-            </select>
-        </form>
-    </div>
     <x-ui.card-content class="p-0">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
