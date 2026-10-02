@@ -4,31 +4,34 @@
 @section('content')
 <?php
 $pageTitle = 'Evaluasi: ' . $permohonan->no_registrasi;
-$statusRevisi = in_array($permohonan->status_saat_ini, [
-    App\Models\Permohonan::STATUS_REVISI_1,
-    App\Models\Permohonan::STATUS_REVISI_2,
-    App\Models\Permohonan::STATUS_REVISI_3,
-]);
-$revisiKe = (int) filter_var($permohonan->status_saat_ini, FILTER_SANITIZE_NUMBER_INT);
+$revisiKe = (int) $permohonan->revisi_ke;
 $revisiBerikutnya = $revisiKe + 1;
 $labelRevisiSekarang = $revisiKe > 0 ? "Revisi {$revisiKe}" : "Proses Awal";
 $labelRevisiBerikutnya = "Revisi {$revisiBerikutnya}";
 // Banner hanya muncul saat di siklus revisi (artinya revisi sebelumnya sudah diupload pemohon)
-$showRevisiBanner = $statusRevisi;
+$showRevisiBanner = $revisiKe > 0;
 ?>
 
 <div x-data="{
     showConfirm: false,
     hasilDipilih: null,
-    confirmRevisi() {
-        this.hasilDipilih = $event.target.closest('form').querySelector('input[name=\'hasil\']:checked').value;
-        if (this.hasilDipilih === 'tidak_lengkap' && {{ $statusRevisi ? 'true' : 'false' }}) {
+    submitting: false,
+    confirmRevisi(e) {
+        if (this.submitting) {
+            e.preventDefault();
+            return;
+        }
+        const checked = e.target.querySelector('input[name=\'hasil\']:checked');
+        this.hasilDipilih = checked ? checked.value : null;
+        if (this.hasilDipilih === 'tidak_lengkap' && {{ $showRevisiBanner ? 'true' : 'false' }}) {
+            e.preventDefault();
             this.showConfirm = true;
             // Salin nilai catatan ke hidden field di form konfirmasi
-            const mainForm = $event.target.closest('form');
+            const mainForm = e.target;
             const catatanValue = mainForm.querySelector('textarea[name=\'catatan\']').value;
             document.getElementById('confirm_catatan').value = catatanValue;
-            $event.preventDefault();
+        } else {
+            this.submitting = true;
         }
     }
 }">
@@ -114,7 +117,7 @@ $showRevisiBanner = $statusRevisi;
 <x-ui.card class="mt-4">
     <x-ui.card-header title="Form Evaluasi" description="Tentukan kelengkapan permohonan" />
     <x-ui.card-content>
-        <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="space-y-5" @submit="confirmRevisi()">
+        <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="space-y-5" @submit="confirmRevisi($event)">
             @csrf @method('PUT')
 
             <div>
@@ -140,7 +143,7 @@ $showRevisiBanner = $statusRevisi;
             <x-ui.textarea label="Catatan Ketidaksesuaian" name="catatan" :value="old('catatan')" placeholder="Jelaskan dokumen atau informasi yang perlu diperbaiki oleh pemohon..." :rows="4" />
 
             <div class="flex items-center gap-3 pt-2">
-                <x-ui.button type="submit" variant="default">Simpan Evaluasi</x-ui.button>
+                <x-ui.button type="submit" variant="default" x-bind:disabled="submitting">Simpan Evaluasi</x-ui.button>
                 <x-ui.button variant="outline" href="{{ route('internal.staff.dashboard') }}">Batal</x-ui.button>
             </div>
         </form>
@@ -181,11 +184,11 @@ $showRevisiBanner = $statusRevisi;
                 <button type="button" @click="showConfirm = false" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium text-sm transition-colors">
                     Batal
                 </button>
-                <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="flex-1" @submit.stop>
+                <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="flex-1" @submit="if(submitting){ $event.preventDefault(); return; } submitting = true;">
                     @csrf @method('PUT')
                     <input type="hidden" name="hasil" value="tidak_lengkap">
                     <input type="hidden" name="catatan" id="confirm_catatan">
-                    <x-ui.button type="submit" variant="destructive" class="w-full">Ya, Kirim</x-ui.button>
+                    <x-ui.button type="submit" variant="destructive" class="w-full" x-bind:disabled="submitting">Ya, Kirim</x-ui.button>
                 </form>
             </div>
         </div>
@@ -193,7 +196,7 @@ $showRevisiBanner = $statusRevisi;
 </div>
 
 {{-- Spinner overlay --}}
-<div x-data="{ submitting: false }" @submit="submitting = true" x-show="submitting" x-cloak
+<div x-show="submitting" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
     <div class="bg-white rounded-xl shadow-xl p-6 flex items-center gap-3">
         <svg class="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>

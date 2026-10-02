@@ -21,6 +21,7 @@ class EvaluasiController extends Controller
         $user = Auth::user();
         $aktif = $permohonan->distribusiAktif;
         abort_if(!$aktif || $aktif->staff_id !== $user->id, 403);
+        abort_if($permohonan->status_saat_ini !== Permohonan::STATUS_PROSES_EVALUASI, 403, 'Permohonan tidak dalam tahap proses evaluasi.');
 
         $dokumen = DokumenPermohonan::where('permohonan_id', $permohonan->id)->get();
         $evaluasi = Evaluasi::where('permohonan_id', $permohonan->id)->latest()->first();
@@ -36,6 +37,7 @@ class EvaluasiController extends Controller
         $user = Auth::user();
         $aktif = $permohonan->distribusiAktif;
         abort_if(!$aktif || $aktif->staff_id !== $user->id, 403);
+        abort_if($permohonan->status_saat_ini !== Permohonan::STATUS_PROSES_EVALUASI, 422, 'Permohonan tidak dalam tahap proses evaluasi.');
 
         $data = $request->validate([
             'hasil' => 'required|in:lengkap,tidak_lengkap',
