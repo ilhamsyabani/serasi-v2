@@ -68,12 +68,14 @@ class DashboardController extends Controller
             ->pluck('total', 'bulan');
 
         $terbitPerBulan = SuratPengesahan::query()
+            ->whereHas('permohonan')
             ->whereYear('tanggal_upload', $year)
             ->selectRaw("{$dateFormatTerbit} as bulan, COUNT(*) as terbit")
             ->groupByRaw($dateFormatTerbit)
             ->pluck('terbit', 'bulan');
 
         $ditutupPerBulan = StatusLog::query()
+            ->whereHas('permohonan')
             ->where('status', Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG)
             ->whereYear('waktu_mulai', $year)
             ->selectRaw("{$dateFormatLog} as bulan, COUNT(*) as ditutup")
@@ -110,6 +112,7 @@ class DashboardController extends Controller
             ->pluck('year');
 
         $yearsTerbit = SuratPengesahan::query()
+            ->whereHas('permohonan')
             ->selectRaw("{$yearExprTerbit} as year")
             ->distinct()
             ->pluck('year');

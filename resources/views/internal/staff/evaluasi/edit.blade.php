@@ -119,6 +119,7 @@ $showRevisiBanner = $revisiKe > 0;
     <x-ui.card-content>
         <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="space-y-5" @submit="confirmRevisi($event)">
             @csrf @method('PUT')
+            <input type="hidden" name="siklus_ke" value="{{ ($evaluasi?->siklus_ke ?? 0) + 1 }}">
 
             <div>
                 <p class="text-sm font-medium text-slate-700 mb-2">Hasil Evaluasi</p>
@@ -188,6 +189,7 @@ $showRevisiBanner = $revisiKe > 0;
                     @csrf @method('PUT')
                     <input type="hidden" name="hasil" value="tidak_lengkap">
                     <input type="hidden" name="catatan" id="confirm_catatan">
+                    <input type="hidden" name="siklus_ke" value="{{ ($evaluasi?->siklus_ke ?? 0) + 1 }}">
                     <x-ui.button type="submit" variant="destructive" class="w-full" x-bind:disabled="submitting">Ya, Kirim</x-ui.button>
                 </form>
             </div>
