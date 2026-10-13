@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Internal\Kabalai;
 
 use App\Http\Controllers\Controller;
 use App\Models\Permohonan;
+use App\Models\StatusLog;
+use App\Models\SuratPengesahan;
 use App\Services\SlaCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,11 +28,15 @@ class DashboardController extends Controller
 
         // SQLite uses strftime, MySQL uses DATE_FORMAT
         $driver = DB::connection()->getDriverName();
-        if ($driver === 'sqlite') {
-            $dateFormat = "strftime('%Y-%m', tanggal_pengajuan)";
-        } else {
-            $dateFormat = "DATE_FORMAT(tanggal_pengajuan, '%Y-%m')";
-        }
+        $dateFormatPengajuan = $driver === 'sqlite'
+            ? "strftime('%Y-%m', tanggal_pengajuan)"
+            : "DATE_FORMAT(tanggal_pengajuan, '%Y-%m')";
+        $dateFormatTerbit = $driver === 'sqlite'
+            ? "strftime('%Y-%m', tanggal_upload)"
+            : "DATE_FORMAT(tanggal_upload, '%Y-%m')";
+        $dateFormatLog = $driver === 'sqlite'
+            ? "strftime('%Y-%m', waktu_mulai)"
+            : "DATE_FORMAT(waktu_mulai, '%Y-%m')";
 
         // Permohonan paginated + filtered
         $permohonans = Permohonan::query()
@@ -54,27 +60,64 @@ class DashboardController extends Controller
             ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
             ->get();
 
-        $statBulanan = Permohonan::query()
-            ->selectRaw("{$dateFormat} as bulan")
-            ->selectRaw("COUNT(*) as total")
-            ->selectRaw("SUM(CASE WHEN status_saat_ini = 'terbit_surat_pengesahan' THEN 1 ELSE 0 END) as terbit")
-            ->selectRaw("SUM(CASE WHEN status_saat_ini = 'ditutup_pengajuan_ulang' THEN 1 ELSE 0 END) as ditutup")
+        // Statistik bulanan: Pengajuan dihitung dari tanggal_pengajuan, Terbit dihitung dari tanggal terbit surat
+        $pengajuanPerBulan = Permohonan::query()
             ->whereYear('tanggal_pengajuan', $year)
-            ->groupByRaw($dateFormat)
-            ->orderByRaw($dateFormat)
-            ->get();
+            ->selectRaw("{$dateFormatPengajuan} as bulan, COUNT(*) as total")
+            ->groupByRaw($dateFormatPengajuan)
+            ->pluck('total', 'bulan');
+
+        $terbitPerBulan = SuratPengesahan::query()
+            ->whereYear('tanggal_upload', $year)
+            ->selectRaw("{$dateFormatTerbit} as bulan, COUNT(*) as terbit")
+            ->groupByRaw($dateFormatTerbit)
+            ->pluck('terbit', 'bulan');
+
+        $ditutupPerBulan = StatusLog::query()
+            ->where('status', Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG)
+            ->whereYear('waktu_mulai', $year)
+            ->selectRaw("{$dateFormatLog} as bulan, COUNT(*) as ditutup")
+            ->groupByRaw($dateFormatLog)
+            ->pluck('ditutup', 'bulan');
+
+        $semuaBulan = $pengajuanPerBulan->keys()
+            ->merge($terbitPerBulan->keys())
+            ->merge($ditutupPerBulan->keys())
+            ->unique()
+            ->sort()
+            ->values();
+
+        $statBulanan = $semuaBulan->map(function ($bln) use ($pengajuanPerBulan, $terbitPerBulan, $ditutupPerBulan) {
+            return (object) [
+                'bulan' => $bln,
+                'total' => (int) ($pengajuanPerBulan[$bln] ?? 0),
+                'terbit' => (int) ($terbitPerBulan[$bln] ?? 0),
+                'ditutup' => (int) ($ditutupPerBulan[$bln] ?? 0),
+            ];
+        });
 
         // Available years (from earliest record to current year)
-        $yearExpr = $driver === 'sqlite'
+        $yearExprPengajuan = $driver === 'sqlite'
             ? "CAST(strftime('%Y', tanggal_pengajuan) AS INTEGER)"
             : 'YEAR(tanggal_pengajuan)';
+        $yearExprTerbit = $driver === 'sqlite'
+            ? "CAST(strftime('%Y', tanggal_upload) AS INTEGER)"
+            : 'YEAR(tanggal_upload)';
 
-        $availableYears = Permohonan::query()
-            ->selectRaw("{$yearExpr} as year")
+        $yearsPengajuan = Permohonan::query()
+            ->selectRaw("{$yearExprPengajuan} as year")
             ->distinct()
-            ->orderByDesc('year')
-            ->pluck('year')
+            ->pluck('year');
+
+        $yearsTerbit = SuratPengesahan::query()
+            ->selectRaw("{$yearExprTerbit} as year")
+            ->distinct()
+            ->pluck('year');
+
+        $availableYears = $yearsPengajuan->merge($yearsTerbit)
             ->filter()
+            ->unique()
+            ->sortDesc()
             ->values();
 
         if ($availableYears->isEmpty() || !$availableYears->contains(now()->year)) {
