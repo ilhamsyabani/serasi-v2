@@ -296,6 +296,7 @@ $stepX = $barW * 2 + $groupW;
             @endforeach
         </ul>
 
+        <!--
         <p class="px-6 pt-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Status Akhir</p>
         <ul class="divide-y divide-slate-100 border-t border-slate-100">
             @foreach($ketAkhir as $item)
@@ -314,7 +315,7 @@ $stepX = $barW * 2 + $groupW;
                 </span>
             </li>
             @endforeach
-        </ul>
+        </ul> -->
     </x-ui.card>
 </div>
 
