@@ -70,6 +70,17 @@ class WhatsappSender
                 return false;
             }
 
+            // Parse JSON response body — Wablas API mengembalikan {status: bool, message: string}
+            $decoded = json_decode($response, true);
+            if (json_last_error() === JSON_ERROR_NONE && ($decoded['status'] ?? true) === false) {
+                Log::error('WhatsappSender: Gateway menolak pesan', [
+                    'no_wa'    => $noWa,
+                    'response' => $response,
+                    'message'  => $decoded['message'] ?? 'unknown',
+                ]);
+                return false;
+            }
+
             Log::info("WhatsappSender: Pesan berhasil dikirim ke $noWa", [
                 'response' => $response,
             ]);
