@@ -13,12 +13,12 @@ use Illuminate\Support\Str;
         <p class="text-sm text-slate-500">Riwayat pengiriman Email & WhatsApp untuk semua permohonan</p>
     </div>
     @if($stats['gagal'] > 0)
-        <form action="{{ route('internal.adminit.notifikasi-log.resend-all') }}" method="POST">
+        <form action="{{ route('internal.adminit.notifikasi-log.resend-all') }}" method="POST"
+              onsubmit="return confirmResend(event, this, true);">
             @csrf
             <button type="submit"
-                    onclick="if(!confirm('Kirim ulang semua notifikasi yang gagal?')) return false; this.disabled=true; this.innerHTML='<i class=\'ph ph-circle-notch animate-spin mr-1\'></i>Mengirim...';"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 shadow-sm transition-colors">
-                <i class="ph ph-arrows-clockwise" aria-hidden="true"></i>
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 shadow-sm transition-colors cursor-pointer">
+                <i class="ph ph-arrows-clockwise text-base" aria-hidden="true"></i>
                 Kirim Ulang Semua ({{ $stats['gagal'] }})
             </button>
         </form>
@@ -26,7 +26,7 @@ use Illuminate\Support\Str;
 </div>
 
 {{-- Statistik Ringkasan --}}
-<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
     <x-ui.stat-card label="Total" :value="$stats['total']" icon="ph-bell" color="slate" />
     <x-ui.stat-card label="Email" :value="$stats['email']" icon="ph-envelope" color="blue" />
     <x-ui.stat-card label="WhatsApp" :value="$stats['whatsapp']" icon="ph-whatsapp-logo" color="emerald" />
@@ -138,18 +138,21 @@ use Illuminate\Support\Str;
                             @if($tujuan)
                                 @if($log->tujuan_tipe === 'pemohon')
                                     <div class="text-xs">
+                                        <span class="font-medium text-slate-700">{{ $tujuan->nama_pbf ?? $log->permohonan?->nama_pbf_snapshot ?? '-' }}</span>
                                         @if($isEmail)
-                                        <span class="font-medium text-slate-700">{{ $log->permohonan->pbf->nama_pbf ?? '-' }}</span>
-                                        <span class="block text-slate-400">{{ $log->permohonan->pbf->email ?? '-' }}</span>
+                                            <span class="block text-slate-400">{{ $tujuan->email ?? $log->permohonan?->email_snapshot ?? $log->permohonan?->pbf?->email ?? '-' }}</span>
                                         @else
-                                        <span class="font-medium text-slate-700">{{ $log->permohonan->pbf->nama_pbf ?? '-' }}</span>
-                                        <span class="block text-slate-400">{{ $log->permohonan->pbf ?? '-' }}</span>
+                                            <span class="block text-slate-400">{{ $tujuan->no_whatsapp ?? $log->permohonan?->no_wa_snapshot ?? $log->permohonan?->pbf?->no_whatsapp ?? '-' }}</span>
                                         @endif
                                     </div>
                                 @else
                                     <div class="text-xs">
-                                        <span class="font-medium text-slate-700">{{ $tujuan->nama }}</span>
-                                        <span class="block text-slate-400">{{ $tujuan->email }}</span>
+                                        <span class="font-medium text-slate-700">{{ $tujuan->nama }} <span class="text-slate-400 font-normal">({{ ucfirst(str_replace('_', ' ', $log->tujuan_tipe)) }})</span></span>
+                                        @if($isEmail)
+                                            <span class="block text-slate-400">{{ $tujuan->email ?? '-' }}</span>
+                                        @else
+                                            <span class="block text-slate-400">{{ $tujuan->no_whatsapp ?? '-' }}</span>
+                                        @endif
                                     </div>
                                 @endif
                             @else
@@ -172,6 +175,9 @@ use Illuminate\Support\Str;
                                 @if($log->sent_at)
                                     <span class="block text-xs text-slate-400 mt-0.5">{{ $log->sent_at->format('H:i:s') }}</span>
                                 @endif
+                                @if($log->retry_count > 0)
+                                    <span class="block text-[11px] text-slate-400 mt-0.5">Retry: {{ $log->retry_count }}x</span>
+                                @endif
                             @elseif($log->status_kirim === 'pending')
                                 <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600">
                                     <span class="h-2 w-2 rounded-full bg-amber-500"></span>Pending
@@ -181,6 +187,9 @@ use Illuminate\Support\Str;
                                     <span class="inline-flex items-center gap-1.5 text-xs font-medium text-red-600">
                                         <span class="h-2 w-2 rounded-full bg-red-500"></span>Gagal
                                     </span>
+                                    @if($log->retry_count > 0)
+                                        <span class="block text-[11px] text-slate-400 mt-0.5">Retry: {{ $log->retry_count }}x</span>
+                                    @endif
                                     @if($log->error_message)
                                         <span class="block text-xs text-red-400 mt-0.5 max-w-[200px] truncate"
                                               title="{{ $log->error_message }}">
@@ -194,18 +203,28 @@ use Illuminate\Support\Str;
                         {{-- Aksi --}}
                         <td class="px-4 py-3 text-right whitespace-nowrap">
                             @if($isGagal)
-                                <form action="{{ route('internal.adminit.notifikasi-log.resend', $log) }}" method="POST" class="inline">
+                                <form action="{{ route('internal.adminit.notifikasi-log.resend', $log) }}" method="POST" class="inline"
+                                      onsubmit="return confirmResend(event, this, false, '{{ $log->channel }}');">
                                     @csrf
                                     <button type="submit"
-                                            onclick="if(!confirm('Kirim ulang notifikasi ini?')) return false; this.disabled=true; this.querySelector('i').classList.add('animate-spin');"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 transition-colors border border-red-200 shadow-sm">
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 transition-colors border border-red-200 shadow-sm cursor-pointer">
                                         <i class="ph ph-arrows-clockwise" aria-hidden="true"></i>Kirim Ulang
                                     </button>
                                 </form>
                             @else
-                                <span class="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                                    <i class="ph-fill ph-check-circle" aria-hidden="true"></i>Terkirim
-                                </span>
+                                <div class="inline-flex items-center gap-2">
+                                    <span class="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                                        <i class="ph-fill ph-check-circle" aria-hidden="true"></i>Terkirim
+                                    </span>
+                                    <form action="{{ route('internal.adminit.notifikasi-log.resend', $log) }}" method="POST" class="inline"
+                                          onsubmit="return confirmResend(event, this, false, '{{ $log->channel }}', true);">
+                                        @csrf
+                                        <button type="submit" title="Kirim ulang kembali"
+                                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer">
+                                            <i class="ph ph-arrows-clockwise" aria-hidden="true"></i>Kirim Ulang
+                                        </button>
+                                    </form>
+                                </div>
                             @endif
                         </td>
                     </tr>
@@ -231,4 +250,84 @@ use Illuminate\Support\Str;
     {{ $logs->links() }}
 </div>
 @endif
+
+<script>
+function confirmResend(event, form, isAll = false, channel = '', isResendAgain = false) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    if (!window.Swal) {
+        const fallbackMsg = isAll
+            ? 'Kirim ulang semua notifikasi yang gagal?'
+            : (isResendAgain ? 'Kirim ulang notifikasi ini lagi?' : 'Kirim ulang notifikasi ini?');
+        if (confirm(fallbackMsg)) {
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+            form.submit();
+        }
+        return false;
+    }
+
+    let title = 'Kirim Ulang Notifikasi?';
+    let text = 'Notifikasi akan dikirim ulang ke alamat/nomor tujuan.';
+    let icon = 'question';
+    let confirmBtnText = 'Ya, Kirim Ulang';
+    let confirmBtnColor = '#059669';
+
+    if (isAll) {
+        title = 'Kirim Ulang Semua?';
+        text = 'Semua notifikasi yang berstatus gagal akan dikirim ulang secara otomatis.';
+        icon = 'warning';
+        confirmBtnText = 'Ya, Kirim Semua';
+        confirmBtnColor = '#dc2626';
+    } else if (channel === 'email') {
+        title = isResendAgain ? 'Kirim Ulang Email Ini Lagi?' : 'Kirim Ulang Email?';
+        text = 'Pesan email akan dikirim ulang ke alamat email penerima.';
+        confirmBtnColor = '#2563eb';
+    } else if (channel === 'whatsapp') {
+        title = isResendAgain ? 'Kirim Ulang WhatsApp Ini Lagi?' : 'Kirim Ulang WhatsApp?';
+        text = 'Pesan WhatsApp akan dikirim ulang ke nomor WhatsApp penerima.';
+        confirmBtnColor = '#059669';
+    }
+
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: icon,
+        showCancelButton: true,
+        confirmButtonColor: confirmBtnColor,
+        cancelButtonColor: '#64748b',
+        confirmButtonText: confirmBtnText,
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        focusCancel: false,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Sedang Mengirim...',
+                text: 'Mohon tunggu, proses pengiriman sedang berlangsung.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.disabled = true;
+                const iconElem = btn.querySelector('i');
+                if (iconElem) {
+                    iconElem.classList.add('animate-spin');
+                }
+            }
+
+            form.submit();
+        }
+    });
+
+    return false;
+}
+</script>
 @endsection

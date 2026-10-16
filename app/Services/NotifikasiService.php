@@ -53,11 +53,15 @@ class NotifikasiService
         }
 
         $status = Notifikasi::STATUS_TERKIRIM;
+        $errorMessage = null;
 
         try {
             if ($channel === Notifikasi::CHANNEL_EMAIL) {
                 $tujuanEmail = $this->resolveEmail($permohonan, $tujuanTipe, $tujuanId);
-                if ($tujuanEmail) {
+                if (!$tujuanEmail) {
+                    $status = Notifikasi::STATUS_GAGAL;
+                    $errorMessage = 'Alamat email tujuan kosong (' . $tujuanTipe . ')';
+                } else {
                     Mail::to($tujuanEmail)->send(
                         new NotifikasiMail($isi, $templateKode, $subjek)
                     );
@@ -75,8 +79,10 @@ class NotifikasiService
                         'nama'         => $nama,
                     ]);
                     $status = Notifikasi::STATUS_GAGAL;
+                    $errorMessage = 'Nomor WhatsApp tujuan kosong (' . $tujuanTipe . ')';
                 } elseif (!$this->whatsappSender()->sendWithRetry($noWa, $isi)) {
                     $status = Notifikasi::STATUS_GAGAL;
+                    $errorMessage = 'Gateway WhatsApp menolak pengiriman';
                 }
             }
         } catch (\Throwable $e) {
@@ -87,6 +93,7 @@ class NotifikasiService
                 'error'        => $e->getMessage(),
             ]);
             $status = Notifikasi::STATUS_GAGAL;
+            $errorMessage = $e->getMessage();
         }
 
         return Notifikasi::create([
@@ -94,8 +101,10 @@ class NotifikasiService
             'tujuan_tipe'   => $tujuanTipe,
             'tujuan_id'     => $tujuanId,
             'channel'       => $channel,
-            'template_kode'  => $templateKode,
+            'template_kode' => $templateKode,
             'status_kirim'  => $status,
+            'sent_at'       => $status === Notifikasi::STATUS_TERKIRIM ? now() : null,
+            'error_message' => $status === Notifikasi::STATUS_GAGAL ? ($errorMessage ?? 'Gagal kirim') : null,
         ]);
     }
 

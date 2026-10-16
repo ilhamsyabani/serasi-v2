@@ -20,12 +20,21 @@ class NotifikasiLogController extends Controller
         $isAdminIt = $user->role?->kode === 'admin_it';
 
         $query = Notifikasi::query()
-            ->with(['permohonan:id,no_registrasi,nama_pbf_snapshot', 'permohonan.pbf:id,nama_pbf,email,no_whatsapp'])
+            ->with(['permohonan:id,no_registrasi,nama_pbf_snapshot,pbf_id', 'permohonan.pbf:id,nama_pbf,email,no_whatsapp'])
             ->latest();
 
         if (!$isAdminIt) {
             $permohonanIds = Permohonan::where('kepala_balai_id', $user->id)->pluck('id');
             $query->whereIn('permohonan_id', $permohonanIds);
+        }
+
+        // Filter search (no_registrasi atau nama_pbf)
+        if ($request->filled('search')) {
+            $search = trim($request->get('search'));
+            $query->whereHas('permohonan', function ($q) use ($search) {
+                $q->where('no_registrasi', 'like', "%{$search}%")
+                  ->orWhere('nama_pbf_snapshot', 'like', "%{$search}%");
+            });
         }
 
         // Filter status
@@ -101,154 +110,13 @@ class NotifikasiLogController extends Controller
             );
         }
 
-        $permohonan = $notifikasi->permohonan;
+        $res = $this->executeResend($notifikasi);
 
-        if ($notifikasi->channel === Notifikasi::CHANNEL_WHATSAPP) {
-            $noWa = $permohonan->pbf->no_whatsapp ?? null;
-            if (!$noWa) {
-                return back()->with('error', 'Nomor WhatsApp pemohon kosong. Tidak dapat mengirim ulang.');
-            }
-
-            $template = \App\Models\TemplateNotifikasi::where('kode_event', $notifikasi->template_kode)
-                ->where('channel', Notifikasi::CHANNEL_WHATSAPP)
-                ->where('is_active', true)
-                ->first();
-
-            if (!$template) {
-                return back()->with('error', 'Template WhatsApp tidak ditemukan.');
-            }
-
-            $isi = $template->isi_template;
-            $placeholders = [
-                '{{no_registrasi}}' => $permohonan->no_registrasi,
-                '{{nama_pbf}}' => $permohonan->nama_pbf_snapshot,
-            ];
-            foreach ($placeholders as $key => $val) {
-                $isi = str_replace($key, $val, $isi);
-            }
-
-            Log::info('NotifikasiLogController: resend WA', [
-                'notifikasi_id' => $notifikasi->id,
-                'no_wa' => $noWa,
-                'template_kode' => $notifikasi->template_kode,
-            ]);
-            $sender = app(\App\Services\WhatsappSender::class);
-            $sent = $sender->send($noWa, $isi);
-
-            $notifikasi->update([
-                'status_kirim' => $sent ? Notifikasi::STATUS_TERKIRIM : Notifikasi::STATUS_GAGAL,
-                'sent_at' => $sent ? now() : null,
-            ]);
-
-            return back()->with('success', $sent ? 'WhatsApp berhasil dikirim ulang.' : 'WhatsApp gagal dikirim.');
+        if ($res['success']) {
+            return back()->with('success', $res['message']);
         }
 
-        // Email - kirim via AkunBaruMail jika AKUN_BARU, sonst via NotifikasiMail
-        if ($notifikasi->template_kode === 'AKUN_BARU' && $notifikasi->channel === Notifikasi::CHANNEL_EMAIL) {
-            $pbf = $permohonan->pbf;
-
-            Log::info('NotifikasiLogController: resend AKUN_BARU email', [
-                'notifikasi_id' => $notifikasi->id,
-                'email' => $pbf->email,
-                'permohonan_id' => $permohonan->id,
-            ]);
-
-            try {
-                \Illuminate\Support\Facades\Mail::to($pbf->email)->send(
-                    new \App\Mail\AkunBaruMail(
-                        $pbf->email,
-                        '***',
-                        $permohonan->nama_pbf_snapshot,
-                        $permohonan->no_registrasi,
-                        $permohonan->nib_snapshot,
-                        $pbf->alamat ?? '-',
-                    )
-                );
-                $notifikasi->update([
-                    'status_kirim' => Notifikasi::STATUS_TERKIRIM,
-                    'sent_at' => now(),
-                    'error_message' => null,
-                ]);
-                Log::info('NotifikasiLogController: AKUN_BARU email berhasil dikirim', [
-                    'notifikasi_id' => $notifikasi->id,
-                ]);
-                return back()->with('success', 'Email berhasil dikirim ulang.');
-            } catch (\Throwable $e) {
-                Log::error('NotifikasiLogController: AKUN_BARU email gagal', [
-                    'notifikasi_id' => $notifikasi->id,
-                    'email' => $pbf->email,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-                $notifikasi->update([
-                    'status_kirim' => Notifikasi::STATUS_GAGAL,
-                    'error_message' => $e->getMessage(),
-                ]);
-                return back()->with('error', 'Email gagal dikirim: ' . $e->getMessage());
-            }
-        }
-
-        // Email generik via template
-        $template = \App\Models\TemplateNotifikasi::where('kode_event', $notifikasi->template_kode)
-            ->where('channel', Notifikasi::CHANNEL_EMAIL)
-            ->where('is_active', true)
-            ->first();
-
-        if (!$template) {
-            return back()->with('error', 'Template email tidak ditemukan.');
-        }
-
-        $email = $permohonan->pbf->email ?? null;
-        if (!$email) {
-            return back()->with('error', 'Email pemohon kosong. Tidak dapat mengirim ulang.');
-        }
-
-        $isi = $template->isi_template;
-        $placeholders = [
-            '{{no_registrasi}}' => $permohonan->no_registrasi,
-            '{{nama_pbf}}' => $permohonan->nama_pbf_snapshot,
-        ];
-        foreach ($placeholders as $key => $val) {
-            $isi = str_replace($key, $val, $isi);
-        }
-
-        Log::info('NotifikasiLogController: resend email generik', [
-            'notifikasi_id' => $notifikasi->id,
-            'email' => $email,
-            'template_kode' => $notifikasi->template_kode,
-            'subject' => $template->subjek,
-            'permohonan_id' => $permohonan->id,
-        ]);
-
-        try {
-            \Illuminate\Support\Facades\Mail::to($email)->send(
-                new \App\Mail\NotifikasiMail($isi, $notifikasi->template_kode, $template->subjek)
-            );
-            $notifikasi->update([
-                'status_kirim' => Notifikasi::STATUS_TERKIRIM,
-                'sent_at' => now(),
-                'error_message' => null,
-            ]);
-            Log::info('NotifikasiLogController: email generik berhasil dikirim', [
-                'notifikasi_id' => $notifikasi->id,
-            ]);
-            return back()->with('success', 'Email berhasil dikirim ulang.');
-        } catch (\Throwable $e) {
-            Log::error('NotifikasiLogController: email generik gagal', [
-                'notifikasi_id' => $notifikasi->id,
-                'email' => $email,
-                'template_kode' => $notifikasi->template_kode,
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            $notifikasi->update([
-                'status_kirim' => Notifikasi::STATUS_GAGAL,
-                'error_message' => $e->getMessage(),
-            ]);
-            return back()->with('error', 'Email gagal dikirim: ' . $e->getMessage());
-        }
+        return back()->with('error', $res['message']);
     }
 
     public function resendAll(Request $request)
@@ -258,13 +126,13 @@ class NotifikasiLogController extends Controller
 
         if ($isAdminIt) {
             $failedLogs = Notifikasi::where('status_kirim', Notifikasi::STATUS_GAGAL)
-                ->with('permohonan.pbf')
+                ->with(['permohonan.pbf'])
                 ->get();
         } else {
             $permohonanIds = Permohonan::where('kepala_balai_id', $user->id)->pluck('id');
             $failedLogs = Notifikasi::whereIn('permohonan_id', $permohonanIds)
                 ->where('status_kirim', Notifikasi::STATUS_GAGAL)
-                ->with('permohonan.pbf')
+                ->with(['permohonan.pbf'])
                 ->get();
         }
 
@@ -276,99 +144,10 @@ class NotifikasiLogController extends Controller
         $gagal = 0;
 
         foreach ($failedLogs as $log) {
-            $permohonan = $log->permohonan;
-            if (!$permohonan) continue;
-
-            try {
-                if ($log->channel === Notifikasi::CHANNEL_WHATSAPP) {
-                    $noWa = $permohonan->pbf->no_whatsapp ?? null;
-                    if (!$noWa) {
-                        $log->update(['error_message' => 'Nomor WhatsApp kosong']);
-                        $gagal++;
-                        continue;
-                    }
-                    $template = \App\Models\TemplateNotifikasi::where('kode_event', $log->template_kode)
-                        ->where('channel', Notifikasi::CHANNEL_WHATSAPP)
-                        ->where('is_active', true)->first();
-                    if (!$template) {
-                        $log->update(['error_message' => 'Template WhatsApp tidak ditemukan']);
-                        $gagal++;
-                        continue;
-                    }
-                    $isi = $this->buildTemplate($template->isi_template, $permohonan);
-                    Log::info('NotifikasiLogController: resend WA (resendAll)', [
-                        'notifikasi_id' => $log->id,
-                        'no_wa' => $noWa,
-                    ]);
-                    $sender = app(\App\Services\WhatsappSender::class);
-                    $sent = $sender->send($noWa, $isi);
-                    if ($sent) {
-                        $log->update(['status_kirim' => Notifikasi::STATUS_TERKIRIM, 'sent_at' => now(), 'error_message' => null]);
-                        $berhasil++;
-                    } else {
-                        $log->update(['error_message' => 'Gateway WhatsApp menolak']);
-                        $gagal++;
-                    }
-                } elseif ($log->channel === Notifikasi::CHANNEL_EMAIL) {
-                    if ($log->template_kode === 'AKUN_BARU') {
-                        $pbf = $permohonan->pbf;
-                        try {
-                            \Illuminate\Support\Facades\Mail::to($pbf->email)->send(
-                                new \App\Mail\AkunBaruMail(
-                                    $pbf->email, '***',
-                                    $permohonan->nama_pbf_snapshot,
-                                    $permohonan->no_registrasi,
-                                    $permohonan->nib_snapshot,
-                                    $pbf->alamat ?? '-',
-                                )
-                            );
-                            $log->update(['status_kirim' => Notifikasi::STATUS_TERKIRIM, 'sent_at' => now(), 'error_message' => null]);
-                            $berhasil++;
-                        } catch (\Throwable $e) {
-                            Log::error('NotifikasiLogController: AKUN_BARU email gagal (resendAll)', [
-                                'notifikasi_id' => $log->id,
-                                'email' => $pbf->email,
-                                'error' => $e->getMessage(),
-                            ]);
-                            $log->update(['error_message' => $e->getMessage()]);
-                            $gagal++;
-                        }
-                    } else {
-                        $template = \App\Models\TemplateNotifikasi::where('kode_event', $log->template_kode)
-                            ->where('channel', Notifikasi::CHANNEL_EMAIL)
-                            ->where('is_active', true)->first();
-                        if (!$template) {
-                            $log->update(['error_message' => 'Template email tidak ditemukan']);
-                            $gagal++;
-                            continue;
-                        }
-                        $email = $permohonan->pbf->email ?? null;
-                        if (!$email) {
-                            $log->update(['error_message' => 'Email kosong']);
-                            $gagal++;
-                            continue;
-                        }
-                        $isi = $this->buildTemplate($template->isi_template, $permohonan);
-                        try {
-                            \Illuminate\Support\Facades\Mail::to($email)->send(
-                                new \App\Mail\NotifikasiMail($isi, $log->template_kode, $template->subjek)
-                            );
-                            $log->update(['status_kirim' => Notifikasi::STATUS_TERKIRIM, 'sent_at' => now(), 'error_message' => null]);
-                            $berhasil++;
-                        } catch (\Throwable $e) {
-                            Log::error('NotifikasiLogController: email generik gagal (resendAll)', [
-                                'notifikasi_id' => $log->id,
-                                'email' => $email,
-                                'template_kode' => $log->template_kode,
-                                'error' => $e->getMessage(),
-                            ]);
-                            $log->update(['error_message' => $e->getMessage()]);
-                            $gagal++;
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                $log->update(['error_message' => $e->getMessage()]);
+            $res = $this->executeResend($log);
+            if ($res['success']) {
+                $berhasil++;
+            } else {
                 $gagal++;
             }
         }
@@ -376,15 +155,197 @@ class NotifikasiLogController extends Controller
         return back()->with('success', "Kirim ulang selesai: {$berhasil} berhasil, {$gagal} gagal.");
     }
 
-    private function buildTemplate(string $template, Permohonan $permohonan): string
+    /**
+     * Eksekusi pengiriman ulang untuk satu notifikasi (WhatsApp atau Email).
+     */
+    private function executeResend(Notifikasi $notifikasi): array
+    {
+        $permohonan = $notifikasi->permohonan;
+        [$email, $noWa, $nama] = $this->resolveRecipient($notifikasi);
+
+        if ($notifikasi->channel === Notifikasi::CHANNEL_WHATSAPP) {
+            if (!$noWa) {
+                $msg = 'Nomor WhatsApp penerima kosong (' . $notifikasi->tujuan_tipe . ').';
+                $notifikasi->increment('retry_count');
+                $notifikasi->update(['error_message' => $msg]);
+                return ['success' => false, 'message' => $msg];
+            }
+
+            $template = \App\Models\TemplateNotifikasi::where('kode_event', $notifikasi->template_kode)
+                ->where('channel', Notifikasi::CHANNEL_WHATSAPP)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$template) {
+                $msg = 'Template WhatsApp tidak ditemukan untuk ' . $notifikasi->template_kode;
+                $notifikasi->increment('retry_count');
+                $notifikasi->update(['error_message' => $msg]);
+                return ['success' => false, 'message' => $msg];
+            }
+
+            $isi = $this->compileMessage($template->isi_template, $permohonan, $notifikasi);
+
+            Log::info('NotifikasiLogController: resend WA', [
+                'notifikasi_id' => $notifikasi->id,
+                'no_wa' => $noWa,
+                'template_kode' => $notifikasi->template_kode,
+            ]);
+
+            $sender = app(\App\Services\WhatsappSender::class);
+            $sent = $sender->send($noWa, $isi);
+
+            $notifikasi->increment('retry_count');
+            $notifikasi->update([
+                'status_kirim' => $sent ? Notifikasi::STATUS_TERKIRIM : Notifikasi::STATUS_GAGAL,
+                'sent_at' => $sent ? now() : null,
+                'error_message' => $sent ? null : 'Gateway WhatsApp menolak pengiriman.',
+            ]);
+
+            return [
+                'success' => $sent,
+                'message' => $sent ? "WhatsApp berhasil dikirim ulang ke {$noWa}." : "WhatsApp gagal dikirim ke {$noWa}.",
+            ];
+        }
+
+        if ($notifikasi->channel === Notifikasi::CHANNEL_EMAIL) {
+            if (!$email) {
+                $msg = 'Alamat email penerima kosong (' . $notifikasi->tujuan_tipe . ').';
+                $notifikasi->increment('retry_count');
+                $notifikasi->update(['error_message' => $msg]);
+                return ['success' => false, 'message' => $msg];
+            }
+
+            if ($notifikasi->template_kode === 'AKUN_BARU') {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($email)->send(
+                        new \App\Mail\AkunBaruMail(
+                            $email,
+                            '***',
+                            $permohonan?->nama_pbf_snapshot ?? $nama,
+                            $permohonan?->no_registrasi ?? '-',
+                            $permohonan?->nib_snapshot ?? '-',
+                            $permohonan?->pbf?->alamat ?? '-',
+                        )
+                    );
+                    $notifikasi->increment('retry_count');
+                    $notifikasi->update([
+                        'status_kirim' => Notifikasi::STATUS_TERKIRIM,
+                        'sent_at' => now(),
+                        'error_message' => null,
+                    ]);
+                    Log::info('NotifikasiLogController: AKUN_BARU email berhasil dikirim', [
+                        'notifikasi_id' => $notifikasi->id,
+                        'email' => $email,
+                    ]);
+                    return ['success' => true, 'message' => "Email berhasil dikirim ulang ke {$email}."];
+                } catch (\Throwable $e) {
+                    Log::error('NotifikasiLogController: AKUN_BARU email gagal', [
+                        'notifikasi_id' => $notifikasi->id,
+                        'email' => $email,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $notifikasi->increment('retry_count');
+                    $notifikasi->update([
+                        'status_kirim' => Notifikasi::STATUS_GAGAL,
+                        'error_message' => $e->getMessage(),
+                    ]);
+                    return ['success' => false, 'message' => "Email gagal dikirim ke {$email}: " . $e->getMessage()];
+                }
+            }
+
+            $template = \App\Models\TemplateNotifikasi::where('kode_event', $notifikasi->template_kode)
+                ->where('channel', Notifikasi::CHANNEL_EMAIL)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$template) {
+                $msg = 'Template email tidak ditemukan untuk ' . $notifikasi->template_kode;
+                $notifikasi->increment('retry_count');
+                $notifikasi->update(['error_message' => $msg]);
+                return ['success' => false, 'message' => $msg];
+            }
+
+            $isi = $this->compileMessage($template->isi_template, $permohonan, $notifikasi);
+
+            Log::info('NotifikasiLogController: resend email generik', [
+                'notifikasi_id' => $notifikasi->id,
+                'email' => $email,
+                'template_kode' => $notifikasi->template_kode,
+                'subject' => $template->subjek,
+            ]);
+
+            try {
+                \Illuminate\Support\Facades\Mail::to($email)->send(
+                    new \App\Mail\NotifikasiMail($isi, $notifikasi->template_kode, $template->subjek)
+                );
+                $notifikasi->increment('retry_count');
+                $notifikasi->update([
+                    'status_kirim' => Notifikasi::STATUS_TERKIRIM,
+                    'sent_at' => now(),
+                    'error_message' => null,
+                ]);
+                Log::info('NotifikasiLogController: email generik berhasil dikirim', [
+                    'notifikasi_id' => $notifikasi->id,
+                    'email' => $email,
+                ]);
+                return ['success' => true, 'message' => "Email berhasil dikirim ulang ke {$email}."];
+            } catch (\Throwable $e) {
+                Log::error('NotifikasiLogController: email generik gagal', [
+                    'notifikasi_id' => $notifikasi->id,
+                    'email' => $email,
+                    'template_kode' => $notifikasi->template_kode,
+                    'error' => $e->getMessage(),
+                ]);
+                $notifikasi->increment('retry_count');
+                $notifikasi->update([
+                    'status_kirim' => Notifikasi::STATUS_GAGAL,
+                    'error_message' => $e->getMessage(),
+                ]);
+                return ['success' => false, 'message' => "Email gagal dikirim ke {$email}: " . $e->getMessage()];
+            }
+        }
+
+        return ['success' => false, 'message' => "Channel {$notifikasi->channel} tidak didukung."];
+    }
+
+    /**
+     * Resolve email, nomor WA, dan nama penerima berdasarkan tujuan_tipe dan tujuan_id.
+     */
+    private function resolveRecipient(Notifikasi $notifikasi): array
+    {
+        $permohonan = $notifikasi->permohonan;
+        $tujuan = $notifikasi->tujuan();
+
+        if ($notifikasi->tujuan_tipe === Notifikasi::TUJUAN_PEMOHON) {
+            $email = $tujuan?->email ?? $permohonan?->email_snapshot ?? $permohonan?->pbf?->email;
+            $noWa = $tujuan?->no_whatsapp ?? $permohonan?->no_wa_snapshot ?? $permohonan?->pbf?->no_whatsapp;
+            $nama = $tujuan?->nama_pbf ?? $permohonan?->nama_pbf_snapshot ?? 'Pemohon';
+        } else {
+            $email = $tujuan?->email;
+            $noWa = $tujuan?->no_whatsapp;
+            $nama = $tujuan?->nama ?? ucfirst(str_replace('_', ' ', $notifikasi->tujuan_tipe));
+        }
+
+        return [$email, $noWa, $nama];
+    }
+
+    /**
+     * Substitusi placeholder template dengan data permohonan.
+     */
+    private function compileMessage(string $template, ?Permohonan $permohonan, ?Notifikasi $notifikasi = null): string
     {
         $placeholders = [
-            '{{no_registrasi}}' => $permohonan->no_registrasi,
-            '{{nama_pbf}}' => $permohonan->nama_pbf_snapshot,
+            '{{no_registrasi}}' => $permohonan?->no_registrasi ?? '-',
+            '{{nama_pbf}}' => $permohonan?->nama_pbf_snapshot ?? '-',
+            '{{nib}}' => $permohonan?->nib_snapshot ?? '-',
+            '{{alamat}}' => $permohonan?->pbf?->alamat ?? '-',
+            '{{app_url}}' => config('app.url'),
         ];
+
         foreach ($placeholders as $key => $val) {
             $template = str_replace($key, $val, $template);
         }
+
         return $template;
     }
 }
