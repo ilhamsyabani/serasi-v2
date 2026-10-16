@@ -5,11 +5,13 @@
 <?php
 $pageTitle = 'Evaluasi: ' . $permohonan->no_registrasi;
 $revisiKe = (int) $permohonan->revisi_ke;
-$revisiBerikutnya = $revisiKe + 1;
-$labelRevisiSekarang = $revisiKe > 0 ? "Revisi {$revisiKe}" : "Proses Awal";
-$labelRevisiBerikutnya = "Revisi {$revisiBerikutnya}";
-// Banner hanya muncul saat di siklus revisi (artinya revisi sebelumnya sudah diupload pemohon)
-$showRevisiBanner = $revisiKe > 0;
+$isStatusRevisi = in_array($permohonan->status_saat_ini, [
+    \App\Models\Permohonan::STATUS_REVISI_1,
+    \App\Models\Permohonan::STATUS_REVISI_2,
+    \App\Models\Permohonan::STATUS_REVISI_3,
+], true);
+$isEvaluasiRevisi = $permohonan->status_saat_ini === \App\Models\Permohonan::STATUS_PROSES_EVALUASI && $revisiKe > 0;
+$showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
 ?>
 
 <div x-data="{
@@ -23,7 +25,7 @@ $showRevisiBanner = $revisiKe > 0;
         }
         const checked = e.target.querySelector('input[name=\'hasil\']:checked');
         this.hasilDipilih = checked ? checked.value : null;
-        if (this.hasilDipilih === 'tidak_lengkap' && {{ $showRevisiBanner ? 'true' : 'false' }}) {
+        if (this.hasilDipilih === 'tidak_lengkap' && {{ $showConfirmModal ? 'true' : 'false' }}) {
             e.preventDefault();
             this.showConfirm = true;
             // Salin nilai catatan ke hidden field di form konfirmasi
@@ -49,23 +51,45 @@ $showRevisiBanner = $revisiKe > 0;
                 <p class="font-mono text-slate-700">{{ $permohonan->nib_snapshot }}</p>
             </div>
         </div>
-        @if($showRevisiBanner)
-        <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p class="text-sm text-amber-800">
-                <i class="ph ph-warning mr-1" aria-hidden="true"></i>
-                Pemohon telah mengunggah revisi untuk <strong>{{ $labelRevisiSekarang }}.
-                </strong> Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke <strong>{{ $labelRevisiBerikutnya }}</strong>.
-                Kuota maks. 3 revisi.
-            </p>
+
+        @if($isStatusRevisi)
+        <div class="mt-4 p-3.5 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-start gap-2.5">
+                <i class="ph ph-info text-blue-600 text-lg mt-0.5" aria-hidden="true"></i>
+                <div class="text-sm text-blue-900">
+                    <p class="font-semibold mb-0.5">Status Saat Ini: Menunggu Pengajuan Revisi {{ $revisiKe }} dari Pemohon</p>
+                    <p class="text-xs text-blue-800 leading-relaxed">
+                        Pemohon <strong>belum mengunggah dokumen untuk Revisi {{ $revisiKe }}</strong> di portal sistem.
+                        Dokumen revisi di bawah merupakan riwayat dari revisi sebelumnya. Anda dapat melanjutkan evaluasi jika berkas perbaikan telah diterima melalui jalur lain (misal email atau luring).
+                    </p>
+                </div>
+            </div>
+        </div>
+        @elseif($isEvaluasiRevisi)
+        <div class="mt-4 p-3.5 bg-amber-50 border border-amber-200 rounded-lg">
+            <div class="flex items-start gap-2.5">
+                <i class="ph ph-warning text-amber-600 text-lg mt-0.5" aria-hidden="true"></i>
+                <div class="text-sm text-amber-900">
+                    <p class="font-semibold mb-0.5">Tahap Evaluasi: Revisi {{ $revisiKe }}</p>
+                    <p class="text-xs text-amber-800 leading-relaxed">
+                        Pemohon telah mengunggah berkas untuk <strong>Revisi {{ $revisiKe }}</strong>.
+                        @if($revisiKe >= 3)
+                            Ini adalah kesempatan revisi terakhir (Kuota maks. 3 kali). Jika hasil evaluasi <strong>Tidak Lengkap</strong>, permohonan akan otomatis <strong>DITUTUP</strong>.
+                        @else
+                            Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke <strong>Revisi {{ $revisiKe + 1 }}</strong>.
+                        @endif
+                    </p>
+                </div>
+            </div>
         </div>
         @endif
     </x-ui.card-content>
 </x-ui.card>
 
 <x-ui.card>
-    <x-ui.card-header title="Dokumen Permohonan" description="Periksa kelengkapan dokumen yang diupload pemohon" />
+    <x-ui.card-header title="Dokumen Permohonan Awal" description="Dokumen yang diunggah pemohon saat pengajuan awal" />
     <x-ui.card-content class="p-0">
-        <ul class="divide-y divide-slate-50">
+        <ul class="divide-y divide-slate-100">
             @forelse($dokumen as $d)
             <li class="px-6 py-3 flex items-center justify-between">
                 <div>
@@ -80,35 +104,70 @@ $showRevisiBanner = $revisiKe > 0;
                 </div>
             </li>
             @empty
-            <li class="px-6 py-4 text-sm text-slate-400 text-center">Tidak ada dokumen.</li>
+            <li class="px-6 py-4 text-sm text-slate-400 text-center">Tidak ada dokumen awal.</li>
             @endforelse
         </ul>
     </x-ui.card-content>
 </x-ui.card>
 
-@if($dokumenRevisi->isNotEmpty())
+@if(isset($revisi) && $revisi->isNotEmpty())
 <x-ui.card class="mt-4">
-    <x-ui.card-header title="Dokumen Revisi" description="Dokumen yang diupload pemohon sebagai hasil revisi" />
-    <x-ui.card-content class="p-0">
-        <ul class="divide-y divide-slate-50">
-            @foreach($dokumenRevisi as $dr)
-            <li class="px-6 py-3 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-800">{{ $dr->nama_file_asli }}</p>
-                    <p class="text-xs text-slate-400">{{ number_format($dr->ukuran_file_kb, 2) }} KB &middot; {{ $dr->uploaded_at?->format('d M Y H:i') }}</p>
-                </div>
-                <div class="flex items-center gap-2">
+    <x-ui.card-header title="Riwayat Dokumen Revisi" description="Dokumen yang diunggah pemohon pada masing-masing siklus revisi" />
+    <x-ui.card-content class="space-y-4">
+        @foreach($revisi as $idx => $r)
+        @php
+            $nomorSiklus = $r->evaluasi?->siklus_ke ?? ($idx + 1);
+        @endphp
+        <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/40">
+            <div class="px-4 py-2.5 bg-slate-100/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                    <i class="ph ph-files"></i> Berkas Revisi {{ $nomorSiklus }}
+                </span>
+                <span class="text-xs text-slate-500">
+                    Diunggah: {{ $r->created_at?->format('d M Y H:i') }} WIB
+                </span>
+            </div>
+            <ul class="divide-y divide-slate-100 bg-white">
+                @forelse($r->dokumenRevisi as $dr)
+                <li class="px-4 py-2.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                    <div>
+                        <p class="text-sm font-medium text-slate-800">{{ $dr->nama_file_asli }}</p>
+                        <p class="text-xs text-slate-400">{{ number_format($dr->ukuran_file_kb, 2) }} KB &middot; {{ $dr->uploaded_at?->format('d M Y H:i') }} WIB</p>
+                    </div>
                     <x-ui.button variant="ghost" size="sm" href="{{ route('internal.download.revisi', $dr->id) }}" target="_blank">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     </x-ui.button>
-                </div>
-            </li>
-            @endforeach
-        </ul>
+                </li>
+                @empty
+                <li class="px-4 py-3 text-xs text-slate-400 text-center">Tidak ada berkas terlampir.</li>
+                @endforelse
+            </ul>
+        </div>
+        @endforeach
 
-        <div class="mt-4 p-4 border border-orange-400 bg-orange-50 rounded-lg">
-         <span class="text-sm font-bold text-slate-700 mb-2">Catatan</span>
-         <p class="text-[14px] text-slate-500">{{ $evaluasi->catatan }}</p>
+        @if($evaluasi && $evaluasi->catatan)
+        <div class="mt-4 p-4 border border-amber-300 bg-amber-50/70 rounded-lg">
+            <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-900">
+                    Catatan Evaluasi Sebelumnya (Siklus {{ $evaluasi->siklus_ke }} &middot; {{ $evaluasi->tanggal_evaluasi?->format('d M Y H:i') }} WIB)
+                </span>
+            </div>
+            <p class="text-sm text-slate-700 whitespace-pre-line">{{ $evaluasi->catatan }}</p>
+        </div>
+        @endif
+    </x-ui.card-content>
+</x-ui.card>
+@elseif($evaluasi && $evaluasi->catatan)
+<x-ui.card class="mt-4">
+    <x-ui.card-header title="Catatan Evaluasi Sebelumnya" description="Catatan dari hasil evaluasi terakhir" />
+    <x-ui.card-content>
+        <div class="p-4 border border-amber-300 bg-amber-50/70 rounded-lg">
+            <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-900">
+                    Siklus {{ $evaluasi->siklus_ke }} &middot; {{ $evaluasi->tanggal_evaluasi?->format('d M Y H:i') }} WIB
+                </span>
+            </div>
+            <p class="text-sm text-slate-700 whitespace-pre-line">{{ $evaluasi->catatan }}</p>
         </div>
     </x-ui.card-content>
 </x-ui.card>
@@ -119,6 +178,7 @@ $showRevisiBanner = $revisiKe > 0;
     <x-ui.card-content>
         <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="space-y-5" @submit="confirmRevisi($event)">
             @csrf @method('PUT')
+            <input type="hidden" name="siklus_ke" value="{{ ($evaluasi?->siklus_ke ?? 0) + 1 }}">
 
             <div>
                 <p class="text-sm font-medium text-slate-700 mb-2">Hasil Evaluasi</p>
@@ -150,7 +210,7 @@ $showRevisiBanner = $revisiKe > 0;
     </x-ui.card-content>
 </x-ui.card>
 
-{{-- Konfirmasi Naik Siklus Revisi --}}
+{{-- Konfirmasi Naik Siklus Revisi / Penutupan --}}
 <div x-show="showConfirm" x-cloak
     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
@@ -161,23 +221,20 @@ $showRevisiBanner = $revisiKe > 0;
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
         class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
 
-        <div class="bg-red-500 px-6 py-4">
+        @if($revisiKe >= 3)
+        <div class="bg-red-600 px-6 py-4">
             <h3 class="text-white font-semibold text-base flex items-center gap-2">
                 <i class="ph ph-warning-circle text-xl" aria-hidden="true"></i>
-                Konfirmasi Siklus Revisi
+                Konfirmasi Penutupan Permohonan
             </h3>
         </div>
         <div class="p-6">
-            <p class="text-sm text-slate-700 mb-1">
-                Revisi telah diunggah oleh pemohon untuk <strong>{{ $labelRevisiSekarang }}</strong>.
-            </p>
-            <p class="text-sm text-slate-700 mb-4">
-                Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke
-                <strong class="text-red-600">{{ $labelRevisiBerikutnya }}</strong>.
+            <p class="text-sm text-slate-700 mb-2">
+                Permohonan ini telah mencapai batas maksimal <strong>3 siklus perbaikan</strong>.
             </p>
             <div class="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
                 <p class="text-xs text-red-700">
-                    <strong>Perhatian:</strong> Kuota maks. 3 siklus revisi. Setelah Revisi 3 tetap tidak lengkap, permohonan akan <strong>ditutup</strong> dan pemohon harus mengajukan ulang.
+                    <strong>Perhatian:</strong> Jika Anda memilih <strong>Tidak Lengkap</strong>, kuota revisi telah habis dan permohonan akan otomatis <strong>DITUTUP (Pengajuan Ulang)</strong>. Pemohon harus mengajukan permohonan baru dari awal.
                 </p>
             </div>
             <div class="flex gap-3">
@@ -188,10 +245,44 @@ $showRevisiBanner = $revisiKe > 0;
                     @csrf @method('PUT')
                     <input type="hidden" name="hasil" value="tidak_lengkap">
                     <input type="hidden" name="catatan" id="confirm_catatan">
+                    <input type="hidden" name="siklus_ke" value="{{ ($evaluasi?->siklus_ke ?? 0) + 1 }}">
+                    <x-ui.button type="submit" variant="destructive" class="w-full" x-bind:disabled="submitting">Ya, Tutup Permohonan</x-ui.button>
+                </form>
+            </div>
+        </div>
+        @else
+        <div class="bg-red-500 px-6 py-4">
+            <h3 class="text-white font-semibold text-base flex items-center gap-2">
+                <i class="ph ph-warning-circle text-xl" aria-hidden="true"></i>
+                Konfirmasi Siklus Revisi
+            </h3>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-slate-700 mb-2">
+                Evaluasi saat ini dinyatakan <strong>Tidak Lengkap</strong>.
+            </p>
+            <p class="text-sm text-slate-700 mb-4">
+                Siklus revisi pemohon akan naik ke <strong class="text-red-600">Revisi {{ $revisiKe + 1 }}</strong>.
+            </p>
+            <div class="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
+                <p class="text-xs text-red-700">
+                    <strong>Perhatian:</strong> Kuota maksimal 3 siklus revisi. Setelah Revisi 3 tetap tidak lengkap, permohonan akan ditutup secara permanen.
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" @click="showConfirm = false" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium text-sm transition-colors">
+                    Batal
+                </button>
+                <form method="POST" action="{{ route('internal.staff.evaluasi.update', $permohonan) }}" class="flex-1" @submit="if(submitting){ $event.preventDefault(); return; } submitting = true;">
+                    @csrf @method('PUT')
+                    <input type="hidden" name="hasil" value="tidak_lengkap">
+                    <input type="hidden" name="catatan" id="confirm_catatan">
+                    <input type="hidden" name="siklus_ke" value="{{ ($evaluasi?->siklus_ke ?? 0) + 1 }}">
                     <x-ui.button type="submit" variant="destructive" class="w-full" x-bind:disabled="submitting">Ya, Kirim</x-ui.button>
                 </form>
             </div>
         </div>
+        @endif
     </div>
 </div>
 

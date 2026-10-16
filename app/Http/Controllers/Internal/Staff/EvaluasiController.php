@@ -16,20 +16,33 @@ use Illuminate\Support\Facades\Auth;
 
 class EvaluasiController extends Controller
 {
+    public const STATUS_BISA_DIEVALUASI = [
+        Permohonan::STATUS_PROSES_EVALUASI,
+        Permohonan::STATUS_DIDISPOSISIKAN,
+        Permohonan::STATUS_REVISI_1,
+        Permohonan::STATUS_REVISI_2,
+        Permohonan::STATUS_REVISI_3,
+    ];
+
+    private function canEvaluate(Permohonan $permohonan): bool
+    {
+        return in_array($permohonan->status_saat_ini, self::STATUS_BISA_DIEVALUASI, true);
+    }
+
     public function edit(Permohonan $permohonan)
     {
         $user = Auth::user();
         $aktif = $permohonan->distribusiAktif;
         abort_if(!$aktif || $aktif->staff_id !== $user->id, 403);
-        abort_if($permohonan->status_saat_ini !== Permohonan::STATUS_PROSES_EVALUASI, 403, 'Permohonan tidak dalam tahap proses evaluasi.');
+        abort_if(!$this->canEvaluate($permohonan), 403, 'Permohonan tidak dalam tahap proses evaluasi.');
 
         $dokumen = DokumenPermohonan::where('permohonan_id', $permohonan->id)->get();
         $evaluasi = Evaluasi::where('permohonan_id', $permohonan->id)->latest()->first();
 
-        $revisi = $permohonan->revisi()->with('dokumenRevisi')->get();
+        $revisi = $permohonan->revisi()->with(['dokumenRevisi', 'evaluasi'])->orderBy('id')->get();
         $dokumenRevisi = $revisi->flatMap(fn($r) => $r->dokumenRevisi);
 
-        return view('internal.staff.evaluasi.edit', compact('permohonan', 'dokumen', 'dokumenRevisi', 'evaluasi'));
+        return view('internal.staff.evaluasi.edit', compact('permohonan', 'dokumen', 'dokumenRevisi', 'revisi', 'evaluasi'));
     }
 
     public function update(Request $request, Permohonan $permohonan)
@@ -37,14 +50,19 @@ class EvaluasiController extends Controller
         $user = Auth::user();
         $aktif = $permohonan->distribusiAktif;
         abort_if(!$aktif || $aktif->staff_id !== $user->id, 403);
-        abort_if($permohonan->status_saat_ini !== Permohonan::STATUS_PROSES_EVALUASI, 422, 'Permohonan tidak dalam tahap proses evaluasi.');
+        abort_if(!$this->canEvaluate($permohonan), 422, 'Permohonan tidak dalam tahap proses evaluasi.');
 
         $data = $request->validate([
             'hasil' => 'required|in:lengkap,tidak_lengkap',
             'catatan' => 'nullable|string',
+            'siklus_ke' => 'nullable|integer',
         ]);
 
         $siklus = (Evaluasi::where('permohonan_id', $permohonan->id)->max('siklus_ke') ?? 0) + 1;
+
+        if ($request->filled('siklus_ke') && (int) $request->siklus_ke !== $siklus) {
+            abort(422, 'Evaluasi untuk siklus ini sudah pernah diproses.');
+        }
 
         Evaluasi::create([
             'permohonan_id' => $permohonan->id,
