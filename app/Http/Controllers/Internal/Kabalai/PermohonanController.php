@@ -158,7 +158,7 @@ class PermohonanController extends Controller
     public function show(Permohonan $permohonan)
     {
         abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
-        $permohonan->load('pbf');
+        $permohonan->load(['pbf', 'disposisi.ketuaTim', 'distribusiAktif.staff']);
         return view('internal.kabalai.permohonan.show', compact('permohonan'));
     }
 

@@ -70,6 +70,7 @@
                             @endif
                         </a>
                     </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Staff Evaluator</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">SLA</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
                         <a href="{{ request()->fullUrlWithQuery(['sort' => 'tanggal_pengajuan', 'dir' => ($sort === 'tanggal_pengajuan' && $dir === 'asc') ? 'desc' : 'asc']) }}"
@@ -86,12 +87,23 @@
                 </tr>
             </thead>
             @forelse($permohonans as $p)
-            <x-ui.permohonan-row :permohonan="$p" :colspan="5">
+            <x-ui.permohonan-row :permohonan="$p" :colspan="7">
                 <td class="px-4 py-3 font-mono text-xs font-medium text-slate-900">{{ $p->no_registrasi }}</td>
                 <td class="px-4 py-3">
                     <p class="font-medium text-slate-900">{{ $p->nama_pbf_snapshot }}</p>
                     <p class="text-xs text-slate-400"><span class="font-mono">NIB : </span>{{ $p->nib_snapshot }}</p>
+                </td>
                 <td class="px-4 py-3"><x-ui.status-badge :status="$p->status_saat_ini" /></td>
+                <td class="px-4 py-3">
+                    @if($staff = $p->distribusiAktif?->staff)
+                        <p class="font-medium text-slate-900">{{ $staff->nama }}</p>
+                        @if($p->disposisi?->ketuaTim)
+                            <p class="text-xs text-slate-400">Ketua Tim: {{ $p->disposisi->ketuaTim->nama }}</p>
+                        @endif
+                    @else
+                        <span class="text-xs text-slate-400 italic">Belum ditentukan</span>
+                    @endif
+                </td>
                 <td class="px-4 py-3"><x-ui.sla-badge :sla="app(\App\Services\SlaCalculator::class)->evaluasiPermohonan($p)" /></td>
                 <td class="px-4 py-3 text-slate-400 text-xs">{{ $p->tanggal_pengajuan?->format('d M Y') }}</td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
@@ -113,7 +125,7 @@
             </x-ui.permohonan-row>
             @empty
             <tbody>
-                <tr><td colspan="5"><x-ui.empty-state title="Belum ada permohonan" description="Klik tombol di atas untuk input permohonan baru" /></td></tr>
+                <tr><td colspan="7"><x-ui.empty-state title="Belum ada permohonan" description="Klik tombol di atas untuk input permohonan baru" /></td></tr>
             </tbody>
             @endforelse
         </table>

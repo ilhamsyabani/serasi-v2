@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Disposisi;
 use App\Models\Distribusi;
+use App\Models\DokumenRevisi;
+use App\Models\Evaluasi;
 use App\Models\Pbf;
 use App\Models\Permohonan;
+use App\Models\Revisi;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -111,6 +114,75 @@ class PermohonanAccessTest extends TestCase
     public function test_admin_it_bisa_lihat_semua(): void
     {
         $this->assertTrue($this->user('admin_it')->can('view', $this->permohonan()));
+    }
+
+    public function test_staff_melihat_catatan_dan_dokumen_revisi_di_detail(): void
+    {
+        $staff = $this->user('staff_sertifikasi');
+        $p = $this->permohonan(['status_saat_ini' => Permohonan::STATUS_PROSES_EVALUASI, 'revisi_ke' => 2]);
+        Distribusi::create([
+            'permohonan_id' => $p->id,
+            'ketua_tim_id' => $this->user('ketua_tim')->id,
+            'staff_id' => $staff->id,
+            'jenis' => 'distribusi_awal',
+            'is_aktif' => true,
+            'tanggal' => now(),
+        ]);
+
+        $ev0 = Evaluasi::create([
+            'permohonan_id' => $p->id, 'staff_id' => $staff->id, 'siklus_ke' => 0,
+            'hasil' => Evaluasi::HASIL_TIDAK_LENGKAP, 'catatan' => 'Denah gudang belum jelas', 'tanggal_evaluasi' => now(),
+        ]);
+        $revisi = Revisi::create(['evaluasi_id' => $ev0->id, 'permohonan_id' => $p->id]);
+        DokumenRevisi::create([
+            'revisi_id' => $revisi->id, 'jenis_dokumen' => 'denah', 'nama_file_asli' => 'denah-revisi-1.pdf',
+            'path_file' => 'dokumen_revisi/x.pdf', 'ukuran_file_kb' => 120, 'mime_type' => 'application/pdf',
+            'checksum' => 'abc', 'uploaded_at' => now(),
+        ]);
+        Evaluasi::create([
+            'permohonan_id' => $p->id, 'staff_id' => $staff->id, 'siklus_ke' => 1,
+            'hasil' => Evaluasi::HASIL_TIDAK_LENGKAP, 'catatan' => 'Ukuran ruang karantina kurang', 'tanggal_evaluasi' => now(),
+        ]);
+
+        $this->actingAs($staff)->get(route('internal.permohonan.show', $p))
+            ->assertOk()
+            ->assertSee('Riwayat Revisi')
+            ->assertSee('Denah gudang belum jelas')
+            ->assertSee('denah-revisi-1.pdf')
+            ->assertSee('Revisi 2')
+            ->assertSee('Ukuran ruang karantina kurang')
+            ->assertSee('Pemohon belum mengunggah dokumen revisi.');
+    }
+
+    public function test_kabalai_melihat_staff_evaluator_di_daftar_dan_detail(): void
+    {
+        $kabalai = $this->user('kepala_balai');
+        $staff = $this->user('staff_sertifikasi');
+        $staff->update(['nama' => 'Siti Evaluator']);
+        $p = $this->permohonan(['kepala_balai_id' => $kabalai->id]);
+        Distribusi::create([
+            'permohonan_id' => $p->id,
+            'ketua_tim_id' => $this->user('ketua_tim')->id,
+            'staff_id' => $staff->id,
+            'jenis' => 'distribusi_awal',
+            'is_aktif' => true,
+            'tanggal' => now(),
+        ]);
+        $belumDidistribusi = $this->permohonan(['kepala_balai_id' => $kabalai->id]);
+
+        $this->actingAs($kabalai)->get(route('internal.kabalai.permohonan.index'))
+            ->assertOk()
+            ->assertSee('Staff Evaluator')
+            ->assertSee('Siti Evaluator')
+            ->assertSee('Belum ditentukan');
+
+        $this->actingAs($kabalai)->get(route('internal.kabalai.permohonan.show', $p))
+            ->assertOk()
+            ->assertSee('Siti Evaluator');
+
+        $this->actingAs($kabalai)->get(route('internal.kabalai.permohonan.show', $belumDidistribusi))
+            ->assertOk()
+            ->assertSee('Belum ditentukan');
     }
 
     public function test_detail_route_menolak_tamu_dengan_redirect_login(): void

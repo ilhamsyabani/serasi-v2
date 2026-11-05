@@ -72,6 +72,14 @@
                             <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-1">No. WhatsApp</p>
                             <p class="text-slate-800">{{ $permohonan->no_wa_snapshot }}</p>
                         </div>
+                        <div>
+                            <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-1">Ketua Tim</p>
+                            <p class="text-slate-800">{{ $permohonan->disposisi?->ketuaTim?->nama ?? 'Belum didisposisikan' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-1">Staff Evaluator</p>
+                            <p class="font-medium text-slate-900">{{ $permohonan->distribusiAktif?->staff?->nama ?? 'Belum ditentukan' }}</p>
+                        </div>
                     </div>
                     @if($permohonan->pbf?->alamat)
                     <div class="mt-4 pt-4 border-t border-slate-100">

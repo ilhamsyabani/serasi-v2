@@ -90,6 +90,58 @@ $canEdit = $user->isKepalaBalai() && $user->id === $permohonan->kepala_balai_id 
     </x-ui.card-content>
 </x-ui.card>
 
+{{-- Riwayat Revisi (Staff) --}}
+@php
+    $evaluasiRevisi = $permohonan->evaluasi->where('hasil', \App\Models\Evaluasi::HASIL_TIDAK_LENGKAP);
+@endphp
+@if($user->isStaffSertifikasi() && $evaluasiRevisi->isNotEmpty())
+<x-ui.card class="mb-4">
+    <x-ui.card-header title="Riwayat Revisi" description="Catatan evaluasi dan dokumen revisi dari pemohon per siklus" />
+    <x-ui.card-content class="space-y-4">
+        @foreach($evaluasiRevisi as $ev)
+        @php $isPenutupan = $ev->isSiklusTerakhir(); @endphp
+        <div class="border border-slate-200 rounded-lg overflow-hidden">
+            <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <span @class([
+                    'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold',
+                    'bg-red-100 text-red-800' => $isPenutupan,
+                    'bg-amber-100 text-amber-800' => ! $isPenutupan,
+                ])>
+                    <i class="ph ph-files"></i> {{ $isPenutupan ? 'Ditutup – Perlu Pengajuan Ulang' : 'Revisi ' . ($ev->siklus_ke + 1) }}
+                </span>
+                @if($ev->tanggal_evaluasi)
+                    <span class="text-xs text-slate-500">Dievaluasi: {{ $ev->tanggal_evaluasi->format('d M Y H:i') }} WIB</span>
+                @endif
+            </div>
+
+            <div class="px-4 py-3 border-b border-slate-100 bg-amber-50/60">
+                <p class="text-xs font-semibold uppercase tracking-wide text-amber-900 mb-1">Catatan Revisi</p>
+                <p class="text-sm text-slate-700 whitespace-pre-line">{{ $ev->catatan ?: '-' }}</p>
+            </div>
+
+            @unless($isPenutupan)
+            <ul class="divide-y divide-slate-100 bg-white">
+                @forelse($ev->revisi?->dokumenRevisi ?? [] as $dr)
+                <li class="px-4 py-2.5 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-800">{{ $dr->nama_file_asli }}</p>
+                        <p class="text-xs text-slate-400">{{ number_format($dr->ukuran_file_kb, 2) }} KB &middot; {{ $dr->uploaded_at?->format('d M Y H:i') }} WIB</p>
+                    </div>
+                    <x-ui.button variant="ghost" size="sm" href="{{ route('internal.download.revisi', $dr->id) }}" target="_blank">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    </x-ui.button>
+                </li>
+                @empty
+                <li class="px-4 py-3 text-xs text-slate-400 text-center">Pemohon belum mengunggah dokumen revisi.</li>
+                @endforelse
+            </ul>
+            @endunless
+        </div>
+        @endforeach
+    </x-ui.card-content>
+</x-ui.card>
+@endif
+
 {{-- Surat Pengesahan --}}
 @if($permohonan->suratPengesahan)
     <x-ui.card class="mb-4">
