@@ -13,7 +13,7 @@ class DashboardController extends Controller
     public function index(Request $request, SlaCalculator $sla)
     {
         $user = Auth::user();
-        $search = $request->input('search');
+        $filter = $request->only(['search', 'status', 'tanggal_dari', 'tanggal_sampai']);
 
         // Stats: semua permohonan (tanpa filter user)
         $allPermohonans = Permohonan::query()
@@ -21,25 +21,19 @@ class DashboardController extends Controller
             ->get();
 
         // Table: hanya permohonan yang ditugaskan ke staff ini
-        $query = Permohonan::query()
+        $permohonans = Permohonan::query()
             ->whereHas('distribusiAktif', fn ($q) => $q->where('staff_id', $user->id))
-            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff', 'revisi.dokumenRevisi']);
-
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_pbf_snapshot', 'like', "%{$search}%")
-                ->orWhere('no_registrasi', 'like', "%{$search}%")
-                ->orWhere('nib_snapshot', 'like', "%{$search}%");
-            });
-        }
-
-        $permohonans = $query->latest()->get();
+            ->filterTabel($filter)
+            ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff', 'revisi.dokumenRevisi'])
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return view('internal.staff.dashboard', [
             'user' => $user,
             'permohonans' => $permohonans,
             'allPermohonans' => $allPermohonans,
-            'search' => $search,
+            'filter' => $filter,
             'slaRingkasan' => $sla->ringkasan($allPermohonans),
         ]);
     }

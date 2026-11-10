@@ -341,6 +341,7 @@ class NotifikasiService
         \App\Models\User $penerima,
         Permohonan $permohonan,
         string $templateKode,
+        array $placeholders = [],
     ): ?Notifikasi {
         if (empty($penerima->no_whatsapp)) {
             \Illuminate\Support\Facades\Log::warning('kirimNotifikasiStaff: no_whatsapp kosong', [
@@ -351,7 +352,7 @@ class NotifikasiService
             ]);
             return null;
         }
-        return $this->kirim($permohonan, Notifikasi::TUJUAN_STAFF, $penerima->id, Notifikasi::CHANNEL_WHATSAPP, $templateKode);
+        return $this->kirim($permohonan, Notifikasi::TUJUAN_STAFF, $penerima->id, Notifikasi::CHANNEL_WHATSAPP, $templateKode, null, $placeholders);
     }
 
     public function kirimNotifikasiKetuaTim(

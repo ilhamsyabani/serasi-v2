@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Permohonan;
 use App\Models\User;
 use App\Services\SlaCalculator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -27,9 +28,10 @@ class DashboardController extends Controller
         Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN,
     ];
 
-    public function index(SlaCalculator $sla)
+    public function index(Request $request, SlaCalculator $sla)
     {
         $user = Auth::guard('web')->user();
+        $filter = $request->only(['search', 'status', 'tanggal_dari', 'tanggal_sampai']);
 
         // Stats: semua permohonan (tanpa filter)
         $allPermohonans = Permohonan::query()
@@ -37,14 +39,20 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
-        // Table: hanya permohonan yang didisposisikan ke tim katim ini
-        $permohonans = Permohonan::query()
-            ->whereHas('disposisi', fn ($q) => $q->where('ketua_tim_id', $user->id))
+        $timQuery = fn () => Permohonan::query()
+            ->whereHas('disposisi', fn ($q) => $q->where('ketua_tim_id', $user->id));
+
+        // Badge & beban kerja dihitung dari seluruh permohonan tim, bukan hanya halaman tabel aktif.
+        $permohonanTim = $timQuery()->with('distribusiAktif')->get();
+
+        $permohonans = $timQuery()
+            ->filterTabel($filter)
             ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff'])
             ->latest()
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
-        $perluDistribusi = $permohonans->where('status_saat_ini', Permohonan::STATUS_DIDISPOSISIKAN);
+        $perluDistribusi = $permohonanTim->where('status_saat_ini', Permohonan::STATUS_DIDISPOSISIKAN);
 
         $staffList = User::whereHas('role', fn ($q) => $q->where('kode', 'staff_sertifikasi'))
             ->where('is_aktif', true)
@@ -52,7 +60,7 @@ class DashboardController extends Controller
             ->get();
 
         // Beban kerja = jumlah permohonan aktif tim ini yang sedang dipegang tiap staff.
-        $bebanKerja = $permohonans
+        $bebanKerja = $permohonanTim
             ->groupBy(fn ($p) => $p->distribusiAktif?->staff_id)
             ->map->count();
 
@@ -63,6 +71,7 @@ class DashboardController extends Controller
             'perluDistribusi' => $perluDistribusi,
             'staffList' => $staffList,
             'bebanKerja' => $bebanKerja,
+            'filter' => $filter,
             'slaRingkasan' => $sla->ringkasan($allPermohonans),
         ]);
     }
