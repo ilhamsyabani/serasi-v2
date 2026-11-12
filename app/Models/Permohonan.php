@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -169,6 +170,19 @@ class Permohonan extends Model
         return $query->where(fn ($q) => $q
             ->where('permohonan.kepala_balai_id', $userId)
             ->orWhereNull('permohonan.kepala_balai_id'));
+    }
+
+    /** Filter tabel permohonan: search, status, tanggal_dari, tanggal_sampai. */
+    public function scopeFilterTabel(Builder $query, array $filter): Builder
+    {
+        return $query
+            ->when($filter['search'] ?? null, fn ($q, $search) => $q->where(fn ($w) => $w
+                ->where('nama_pbf_snapshot', 'like', "%{$search}%")
+                ->orWhere('no_registrasi', 'like', "%{$search}%")
+                ->orWhere('nib_snapshot', 'like', "%{$search}%")))
+            ->when($filter['status'] ?? null, fn ($q, $status) => $q->where('status_saat_ini', $status))
+            ->when($filter['tanggal_dari'] ?? null, fn ($q, $tgl) => $q->whereDate('tanggal_pengajuan', '>=', $tgl))
+            ->when($filter['tanggal_sampai'] ?? null, fn ($q, $tgl) => $q->whereDate('tanggal_pengajuan', '<=', $tgl));
     }
 
     // ── Helper ────────────────────────────────────────

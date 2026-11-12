@@ -177,7 +177,7 @@ class PermohonanController extends Controller
         // Sama dengan halaman detail lintas-role: Kepala Balai melihat seluruh permohonan
         // balai, termasuk pengajuan ulang mandiri pemohon (kepala_balai_id NULL).
         Gate::authorize('view', $permohonan);
-        $permohonan->load('pbf');
+        $permohonan->load(['pbf', 'disposisi.ketuaTim', 'distribusiAktif.staff']);
         return view('internal.kabalai.permohonan.show', compact('permohonan'));
     }
 

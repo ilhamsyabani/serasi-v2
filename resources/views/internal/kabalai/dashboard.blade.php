@@ -384,6 +384,7 @@ $stepX = $barW * 2 + $groupW;
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">SLA</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Tanggal Pengajuan</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Evaluator</th>
                     <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Aksi</th>
                 </tr>
             </thead>
@@ -394,6 +395,7 @@ $stepX = $barW * 2 + $groupW;
                 <td class="px-4 py-3"><x-ui.status-badge :status="$p->status_saat_ini" /></td>
                 <td class="px-4 py-3"><x-ui.sla-badge :sla="app(\App\Services\SlaCalculator::class)->evaluasiPermohonan($p)" /></td>
                 <td class="px-4 py-3 text-slate-400 text-xs">{{ $p->tanggal_pengajuan?->format('d M Y') }}</td>
+                <td class="px-4 py-3 text-slate-600">{{ $p->distribusiAktif?->staff?->nama ?? '—' }}</td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
                     <x-ui.button variant="ghost" size="sm" href="{{ route('internal.permohonan.show', $p) }}">Detail</x-ui.button>
                     @if($p->status_saat_ini === 'pengajuan')

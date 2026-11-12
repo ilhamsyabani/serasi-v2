@@ -22,7 +22,7 @@ class PermohonanController extends Controller
             'dokumen',
             'disposisi.ketuaTim',
             'distribusiAktif.staff',
-            'evaluasi',
+            'evaluasi.revisi.dokumenRevisi',
         ]);
 
         return view('internal.permohonan.show', compact('permohonan'));

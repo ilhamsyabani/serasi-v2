@@ -219,25 +219,12 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
     </x-ui.card>
 </div>
 
-{{-- Search --}}
-<div class="mb-4">
-    <form method="GET" action="{{ route('internal.staff.dashboard') }}" class="flex flex-wrap gap-3 items-end">
-        <div class="flex-1 min-w-[200px]">
-            <x-ui.input label="" name="search" :value="$search" placeholder="Ketik NIB atau Nama PBF..." />
-        </div>
-        <div class="flex items-end gap-2">
-            <x-ui.button type="submit">Cari</x-ui.button>
-            @if($search)
-                <x-ui.button type="button" variant="ghost" onclick="window.location='{{ url()->current() }}'">Reset</x-ui.button>
-            @endif
-        </div>
-    </form>
-</div>
-
 {{-- Daftar Permohonan --}}
 <div class="flex items-center justify-between mb-3">
     <h2 class="text-base font-semibold text-blue-900">Permohonan</h2>
 </div>
+
+<x-ui.permohonan-filter :action="route('internal.staff.dashboard')" :filter="$filter" />
 
 <x-ui.card>
     <x-ui.card-content class="p-0">
@@ -299,6 +286,11 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
             @endforelse
         </table>
         </div>
+        @if($permohonans->hasPages())
+            <div class="px-4 py-3 border-t border-slate-100">
+                {{ $permohonans->links() }}
+            </div>
+        @endif
     </x-ui.card-content>
 </x-ui.card>
 @endsection

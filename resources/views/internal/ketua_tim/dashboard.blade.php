@@ -287,6 +287,8 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
     </x-ui.button>
 </div>
 
+<x-ui.permohonan-filter :action="route('internal.ketua_tim.dashboard')" :filter="$filter" />
+
 <x-ui.card>
     <x-ui.card-content class="p-0">
         <div class="overflow-x-auto">
@@ -358,6 +360,11 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
             @endforelse
         </table>
         </div>
+        @if($permohonans->hasPages())
+            <div class="px-4 py-3 border-t border-slate-100">
+                {{ $permohonans->links() }}
+            </div>
+        @endif
     </x-ui.card-content>
 </x-ui.card>
 {{-- M-17: dialog Alihkan Staff / Kirim Reminder (khusus Ketua Tim) --}}
