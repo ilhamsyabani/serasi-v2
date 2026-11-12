@@ -25,6 +25,12 @@ class StatusTransitionService
     {
         $statusLama = $permohonan->status_saat_ini;
 
+        // Status akhir bersifat final: permohonan yang sudah terbit/ditutup tidak boleh
+        // dipindahkan lagi (pengajuan ulang = permohonan BARU bertaut parent).
+        if ($permohonan->isStatusAkhir() && StatusLog::where('permohonan_id', $permohonan->id)->exists()) {
+            throw new \RuntimeException("Permohonan sudah berstatus akhir ($statusLama) dan tidak dapat diubah ke $statusBaru.");
+        }
+
         if ($statusLama === $statusBaru && StatusLog::where('permohonan_id', $permohonan->id)->whereNull('waktu_selesai')->exists()) {
             throw new \RuntimeException('Status sudah aktif dan sama.');
         }
@@ -83,6 +89,8 @@ class StatusTransitionService
 
         // save() (bukan update([])) agar revisi_ke yang di-set di atas ikut tersimpan.
         $permohonan->status_saat_ini = $statusBaru;
+        // Deadline tahap baru (null saat clock-off/final/tanpa SLA) — dipakai reminder SLA.
+        app(SlaCalculator::class)->isiDeadline($permohonan, $log);
         $permohonan->save();
 
         if ($actor) {

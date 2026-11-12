@@ -56,7 +56,11 @@ class NotifikasiService
         $errorMessage = null;
 
         try {
-            if ($channel === Notifikasi::CHANNEL_EMAIL) {
+            if (trim((string) $isi) === '') {
+                // Template tidak ada/nonaktif: jangan kirim pesan kosong ke penerima.
+                $status = Notifikasi::STATUS_GAGAL;
+                $errorMessage = 'Template notifikasi tidak ditemukan atau nonaktif (' . ($templateKode ?? '-') . '/' . $channel . ')';
+            } elseif ($channel === Notifikasi::CHANNEL_EMAIL) {
                 $tujuanEmail = $this->resolveEmail($permohonan, $tujuanTipe, $tujuanId);
                 if (!$tujuanEmail) {
                     $status = Notifikasi::STATUS_GAGAL;
@@ -70,7 +74,7 @@ class NotifikasiService
                 $noWa = $this->resolveNomorWa($permohonan, $tujuanTipe, $tujuanId);
                 if (!$noWa) {
                     $nama = $tujuanTipe === Notifikasi::TUJUAN_PEMOHON
-                        ? $permohonan->pbf->nama
+                        ? $permohonan->pbf?->nama_pbf
                         : \App\Models\User::find($tujuanId)?->nama;
                     \Illuminate\Support\Facades\Log::warning('NotifikasiService: Nomor WA kosong', [
                         'permohonan_id' => $permohonan->id,

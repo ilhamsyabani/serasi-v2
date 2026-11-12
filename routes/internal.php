@@ -24,6 +24,7 @@ use App\Http\Controllers\Internal\AdminIt\SlaConfigController;
 use App\Http\Controllers\Internal\AdminIt\AuditTrailController;
 use App\Http\Controllers\Internal\Permohonan\PermohonanController;
 use App\Http\Controllers\DownloadController;
+use App\Http\Controllers\Internal\KetuaTim\EskalasiController;
 use App\Http\Controllers\Internal\NotifikasiController;
 
 Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'security.headers'])->group(function () {
@@ -56,6 +57,9 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::get('/dashboard', [KetuaTimDashboardController::class, 'index'])->name('dashboard');
             Route::get('/distribusi', [DistribusiController::class, 'index'])->name('distribusi.index');
             Route::post('/distribusi/{permohonan}', [DistribusiController::class, 'store'])->name('distribusi.store');
+            // M-17 Eskalasi & Reassignment — khusus Ketua Tim.
+            Route::post('/eskalasi/{permohonan}/reassign', [EskalasiController::class, 'reassign'])->name('eskalasi.reassign');
+            Route::post('/eskalasi/{permohonan}/reminder', [EskalasiController::class, 'reminder'])->middleware('throttle:20,1')->name('eskalasi.reminder');
         });
 
         Route::prefix('staff')->middleware('role:staff_sertifikasi')->name('staff.')->group(function () {

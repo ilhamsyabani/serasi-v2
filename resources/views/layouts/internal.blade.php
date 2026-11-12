@@ -17,7 +17,7 @@
         {{-- Main Area --}}
         <div class="flex flex-1 flex-col overflow-hidden">
             {{-- Topbar --}}
-            <x-layouts.topbar title="{{ $pageTitle ?? '' }}" />
+            <x-layouts.topbar :title="$pageTitle ?? ''" />
 
             {{-- Content --}}
             <main class="flex-1 overflow-y-auto p-6">

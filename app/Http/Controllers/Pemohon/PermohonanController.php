@@ -32,10 +32,24 @@ class PermohonanController extends Controller
         return view('pemohon.permohonan.show', compact('permohonan'));
     }
 
+    /**
+     * Permohonan ditutup yang BELUM diajukan ulang. Satu permohonan ditutup hanya
+     * boleh melahirkan satu pengajuan ulang — tanpa `whereDoesntHave`, pemohon bisa
+     * membuat pengajuan ulang tak terbatas dari permohonan lama yang sama.
+     */
+    private function permohonanPerluPengajuanUlang(int $pbfId): ?Permohonan
+    {
+        return Permohonan::where('pbf_id', $pbfId)
+            ->where('status_saat_ini', Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG)
+            ->whereDoesntHave('pengajuanUlang')
+            ->latest()
+            ->first();
+    }
+
     public function create()
     {
         $pbf = Auth::guard('pemohon')->user();
-        $parent = Permohonan::where('pbf_id', $pbf->id)->where('status_saat_ini', Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG)->latest()->first();
+        $parent = $this->permohonanPerluPengajuanUlang($pbf->id);
         abort_if(!$parent, 403, 'Tidak ada permohonan yang memerlukan pengajuan ulang.');
 
         return view('pemohon.permohonan.create', compact('parent'));
@@ -44,11 +58,16 @@ class PermohonanController extends Controller
     public function store(Request $request)
     {
         $pbf = Auth::guard('pemohon')->user();
-        $parent = Permohonan::where('pbf_id', $pbf->id)->where('status_saat_ini', Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG)->latest()->first();
-        abort_if(!$parent, 403);
+        $parent = $this->permohonanPerluPengajuanUlang($pbf->id);
+        abort_if(!$parent, 403, 'Tidak ada permohonan yang memerlukan pengajuan ulang.');
 
         $data = $request->validate([
+            // Tanpa aturan pada `dokumen` sendiri, pengajuan ulang tanpa berkas lolos validasi.
+            'dokumen' => 'required|array|min:1|max:5',
             'dokumen.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ], [
+            'dokumen.required' => 'Unggah dokumen persyaratan terlebih dahulu.',
+            'dokumen.max' => 'Maksimal 5 berkas.',
         ]);
 
         if ($request->hasFile('dokumen')) {
@@ -94,7 +113,7 @@ class PermohonanController extends Controller
             ];
 
             foreach ($request->file('dokumen') as $i => $file) {
-                $path = $file->store('dokumen_permohonan', 'public');
+                $path = app(\App\Services\BerkasService::class)->simpan($file, 'dokumen_permohonan');
                 \App\Models\DokumenPermohonan::create([
                     'permohonan_id' => $permohonan->id,
                     'jenis_dokumen' => $jenisDokumen[$i] ?? 'dokumen_lain',

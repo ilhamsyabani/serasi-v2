@@ -13,6 +13,7 @@ use App\Services\NotifikasiService;
 use App\Services\StatusTransitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class EvaluasiController extends Controller
 {
@@ -54,33 +55,48 @@ class EvaluasiController extends Controller
 
         $data = $request->validate([
             'hasil' => 'required|in:lengkap,tidak_lengkap',
-            'catatan' => 'nullable|string',
+            // Tidak Lengkap wajib disertai catatan — itulah yang dibaca pemohon untuk merevisi.
+            'catatan' => 'nullable|string|max:5000|required_if:hasil,tidak_lengkap',
             'siklus_ke' => 'nullable|integer',
-        ]);
-
-        $siklus = (Evaluasi::where('permohonan_id', $permohonan->id)->max('siklus_ke') ?? 0) + 1;
-
-        if ($request->filled('siklus_ke') && (int) $request->siklus_ke !== $siklus) {
-            abort(422, 'Evaluasi untuk siklus ini sudah pernah diproses.');
-        }
-
-        Evaluasi::create([
-            'permohonan_id' => $permohonan->id,
-            'staff_id' => $user->id,
-            'siklus_ke' => $siklus,
-            'hasil' => $data['hasil'],
-            'catatan' => $data['catatan'],
-            'tanggal_evaluasi' => now(),
+        ], [
+            'catatan.required_if' => 'Catatan ketidaksesuaian wajib diisi bila hasil evaluasi Tidak Lengkap.',
         ]);
 
         $transisi = app(StatusTransitionService::class);
+
+        // Evaluasi + perubahan status disimpan atomik, dengan baris permohonan dikunci
+        // supaya submit ganda tidak menghasilkan dua evaluasi / dua lompatan revisi.
+        $log = DB::transaction(function () use ($permohonan, $request, $data, $user, $transisi) {
+            $terkunci = Permohonan::whereKey($permohonan->id)->lockForUpdate()->firstOrFail();
+            abort_if(!$this->canEvaluate($terkunci), 422, 'Permohonan tidak dalam tahap proses evaluasi.');
+
+            $siklus = (Evaluasi::where('permohonan_id', $terkunci->id)->max('siklus_ke') ?? 0) + 1;
+
+            if ($request->filled('siklus_ke') && (int) $request->siklus_ke !== $siklus) {
+                abort(422, 'Evaluasi untuk siklus ini sudah pernah diproses.');
+            }
+
+            Evaluasi::create([
+                'permohonan_id' => $terkunci->id,
+                'staff_id' => $user->id,
+                'siklus_ke' => $siklus,
+                'hasil' => $data['hasil'],
+                'catatan' => $data['catatan'] ?? null,
+                'tanggal_evaluasi' => now(),
+            ]);
+
+            return $data['hasil'] === 'lengkap'
+                ? $transisi->transisi($terkunci, Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN, 'Evaluasi lengkap', $user, 'internal')
+                : $transisi->mintaRevisiAtauTutup($terkunci, $data['catatan'], $user, 'internal');
+        });
+
+        $permohonan->refresh();
+
         $notif = app(NotifikasiService::class);
         $ketuaTimId = $permohonan->disposisi?->ketua_tim_id;
         $ketuaTim = $ketuaTimId ? User::find($ketuaTimId) : null;
 
         if ($data['hasil'] === 'lengkap') {
-            $transisi->transisi($permohonan, Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN, 'Evaluasi lengkap', $user, 'internal');
-
             if ($ketuaTim) {
                 $notif->kirimNotifikasiKetuaTim($ketuaTim, $permohonan, 'SIAP_TERBIT');
                 $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTimId, Notifikasi::CHANNEL_EMAIL, 'SIAP_TERBIT');
@@ -88,8 +104,6 @@ class EvaluasiController extends Controller
 
             $pesan = 'Evaluasi disimpan. Permohonan siap terbit surat.';
         } else {
-            $log = $transisi->mintaRevisiAtauTutup($permohonan, $data['catatan'], $user, 'internal');
-
             if ($log->status === Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG) {
                 $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'DITUTUP_PENGAJUAN_ULANG');
                 $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_EMAIL, 'DITUTUP_PENGAJUAN_ULANG');

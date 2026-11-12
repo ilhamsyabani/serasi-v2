@@ -100,7 +100,7 @@
                         <x-ui.button variant="ghost" size="sm" href="{{ route('internal.kabalai.permohonan.edit', $p) }}" class="!text-amber-600 hover:!text-amber-700">
                             <i class="ph ph-pencil-simple" aria-hidden="true"></i>
                         </x-ui.button>
-                        <form action="{{ route('internal.kabalai.permohonan.destroy', $p) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus permohonan ini?')">
+                        <form action="{{ route('internal.kabalai.permohonan.destroy', $p) }}" method="POST" class="inline" onsubmit="return confirm('Hapus permohonan ini dari daftar? Riwayat dan audit trail-nya tetap tersimpan.')">
                             @csrf
                             @method('DELETE')
                             <x-ui.button variant="ghost" size="sm" type="submit" class="!text-red-500 hover:!text-red-700">

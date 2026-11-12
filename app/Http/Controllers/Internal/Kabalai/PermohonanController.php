@@ -14,6 +14,7 @@ use App\Services\StatusTransitionService;
 use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class PermohonanController extends Controller
 {
@@ -33,7 +34,8 @@ class PermohonanController extends Controller
 
         $query = Permohonan::select('permohonan.*','pbf.nib as nib')
             ->with(['statusLog', 'disposisi.ketuaTim', 'pbf','distribusiAktif.staff'])
-            ->where('kepala_balai_id', Auth::id())
+            // Termasuk pengajuan ulang mandiri pemohon (kepala_balai_id NULL).
+            ->untukKepalaBalai(Auth::id())
             -> leftJoin('pbf', 'permohonan.pbf_id', '=', 'pbf.id');
 
         if ($status !== '' && $status !== null) {
@@ -85,17 +87,25 @@ class PermohonanController extends Controller
                 ->with('warning', 'Nomor WhatsApp ini sudah terdaftar untuk NIB lain (' . $pbfByWa->nib . ' — ' . $pbfByWa->nama_pbf . ').');
         }
 
-        $pbf = Pbf::create([
-            'nib' => $data['nib'],
-            'nama_pbf' => $data['nama_pbf'],
-            'alamat' => $data['alamat'] ?? null,
-            'email' => $data['email'],
-            'no_whatsapp' => $data['no_whatsapp'],
-            'password_hash' => \Illuminate\Support\Facades\Hash::make($password),
-            'otp_terverifikasi' => false,
-        ]);
+        // NIB yang sudah terdaftar = PBF lama mengajukan lagi: pakai akunnya yang ada.
+        // Membuat baris baru akan menabrak unique `pbf.nib`, dan kredensialnya tidak
+        // boleh di-reset diam-diam.
+        $pbf = Pbf::where('nib', $data['nib'])->first();
+        $akunBaru = $pbf === null;
 
-        $username = $data['email'];
+        if ($akunBaru) {
+            $pbf = Pbf::create([
+                'nib' => $data['nib'],
+                'nama_pbf' => $data['nama_pbf'],
+                'alamat' => $data['alamat'] ?? null,
+                'email' => $data['email'],
+                'no_whatsapp' => $data['no_whatsapp'],
+                'password_hash' => \Illuminate\Support\Facades\Hash::make($password),
+                'otp_terverifikasi' => false,
+            ]);
+        }
+
+        $username = $pbf->email;
 
         try {
             $noReg = Permohonan::generateNoRegistrasi();
@@ -139,7 +149,7 @@ class PermohonanController extends Controller
                 'permohonan_id' => $permohonan->id,
                 'jenis_dokumen' => $jenis,
                 'nama_file_asli' => $file->getClientOriginalName(),
-                'path_file' => $file->store('dokumen_permohonan', 'public'),
+                'path_file' => app(\App\Services\BerkasService::class)->simpan($file, 'dokumen_permohonan'),
                 'ukuran_file_kb' => (int) ceil($file->getSize() / 1024),
                 'mime_type' => $file->getMimeType(),
                 'uploaded_by_user_id' => Auth::id(),
@@ -149,29 +159,39 @@ class PermohonanController extends Controller
 
         app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PENGAJUAN, 'Pengajuan baru', Auth::user(), 'internal');
 
-        // Kirim info akun baru via WA + email (sekali saja)
-        app(NotifikasiService::class)->kirimAkunBaru($permohonan, $username, $password);
+        $notif = app(NotifikasiService::class);
+        if ($akunBaru) {
+            // Kirim info akun baru via WA + email (sekali saja)
+            $notif->kirimAkunBaru($permohonan, $username, $password);
+        } else {
+            // Akun sudah ada: cukup kabari bahwa pengajuan diterima, tanpa kredensial.
+            $notif->kirim($permohonan, \App\Models\Notifikasi::TUJUAN_PEMOHON, $pbf->id, \App\Models\Notifikasi::CHANNEL_WHATSAPP, 'PENGAJUAN_BARU');
+            $notif->kirim($permohonan, \App\Models\Notifikasi::TUJUAN_PEMOHON, $pbf->id, \App\Models\Notifikasi::CHANNEL_EMAIL, 'PENGAJUAN_BARU');
+        }
 
         return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil dibuat.');
     }
 
     public function show(Permohonan $permohonan)
     {
-        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+        // Sama dengan halaman detail lintas-role: Kepala Balai melihat seluruh permohonan
+        // balai, termasuk pengajuan ulang mandiri pemohon (kepala_balai_id NULL).
+        Gate::authorize('view', $permohonan);
         $permohonan->load('pbf');
         return view('internal.kabalai.permohonan.show', compact('permohonan'));
     }
 
     public function edit(Permohonan $permohonan)
     {
-        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+        // Policy: hanya pemilik, dan hanya selama belum berstatus akhir.
+        Gate::authorize('update', $permohonan);
         $permohonan->load('dokumen', 'pbf');
         return view('internal.kabalai.permohonan.edit', compact('permohonan'));
     }
 
     public function update(Request $request, Permohonan $permohonan)
     {
-        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+        Gate::authorize('update', $permohonan);
 
         $data = $request->validate([
             'nama_pbf_snapshot' => 'required|string|max:200',
@@ -201,10 +221,10 @@ class PermohonanController extends Controller
 
             $existing = $permohonan->dokumen()->where('jenis_dokumen', $jenis)->first();
             if ($existing) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($existing->path_file);
+                app(\App\Services\BerkasService::class)->hapus($existing->path_file);
                 $existing->update([
                     'nama_file_asli' => $file->getClientOriginalName(),
-                    'path_file' => $file->store('dokumen_permohonan', 'public'),
+                    'path_file' => app(\App\Services\BerkasService::class)->simpan($file, 'dokumen_permohonan'),
                     'ukuran_file_kb' => (int) ceil($file->getSize() / 1024),
                     'mime_type' => $file->getMimeType(),
                     'versi' => ($existing->versi ?? 0) + 1,
@@ -216,7 +236,7 @@ class PermohonanController extends Controller
                     'permohonan_id' => $permohonan->id,
                     'jenis_dokumen' => $jenis,
                     'nama_file_asli' => $file->getClientOriginalName(),
-                    'path_file' => $file->store('dokumen_permohonan', 'public'),
+                    'path_file' => app(\App\Services\BerkasService::class)->simpan($file, 'dokumen_permohonan'),
                     'ukuran_file_kb' => (int) ceil($file->getSize() / 1024),
                     'mime_type' => $file->getMimeType(),
                     'uploaded_by_user_id' => Auth::id(),
@@ -224,6 +244,16 @@ class PermohonanController extends Controller
                 ]);
             }
         }
+
+        \App\Models\AuditTrail::create([
+            'user_id' => Auth::id(),
+            'user_type' => \App\Models\AuditTrail::USER_TYPE_INTERNAL,
+            'aksi' => 'permohonan_update',
+            'modul' => 'M-03',
+            'permohonan_id' => $permohonan->id,
+            'detail' => ['kolom' => array_keys($permohonan->getChanges())],
+            'ip_address' => $request->ip(),
+        ]);
 
         return redirect()->route('internal.kabalai.permohonan.show', $permohonan)->with('success', 'Permohonan berhasil diperbarui.');
     }
@@ -233,20 +263,24 @@ class PermohonanController extends Controller
         abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
         abort_unless($permohonan->status_saat_ini === Permohonan::STATUS_PENGAJUAN, 403);
 
+        // Soft delete: permohonan hilang dari seluruh daftar, tetapi dokumen, riwayat
+        // status, notifikasi, dan audit trail-nya TIDAK dihapus — jejak tetap utuh.
         \DB::transaction(function () use ($permohonan) {
-            // Hapus semua relasi terkait
-            $permohonan->dokumen()->delete();
-            $permohonan->disposisi()->delete();
-            $permohonan->distribusi()->delete();
-            $permohonan->evaluasi()->delete();
-            $permohonan->revisi()->delete();
-            $permohonan->suratPengesahan()->delete();
-            $permohonan->statusLog()->delete();
-            $permohonan->notifikasi()->delete();
-            $permohonan->reassignmentLog()->delete();
-            \DB::table('audit_trail')->where('permohonan_id', $permohonan->id)->delete();
-
             $permohonan->delete();
+
+            \App\Models\AuditTrail::create([
+                'user_id' => Auth::id(),
+                'user_type' => \App\Models\AuditTrail::USER_TYPE_INTERNAL,
+                'aksi' => 'permohonan_hapus',
+                'modul' => 'M-03',
+                'permohonan_id' => $permohonan->id,
+                'detail' => [
+                    'no_registrasi' => $permohonan->no_registrasi,
+                    'nama_pbf' => $permohonan->nama_pbf_snapshot,
+                    'status_saat_dihapus' => $permohonan->status_saat_ini,
+                ],
+                'ip_address' => request()->ip(),
+            ]);
         });
 
         return redirect()->route('internal.kabalai.permohonan.index')->with('success', 'Permohonan berhasil dihapus.');

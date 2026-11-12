@@ -65,6 +65,9 @@ $canEdit = $user->isKepalaBalai() && $user->id === $permohonan->kepala_balai_id 
     </x-ui.card-content>
 </x-ui.card>
 
+{{-- Riwayat Revisi (semua siklus) --}}
+<x-ui.riwayat-revisi :permohonan="$permohonan" route-download="internal.download.revisi" class="mb-4" />
+
 {{-- Dokumen --}}
 <x-ui.card class="mb-4">
     <x-ui.card-header title="Dokumen" description="Dokumen yang diupload" />

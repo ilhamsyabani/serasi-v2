@@ -11,6 +11,7 @@ use App\Services\NotifikasiService;
 use App\Services\StatusTransitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DisposisiController extends Controller
 {
@@ -25,8 +26,10 @@ class DisposisiController extends Controller
 
         $allowedSorts = ['tanggal_pengajuan'];
         
+        // Termasuk pengajuan ulang mandiri pemohon (kepala_balai_id NULL) — tanpa ini
+        // pengajuan ulang tidak pernah muncul di daftar disposisi dan macet selamanya.
         $query = Permohonan::where('status_saat_ini', Permohonan::STATUS_PENGAJUAN)
-            ->where('kepala_balai_id', $user->id);
+            ->untukKepalaBalai($user->id);
 
         if ($tanggalDari) {
             $query->whereDate('tanggal_pengajuan', '>=', $tanggalDari);
@@ -49,37 +52,59 @@ class DisposisiController extends Controller
         }
 
         $permohonans = $query->latest()->paginate(10);
-        $ketuaTimList = User::whereHas('role', fn($q) => $q->where('kode', 'ketua_tim'))->get();
+        $ketuaTimList = User::whereHas('role', fn($q) => $q->where('kode', 'ketua_tim'))->where('is_aktif', true)->orderBy('nama')->get();
         return view('internal.kabalai.disposisi.index', compact('permohonans', 'ketuaTimList', 'sort', 'dir', 'tanggalDari', 'tanggalSampai', 'search'));
     }
 
     public function store(Request $request, Permohonan $permohonan)
     {
-        abort_unless($permohonan->kepala_balai_id === Auth::id(), 403);
+        // Milik Kepala Balai ini, atau pengajuan ulang mandiri pemohon (belum punya pemilik).
+        abort_unless($permohonan->kepala_balai_id === null || $permohonan->kepala_balai_id === Auth::id(), 403);
 
         $data = $request->validate([
-            'ketua_tim_id' => 'required|exists:users,id',
+            'ketua_tim_id' => 'required|integer',
             'catatan' => 'nullable|string',
         ]);
 
-        if ($permohonan->disposisi) {
+        // Tujuan disposisi wajib Ketua Tim yang aktif.
+        $ketuaTim = User::whereKey($data['ketua_tim_id'])
+            ->where('is_aktif', true)
+            ->whereHas('role', fn ($q) => $q->where('kode', 'ketua_tim'))
+            ->first();
+
+        if (! $ketuaTim) {
+            return back()->withErrors(['ketua_tim_id' => 'Ketua Tim yang dipilih tidak valid atau tidak aktif.'])->withInput();
+        }
+
+        $berhasil = DB::transaction(function () use ($permohonan, $ketuaTim, $data) {
+            $terkunci = Permohonan::whereKey($permohonan->id)->lockForUpdate()->firstOrFail();
+
+            if ($terkunci->status_saat_ini !== Permohonan::STATUS_PENGAJUAN || $terkunci->disposisi) {
+                return false;
+            }
+
+            Disposisi::create([
+                'permohonan_id' => $terkunci->id,
+                'kepala_balai_id' => Auth::id(),
+                'ketua_tim_id' => $ketuaTim->id,
+                'catatan' => $data['catatan'] ?? null,
+                'tanggal_disposisi' => now(),
+            ]);
+
+            app(StatusTransitionService::class)->transisi($terkunci, Permohonan::STATUS_DIDISPOSISIKAN, 'Didisposisikan ke Ketua Tim', Auth::user(), 'internal');
+
+            return true;
+        });
+
+        if (! $berhasil) {
             return back()->with('error', 'Permohonan sudah didisposisikan.');
         }
 
-        Disposisi::create([
-            'permohonan_id' => $permohonan->id,
-            'kepala_balai_id' => Auth::id(),
-            'ketua_tim_id' => $data['ketua_tim_id'],
-            'catatan' => $data['catatan'],
-            'tanggal_disposisi' => now(),
-        ]);
+        $permohonan->refresh();
 
-        app(StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_DIDISPOSISIKAN, 'Didisposisikan ke Ketua Tim', Auth::user(), 'internal');
-
-        $ketuaTim = User::find($data['ketua_tim_id']);
         $notif = app(NotifikasiService::class);
         $notif->kirimNotifikasiKetuaTim($ketuaTim, $permohonan, 'DISPOSISI_BARU');
-        $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $data['ketua_tim_id'], Notifikasi::CHANNEL_EMAIL, 'DISPOSISI_BARU');
+        $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTim->id, Notifikasi::CHANNEL_EMAIL, 'DISPOSISI_BARU');
 
         return back()->with('success', 'Disposisi berhasil dikirim.');
     }

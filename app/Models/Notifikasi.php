@@ -62,7 +62,8 @@ class Notifikasi extends Model
 
     public function permohonan(): BelongsTo
     {
-        return $this->belongsTo(Permohonan::class);
+        // withTrashed: jejak permohonan yang dihapus tetap bisa ditampilkan.
+        return $this->belongsTo(Permohonan::class)->withTrashed();
     }
 
     /**

@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Storage;
+use App\Services\BerkasService;
+use Illuminate\Support\Facades\Gate;
 
 class DownloadController extends Controller
 {
@@ -36,6 +37,7 @@ class DownloadController extends Controller
     public function surat(int $permohonanId)
     {
         $surat = \App\Models\SuratPengesahan::where('permohonan_id', $permohonanId)
+            ->latest('id')
             ->firstOrFail();
 
         abort_unless(
@@ -48,45 +50,38 @@ class DownloadController extends Controller
 
     private function previewFile(string $path, string $filename)
     {
-        if (! Storage::disk('public')->exists($path)) {
+        // Berkas ada di disk privat; BerkasService masih membaca disk public untuk
+        // berkas lama yang belum dipindahkan (`php artisan berkas:amankan`).
+        $fullPath = app(BerkasService::class)->pathFisik($path);
+
+        if ($fullPath === null) {
             abort(404, 'File tidak ditemukan.');
         }
 
-        $disk = Storage::disk('public');
-        $fullPath = $disk->path($path);
-
-        $response = response()->file($fullPath, [
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        return response()->file($fullPath, [
+            // Nama berkas berasal dari input pengguna — buang karakter yang merusak header.
+            'Content-Disposition' => 'inline; filename="' . preg_replace('/[\\\\\/"\r\n]+/', '_', $filename) . '"',
+            // Berkas privat: jangan disimpan cache bersama/proxy.
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
-
-        return $response;
     }
 
+    /**
+     * Hak unduh = hak lihat permohonan. Portal internal memakai PermohonanPolicy::view
+     * (sumber kebenaran yang sama dengan halaman detail), sehingga siapa pun yang boleh
+     * membuka detail juga bisa membuka berkasnya. Portal pemohon: hanya milik sendiri.
+     */
     private function canAccessPermohonan(\App\Models\Permohonan $permohonan): bool
     {
-        $user = auth()->user();
+        if (request()->routeIs('pemohon.*')) {
+            $pbf = auth('pemohon')->user();
 
-        if ($user && $user->isAdminIt()) {
-            return true;
+            return $pbf !== null && $permohonan->pbf_id === $pbf->id;
         }
 
-        if ($user && $user->isKepalaBalai()) {
-            return $permohonan->kepala_balai_id === $user->id;
-        }
+        $user = auth('web')->user();
 
-        if ($user && $user->isStaffSertifikasi()) {
-            return $permohonan->distribusiAktif?->staff_id === $user->id;
-        }
-
-        if ($user && $user->isKetuaTim()) {
-            return $permohonan->disposisi?->ketua_tim_id === $user->id;
-        }
-
-        $pbf = auth('pemohon')->user();
-        if ($pbf) {
-            return $permohonan->pbf_id === $pbf->id;
-        }
-
-        return false;
+        return $user !== null && Gate::forUser($user)->allows('view', $permohonan);
     }
 }

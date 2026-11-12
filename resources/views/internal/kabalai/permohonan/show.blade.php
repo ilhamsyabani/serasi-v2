@@ -17,11 +17,12 @@
         </a>
 
         {{-- Jika ada aksi tambahan di pojok kanan atas, bisa diletakkan di sini --}}
-        @unless($permohonan->isStatusAkhir())
+        {{-- Edit hanya untuk pemilik & selama belum final (PermohonanPolicy::update). --}}
+        @can('update', $permohonan)
             <x-ui.button variant="default" size="md" href="{{ route('internal.kabalai.permohonan.edit', $permohonan) }}">
                 <i class="ph ph-pencil-simple mr-1.5"></i> Edit Data
             </x-ui.button>
-        @endunless
+        @endcan
     </div>
 
     {{-- Grid Layout Utama: 2 Kolom Kiri, 1 Kolom Kanan pada Desktop --}}
@@ -139,6 +140,9 @@
                     </div>
                 </x-ui.card>
             @endif
+
+            {{-- Riwayat Revisi (semua siklus) --}}
+            <x-ui.riwayat-revisi :permohonan="$permohonan" route-download="internal.download.revisi" />
 
         </div>
 

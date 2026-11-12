@@ -8,7 +8,7 @@
         <h1 class="text-lg font-bold text-slate-900">Pengajuan Saya</h1>
         <p class="text-sm text-slate-500">Riwayat permohonan</p>
     </div>
-    @if($permohonans->where('status_saat_ini', \App\Models\Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG)->isNotEmpty())
+    @if($permohonans->contains(fn ($p) => $p->status_saat_ini === \App\Models\Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG && $permohonans->where('parent_permohonan_id', $p->id)->isEmpty()))
         <x-ui.button variant="default" size="sm" href="{{ route('pemohon.permohonan.create') }}">
             + Ajukan Ulang
         </x-ui.button>

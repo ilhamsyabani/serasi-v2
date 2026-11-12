@@ -12,6 +12,7 @@ use App\Services\NotifikasiService;
 use App\Traits\ValidatesFileContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RevisiController extends Controller
 {
@@ -35,32 +36,59 @@ class RevisiController extends Controller
         abort_if(!in_array($permohonan->status_saat_ini, [Permohonan::STATUS_REVISI_1, Permohonan::STATUS_REVISI_2, Permohonan::STATUS_REVISI_3]), 403);
 
         $request->validate([
+            // Tanpa aturan pada `dokumen` sendiri, form tanpa berkas lolos validasi.
+            'dokumen' => 'required|array|min:1|max:10',
             'dokumen.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ], [
+            'dokumen.required' => 'Unggah minimal satu berkas perbaikan.',
+            'dokumen.max' => 'Maksimal 10 berkas per pengiriman revisi.',
         ]);
 
-        foreach ($request->file('dokumen') as $file) {
+        $files = $request->file('dokumen');
+        foreach ($files as $file) {
             $this->assertAllowedFileMime($file);
         }
 
-        $evaluasiTerakhir = $permohonan->evaluasiTerakhir;
+        $paths = [];
 
-        $revisi = Revisi::firstOrCreate(
-            ['evaluasi_id' => $evaluasiTerakhir->id],
-            ['permohonan_id' => $permohonan->id]
-        );
+        try {
+            DB::transaction(function () use ($permohonan, $files, &$paths) {
+                // Kunci baris: dua kiriman bersamaan tidak boleh memicu dua transisi.
+                $terkunci = Permohonan::whereKey($permohonan->id)->lockForUpdate()->firstOrFail();
+                abort_if(!in_array($terkunci->status_saat_ini, [Permohonan::STATUS_REVISI_1, Permohonan::STATUS_REVISI_2, Permohonan::STATUS_REVISI_3], true), 422, 'Revisi untuk permohonan ini sudah dikirim.');
 
-        foreach ($request->file('dokumen') as $file) {
-            $path = $file->store('dokumen_revisi', 'public');
-            DokumenRevisi::create([
-                'revisi_id' => $revisi->id,
-                'nama_file_asli' => $file->getClientOriginalName(),
-                'path_file' => $path,
-                'ukuran_file_kb' => round($file->getSize() / 1024, 2),
-                'mime_type' => $file->getMimeType(),
-                'uploaded_at' => now(),
-            ]);
+                $evaluasiTerakhir = $terkunci->evaluasiTerakhir;
+                abort_if(!$evaluasiTerakhir, 422, 'Catatan evaluasi untuk revisi ini tidak ditemukan.');
+
+                $revisi = Revisi::firstOrCreate(
+                    ['evaluasi_id' => $evaluasiTerakhir->id],
+                    ['permohonan_id' => $terkunci->id]
+                );
+
+                foreach ($files as $file) {
+                    $path = app(\App\Services\BerkasService::class)->simpan($file, 'dokumen_revisi');
+                    $paths[] = $path;
+                    DokumenRevisi::create([
+                        'revisi_id' => $revisi->id,
+                        'nama_file_asli' => $file->getClientOriginalName(),
+                        'path_file' => $path,
+                        'ukuran_file_kb' => round($file->getSize() / 1024, 2),
+                        'mime_type' => $file->getMimeType(),
+                        'uploaded_at' => now(),
+                    ]);
+                }
+
+                app(\App\Services\StatusTransitionService::class)->transisi($terkunci, Permohonan::STATUS_PROSES_EVALUASI, 'Revisi diupload', null, 'pemohon');
+            });
+        } catch (\Throwable $e) {
+            app(\App\Services\BerkasService::class)->hapus($paths);
+            throw $e;
         }
 
+        $permohonan->refresh();
+
+        // Notifikasi dikirim SETELAH data tersimpan, supaya staff tidak diberi tahu
+        // tentang revisi yang ternyata gagal disimpan.
         $staffId = $permohonan->distribusiAktif?->staff_id;
         $staff = $staffId ? User::find($staffId) : null;
         $notif = app(NotifikasiService::class);
@@ -70,15 +98,12 @@ class RevisiController extends Controller
             $notif->kirimNotifikasiStaff($staff, $permohonan, 'REVISI_DITERIMA');
         }
 
-        // Notify KT bahwa pemohon telah upload revisi
         $ktId = $permohonan->disposisi?->ketua_tim_id;
-        if ($ktId) {
-            $kt = User::find($ktId);
+        $kt = $ktId ? User::find($ktId) : null;
+        if ($kt) {
             $notif->kirimNotifikasiKetuaTim($kt, $permohonan, 'REVISI_UPLOADED');
             $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ktId, Notifikasi::CHANNEL_EMAIL, 'REVISI_UPLOADED');
         }
-
-        app(\App\Services\StatusTransitionService::class)->transisi($permohonan, Permohonan::STATUS_PROSES_EVALUASI, 'Revisi diupload', null, 'pemohon');
 
         return redirect()->route('pemohon.dashboard')->with('success', 'Revisi berhasil dikirim.');
     }

@@ -110,68 +110,8 @@ $showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
     </x-ui.card-content>
 </x-ui.card>
 
-@if(isset($revisi) && $revisi->isNotEmpty())
-<x-ui.card class="mt-4">
-    <x-ui.card-header title="Riwayat Dokumen Revisi" description="Dokumen yang diunggah pemohon pada masing-masing siklus revisi" />
-    <x-ui.card-content class="space-y-4">
-        @foreach($revisi as $idx => $r)
-        @php
-            $nomorSiklus = $r->evaluasi?->siklus_ke ?? ($idx + 1);
-        @endphp
-        <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/40">
-            <div class="px-4 py-2.5 bg-slate-100/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                    <i class="ph ph-files"></i> Berkas Revisi {{ $nomorSiklus }}
-                </span>
-                <span class="text-xs text-slate-500">
-                    Diunggah: {{ $r->created_at?->format('d M Y H:i') }} WIB
-                </span>
-            </div>
-            <ul class="divide-y divide-slate-100 bg-white">
-                @forelse($r->dokumenRevisi as $dr)
-                <li class="px-4 py-2.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                    <div>
-                        <p class="text-sm font-medium text-slate-800">{{ $dr->nama_file_asli }}</p>
-                        <p class="text-xs text-slate-400">{{ number_format($dr->ukuran_file_kb, 2) }} KB &middot; {{ $dr->uploaded_at?->format('d M Y H:i') }} WIB</p>
-                    </div>
-                    <x-ui.button variant="ghost" size="sm" href="{{ route('internal.download.revisi', $dr->id) }}" target="_blank">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    </x-ui.button>
-                </li>
-                @empty
-                <li class="px-4 py-3 text-xs text-slate-400 text-center">Tidak ada berkas terlampir.</li>
-                @endforelse
-            </ul>
-        </div>
-        @endforeach
-
-        @if($evaluasi && $evaluasi->catatan)
-        <div class="mt-4 p-4 border border-amber-300 bg-amber-50/70 rounded-lg">
-            <div class="flex items-center gap-2 mb-1.5">
-                <span class="text-xs font-bold uppercase tracking-wider text-amber-900">
-                    Catatan Evaluasi Sebelumnya (Siklus {{ $evaluasi->siklus_ke }} &middot; {{ $evaluasi->tanggal_evaluasi?->format('d M Y H:i') }} WIB)
-                </span>
-            </div>
-            <p class="text-sm text-slate-700 whitespace-pre-line">{{ $evaluasi->catatan }}</p>
-        </div>
-        @endif
-    </x-ui.card-content>
-</x-ui.card>
-@elseif($evaluasi && $evaluasi->catatan)
-<x-ui.card class="mt-4">
-    <x-ui.card-header title="Catatan Evaluasi Sebelumnya" description="Catatan dari hasil evaluasi terakhir" />
-    <x-ui.card-content>
-        <div class="p-4 border border-amber-300 bg-amber-50/70 rounded-lg">
-            <div class="flex items-center gap-2 mb-1.5">
-                <span class="text-xs font-bold uppercase tracking-wider text-amber-900">
-                    Siklus {{ $evaluasi->siklus_ke }} &middot; {{ $evaluasi->tanggal_evaluasi?->format('d M Y H:i') }} WIB
-                </span>
-            </div>
-            <p class="text-sm text-slate-700 whitespace-pre-line">{{ $evaluasi->catatan }}</p>
-        </div>
-    </x-ui.card-content>
-</x-ui.card>
-@endif
+{{-- Riwayat Revisi (semua siklus: catatan evaluasi + berkas perbaikan) --}}
+<x-ui.riwayat-revisi :permohonan="$permohonan" route-download="internal.download.revisi" class="mt-4" />
 
 <x-ui.card class="mt-4">
     <x-ui.card-header title="Form Evaluasi" description="Tentukan kelengkapan permohonan" />

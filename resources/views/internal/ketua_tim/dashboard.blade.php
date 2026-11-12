@@ -274,6 +274,7 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
     </x-ui.card>
 </div>
 
+@php $eskalasi = app(\App\Services\EskalasiService::class); @endphp
 {{-- Permohonan Tim --}}
 <div class="flex items-center justify-between mb-3">
     <h2 class="text-base font-semibold text-blue-900">Daftar Permohonan Tim</h2>
@@ -330,6 +331,22 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                     <x-ui.sla-badge :sla="app(\App\Services\SlaCalculator::class)->evaluasiPermohonan($p)" />
                 </td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
+                    @if($eskalasi->bisaReminder($p))
+                        <button type="button" title="Kirim reminder WhatsApp ke staff"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-md text-amber-600 hover:bg-amber-50"
+                                @click="$dispatch('buka-eskalasi', { mode: 'reminder', id: {{ $p->id }}, noReg: @js($p->no_registrasi), staffId: {{ $p->distribusiAktif->staff_id }}, staffNama: @js($p->distribusiAktif->staff?->nama) })">
+                            <i class="ph ph-bell-ringing text-base" aria-hidden="true"></i>
+                            <span class="sr-only">Kirim reminder</span>
+                        </button>
+                    @endif
+                    @if($eskalasi->bisaReassign($p))
+                        <button type="button" title="Alihkan ke staff lain"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-md text-blue-700 hover:bg-blue-50"
+                                @click="$dispatch('buka-eskalasi', { mode: 'reassign', id: {{ $p->id }}, noReg: @js($p->no_registrasi), staffId: {{ $p->distribusiAktif->staff_id }}, staffNama: @js($p->distribusiAktif->staff?->nama) })">
+                            <i class="ph ph-user-switch text-base" aria-hidden="true"></i>
+                            <span class="sr-only">Alihkan staff</span>
+                        </button>
+                    @endif
                     <x-ui.button variant="ghost" size="sm" href="{{ route('internal.permohonan.show', $p) }}">Detail</x-ui.button>
                     <x-ui.timeline-toggle />
                 </td>
@@ -343,4 +360,70 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
         </div>
     </x-ui.card-content>
 </x-ui.card>
+{{-- M-17: dialog Alihkan Staff / Kirim Reminder (khusus Ketua Tim) --}}
+<div x-data="{
+        buka: false, mode: 'reassign', id: null, noReg: '', staffId: null, staffNama: '',
+        urlReassign: @js(route('internal.ketua_tim.eskalasi.reassign', '__ID__')),
+        urlReminder: @js(route('internal.ketua_tim.eskalasi.reminder', '__ID__')),
+        get aksi() { return (this.mode === 'reassign' ? this.urlReassign : this.urlReminder).replace('__ID__', this.id); },
+     }"
+     @buka-eskalasi.window="Object.assign($data, $event.detail); buka = true"
+     @keydown.escape.window="buka = false"
+     x-show="buka" x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+     role="dialog" aria-modal="true">
+    <div class="w-full max-w-md rounded-xl bg-white shadow-2xl" @click.outside="buka = false">
+        <form method="POST" :action="aksi">
+            @csrf
+            <div class="border-b border-slate-200 px-5 py-4">
+                <h3 class="text-base font-semibold text-blue-900" x-text="mode === 'reassign' ? 'Alihkan ke Staff Lain' : 'Kirim Reminder ke Staff'"></h3>
+                <p class="mt-0.5 text-xs text-slate-500">
+                    <span class="font-mono" x-text="noReg"></span> &middot; saat ini: <span x-text="staffNama || '—'"></span>
+                </p>
+            </div>
+
+            <div class="space-y-4 px-5 py-4">
+                <template x-if="mode === 'reassign'">
+                    <div class="space-y-4">
+                        <div class="space-y-1.5">
+                            <label for="eskalasi_staff" class="text-sm font-medium text-slate-700">Staff tujuan</label>
+                            <select id="eskalasi_staff" name="staff_id" required
+                                    class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+                                <option value="">— Pilih staff —</option>
+                                @foreach($staffList as $st)
+                                    <option value="{{ $st->id }}" :disabled="staffId == {{ $st->id }}">
+                                        {{ $st->nama }} ({{ $bebanKerja[$st->id] ?? 0 }} permohonan)
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label for="eskalasi_alasan" class="text-sm font-medium text-slate-700">Alasan pengalihan</label>
+                            <textarea id="eskalasi_alasan" name="alasan" rows="3" required minlength="5" maxlength="1000"
+                                      placeholder="Contoh: staff sedang cuti, beban kerja tidak seimbang…"
+                                      class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"></textarea>
+                        </div>
+                        <p class="text-xs text-slate-500">Status dan hitungan SLA tidak berubah. Staff lama dan staff baru menerima notifikasi WhatsApp.</p>
+                    </div>
+                </template>
+
+                <template x-if="mode === 'reminder'">
+                    <div class="space-y-1.5">
+                        <label for="eskalasi_catatan" class="text-sm font-medium text-slate-700">Catatan (opsional, hanya untuk arsip)</label>
+                        <textarea id="eskalasi_catatan" name="catatan" rows="2" maxlength="500"
+                                  class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"></textarea>
+                        <p class="text-xs text-slate-500">Staff akan menerima pesan WhatsApp pengingat untuk permohonan ini.</p>
+                    </div>
+                </template>
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
+                <x-ui.button type="button" variant="outline" size="sm" @click="buka = false">Batal</x-ui.button>
+                <x-ui.button type="submit" variant="default" size="sm">
+                    <span x-text="mode === 'reassign' ? 'Alihkan' : 'Kirim Reminder'"></span>
+                </x-ui.button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection

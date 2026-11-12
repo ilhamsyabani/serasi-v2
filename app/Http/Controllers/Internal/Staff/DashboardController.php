@@ -15,15 +15,16 @@ class DashboardController extends Controller
         $user = Auth::user();
         $search = $request->input('search');
 
-        // Stats: semua permohonan (tanpa filter user)
-        $allPermohonans = Permohonan::query()
-            ->latest()
-            ->get();
-
-        // Table: hanya permohonan yang ditugaskan ke staff ini
-        $query = Permohonan::query()
+        // Hanya permohonan yang ditugaskan ke staff ini — baik untuk kartu statistik
+        // maupun tabel. Staff tidak melihat angka permohonan milik staff lain.
+        $milikStaff = fn () => Permohonan::query()
             ->whereHas('distribusiAktif', fn ($q) => $q->where('staff_id', $user->id))
             ->with(['statusLog', 'disposisi.ketuaTim', 'distribusiAktif.staff', 'revisi.dokumenRevisi']);
+
+        // Stats: seluruh tugas staff ini, tidak terpengaruh kotak pencarian.
+        $allPermohonans = $milikStaff()->latest()->get();
+
+        $query = $milikStaff();
 
         if ($search) {
             $query->where(function ($q) use ($search) {

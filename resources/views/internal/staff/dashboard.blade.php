@@ -37,7 +37,7 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
     <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-sm">
         <p class="text-xs font-medium text-blue-100 uppercase tracking-wide">Total Permohonan</p>
         <p class="text-2xl font-bold mt-1">{{ $allPermohonans->count() }}</p>
-        <p class="text-xs text-blue-200 mt-1">seluruh permohonan</p>
+        <p class="text-xs text-blue-200 mt-1">ditugaskan kepada Anda</p>
     </div>
     <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white shadow-sm">
         <p class="text-xs font-medium text-emerald-100 uppercase tracking-wide">Terbit</p>

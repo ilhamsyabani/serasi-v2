@@ -30,14 +30,16 @@ Route::prefix('pemohon')->middleware(['web', 'force.https', 'security.headers'])
     Route::middleware('pbf.auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/permohonan', [PermohonanController::class, 'index'])->name('permohonan.index');
+        // `/permohonan/baru` HARUS didaftarkan sebelum `/permohonan/{permohonan}`,
+        // kalau tidak "baru" ditangkap sebagai ID permohonan dan berujung 404.
+        Route::get('/permohonan/baru', [PermohonanController::class, 'create'])->name('permohonan.create');
+        Route::post('/permohonan/baru', [PermohonanController::class, 'store'])->name('permohonan.store');
         Route::get('/permohonan/{permohonan}', [PermohonanController::class, 'show'])->name('permohonan.show');
         Route::get('/permohonan/{permohonan}/revisi', [RevisiController::class, 'show'])->name('revisi.show');
         Route::post('/permohonan/{permohonan}/revisi', [RevisiController::class, 'store'])->name('revisi.store');
         Route::get('/download/dokumen/{permohonan}/{jenisDokumen}', [DownloadController::class, 'dokumen'])->name('download.dokumen');
         Route::get('/download/surat/{permohonan}', [DownloadController::class, 'surat'])->name('download.surat');
         Route::get('/download/revisi/{revisi}', [DownloadController::class, 'revisi'])->name('download.revisi');
-        Route::get('/permohonan/baru', [PermohonanController::class, 'create'])->name('permohonan.create');
-        Route::post('/permohonan/baru', [PermohonanController::class, 'store'])->name('permohonan.store');
 
         // Notifikasi
         Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');

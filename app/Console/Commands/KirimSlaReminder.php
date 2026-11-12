@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Distribusi;
 use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Services\NotifikasiService;
+use App\Services\SlaCalculator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -14,7 +14,11 @@ use Illuminate\Support\Facades\Log;
  * Cron: setiap jam pada jam kerja (diatur di routes/console.php).
  *
  * Logic:
- * - Cek permohonan aktif (bukan final, bukan clock-off/revisi) yang deadline <= 24 jam
+ * - Evaluasi setiap permohonan aktif (bukan final, bukan clock-off/revisi) lewat
+ *   SlaCalculator — sumber kebenaran yang sama dengan badge SLA di dashboard.
+ * - Sekalian segarkan kolom `sla_deadline_current` & `is_overdue`.
+ * - Kirim bila belum telat dan sisa hari kerja <= ambang (default 1 HK, dari
+ *   config services.sla_reminder_tenggat dalam jam, dibulatkan ke hari kerja).
  * - Hanya kirim jika belum pernah dikirim hari ini (cegah spam)
  * - Target: staff penanggung jawab aktif
  */
@@ -24,31 +28,39 @@ class KirimSlaReminder extends Command
 
     protected $description = 'Kirim WhatsApp reminder ke staff untuk permohonan yang mendekati batas SLA';
 
-    public function handle(NotifikasiService $notif): int
+    public function handle(NotifikasiService $notif, SlaCalculator $sla): int
     {
         $this->info('Mulai cek SLA reminder...');
 
-        $batasJam = (int) config('services.sla_reminder_jam', 9);
         $tenggatJam = (int) config('services.sla_reminder_tenggat', 24);
+        $ambangHari = max(1, (int) ceil($tenggatJam / 24));
         $sekarang = now();
-        $deadline = $sekarang->copy()->addHours($tenggatJam)->endOfDay();
 
-        $permohonans = Permohonan::query()
+        $aktif = Permohonan::query()
             ->whereNotIn('status_saat_ini', [
                 Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN,
                 Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG,
-            ])
-            ->whereNotIn('status_saat_ini', [
                 Permohonan::STATUS_REVISI_1,
                 Permohonan::STATUS_REVISI_2,
                 Permohonan::STATUS_REVISI_3,
             ])
-            ->where('is_overdue', false)
-            ->whereNotNull('sla_deadline_current')
-            ->where('sla_deadline_current', '<=', $deadline)
-            ->where('sla_deadline_current', '>=', $sekarang->toDateString())
-            ->with(['distribusiAktif.staff'])
+            ->with(['statusLog', 'distribusiAktif.staff'])
             ->get();
+
+        $permohonans = $aktif->filter(function (Permohonan $p) use ($sla, $ambangHari) {
+            $hasil = $sla->isiDeadline($p);
+
+            if (! $this->option('dry-run') && $p->isDirty(['sla_deadline_current', 'is_overdue'])) {
+                // Kolom turunan saja — jangan geser updated_at / memicu event model.
+                $p->timestamps = false;
+                $p->saveQuietly();
+                $p->timestamps = true;
+            }
+
+            return $hasil !== null
+                && in_array($hasil['state'], [SlaCalculator::STATE_ON_TIME, SlaCalculator::STATE_AT_RISK], true)
+                && $hasil['sisa'] <= $ambangHari;
+        });
 
         if ($permohonans->isEmpty()) {
             $this->info('Tidak ada permohonan yang mendekati batas SLA.');

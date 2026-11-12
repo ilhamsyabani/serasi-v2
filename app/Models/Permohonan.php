@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Entitas sentral aplikasi. Merepresentasikan satu pengajuan Surat Pengesahan Denah PBF.
@@ -24,7 +25,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class Permohonan extends Model
 {
-    use HasFactory;
+    // Hapus = soft delete: baris, riwayat status, dan audit trail tetap tersimpan
+    // (CLAUDE.md §4 — riwayat instansi pemerintah tidak boleh hilang).
+    use HasFactory, SoftDeletes;
 
     protected $table = 'permohonan';
 
@@ -61,6 +64,8 @@ class Permohonan extends Model
 
     protected $casts = [
         'tanggal_pengajuan' => 'datetime',
+        'sla_deadline_current' => 'date',
+        'is_overdue' => 'boolean',
     ];
 
     // ── Relasi Dasar ──────────────────────────────────
@@ -153,6 +158,19 @@ class Permohonan extends Model
         return $this->hasMany(ReassignmentLog::class);
     }
 
+    // ── Scope ─────────────────────────────────────────
+
+    /**
+     * Permohonan yang menjadi urusan seorang Kepala Balai: yang ia buat sendiri,
+     * ditambah pengajuan ulang mandiri pemohon (`kepala_balai_id` NULL, CLAUDE.md §3 poin 6).
+     */
+    public function scopeUntukKepalaBalai($query, int $userId)
+    {
+        return $query->where(fn ($q) => $q
+            ->where('permohonan.kepala_balai_id', $userId)
+            ->orWhereNull('permohonan.kepala_balai_id'));
+    }
+
     // ── Helper ────────────────────────────────────────
 
     public function isPengajuanUlang(): bool
@@ -192,7 +210,8 @@ class Permohonan extends Model
         $tahun = date('Y');
         $prefix = "PBF/DENAH/{$tahun}/";
 
-        $last = static::where('no_registrasi', 'LIKE', "{$prefix}%")
+        // withTrashed: nomor milik permohonan yang dihapus tidak boleh dipakai ulang.
+        $last = static::withTrashed()->where('no_registrasi', 'LIKE', "{$prefix}%")
             ->orderByDesc('no_registrasi')
             ->value('no_registrasi');
 
