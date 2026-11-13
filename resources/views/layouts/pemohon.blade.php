@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow">
     <title>@yield('title', 'Portal Pemohon') — {{ config('app.name') }}</title>
     <link rel="stylesheet" href="{{ Vite::asset('resources/css/app.css') }}">
     <script type="module" src="{{ Vite::asset('resources/js/app.js') }}" defer></script>

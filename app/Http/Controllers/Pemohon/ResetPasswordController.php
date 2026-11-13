@@ -7,24 +7,25 @@ use App\Models\Pbf;
 use App\Models\PasswordResetOtp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class ResetPasswordController extends Controller
 {
     public function showResetForm(Request $request)
     {
         return view('pemohon.auth.reset-password', [
-            'token' => $request->route('token'),
+            'token' => (string) $request->route('token'),
         ]);
     }
 
     public function reset(Request $request)
     {
-        $request->validate([
-            'token' => 'required',
-            'password' => ['required', 'confirmed', 'min:8'],
+        $validated = $request->validate([
+            'token' => ['bail', 'required', 'string'],
+            'password' => ['bail', 'required', 'string', 'confirmed', 'min:8'],
         ]);
 
-        $reset = PasswordResetOtp::where('token', $request->token)
+        $reset = PasswordResetOtp::where('token', (string) $validated['token'])
             ->where('status', PasswordResetOtp::STATUS_TERKIRIM)
             ->where('expires_at', '>', now())
             ->first();
@@ -35,9 +36,15 @@ class ResetPasswordController extends Controller
             ]);
         }
 
-        $pbf = Pbf::where('email', $reset->email)->first();
+        $pbf = Pbf::where('email', (string) $reset->email)->first();
 
-        $pbf->password_hash = Hash::make($request->password);
+        if (! $pbf) {
+            throw ValidationException::withMessages([
+                'token' => 'Data akun pemohon tidak ditemukan.',
+            ]);
+        }
+
+        $pbf->password_hash = Hash::make((string) $validated['password']);
         $pbf->save();
 
         $reset->update(['status' => PasswordResetOtp::STATUS_TERVERIFIKASI]);
