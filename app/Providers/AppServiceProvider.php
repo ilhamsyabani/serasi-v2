@@ -12,6 +12,7 @@ use App\Policies\DistribusiPolicy;
 use App\Policies\HariLiburPolicy;
 use App\Policies\PermohonanPolicy;
 use App\Policies\UserPolicy;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,6 +31,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Cegah migrate:fresh/refresh/reset & db:wipe mengosongkan DB asli.
+        DB::prohibitDestructiveCommands(
+            ! $this->app->runningUnitTests()
+            && ! config('database.allow_destructive_commands')
+        );
+
         Gate::policy(Permohonan::class, PermohonanPolicy::class);
         Gate::policy(Distribusi::class, DistribusiPolicy::class);
         Gate::policy(User::class, UserPolicy::class);

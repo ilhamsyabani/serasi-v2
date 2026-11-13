@@ -20,6 +20,13 @@ return [
     'default' => env('DB_CONNECTION', 'sqlite'),
 
     /*
+    | Izinkan perintah yang menghapus seluruh isi DB (migrate:fresh, migrate:refresh,
+    | migrate:reset, db:wipe) di luar test. Default diblokir agar data tidak hilang;
+    | set DB_ALLOW_DESTRUCTIVE=true di .env hanya saat memang sengaja reset DB.
+    */
+    'allow_destructive_commands' => (bool) env('DB_ALLOW_DESTRUCTIVE', false),
+
+    /*
     |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
