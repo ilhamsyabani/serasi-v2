@@ -11,7 +11,7 @@ Aplikasi untuk mengelola pengajuan, evaluasi, dan penerbitan **Surat Pengesahan 
 - **Portal Internal BBPOM** — SSO, 4 role: Kepala Balai, Ketua Tim Sertifikasi, Staff Sertifikasi, Administrator IT.
 - **Portal Pelaku Usaha (PBF)** — login Email/No. WA + Password + OTP (sekali saat login pertama).
 
-Alur inti: Pengajuan → Disposisi → Evaluasi → (Revisi maks. 3x, clock-off) → Terbit Surat Pengesahan, dengan cabang "Ditutup – Perlu Pengajuan Ulang" jika revisi ke-3 masih tidak lengkap (pemohon boleh ajukan ulang mandiri, tertaut ke permohonan lama).
+Alur inti: Pengajuan → Disposisi → Evaluasi → (Revisi maks. 4x, clock-off) → Terbit Surat Pengesahan, dengan cabang "Ditutup – Perlu Pengajuan Ulang" jika revisi ke-4 masih tidak lengkap (pemohon boleh ajukan ulang mandiri, tertaut ke permohonan lama).
 
 ## 2. Tech Stack
 
@@ -30,11 +30,11 @@ Alur inti: Pengajuan → Disposisi → Evaluasi → (Revisi maks. 3x, clock-off)
 Ini adalah aturan yang sudah disepakati lintas Tahap 1–4 dan sering jadi sumber bug jika diabaikan:
 
 1. **1 permohonan = 1 Staff Sertifikasi.** Tidak ada distribusi ke banyak staff sekaligus.
-2. **Maks. 3 siklus revisi.** Siklus ke-4 tidak boleh terjadi — setelah revisi ke-3 masih "Tidak Lengkap", status **wajib** menjadi `ditutup_pengajuan_ulang`, bukan `revisi_4`.
+2. **Maks. 4 siklus revisi** (`Permohonan::MAKS_REVISI`; dinaikkan dari 3 pada 13 Nov 2026). Siklus ke-5 tidak boleh terjadi — setelah revisi ke-4 masih "Tidak Lengkap", status **wajib** menjadi `ditutup_pengajuan_ulang`, bukan `revisi_5`. Peringatan "revisi terakhir" berupa **modal konfirmasi SweetAlert saja** (bukan WA/email tambahan): ke evaluator saat akan mengirim hasil Tidak Lengkap yang membuka revisi ke-4, dan ke pemohon saat akan mengunggah berkas revisi ke-4. Jangan hardcode angka batas — pakai `Permohonan::MAKS_REVISI` / `Permohonan::STATUS_REVISI`.
 3. **SLA clock-off saat status Revisi.** Selama menunggu upload revisi dari pemohon, durasi TIDAK dihitung sebagai keterlambatan SLA staff. Jangan hitung SLA evaluasi dari `created_at` permohonan secara naif — gunakan `status_log` dengan flag `is_clock_off`.
 4. **Status akhir sukses = `Terbit Surat Pengesahan`.** Bukan "Selesai" — jangan buat status "Selesai" terpisah, ini sudah diputuskan final (revisi dari draft awal).
 5. **Pengajuan pertama HANYA oleh Kepala Balai.** Pemohon tidak bisa membuat permohonan baru dari nol.
-6. **Pengajuan ulang (setelah revisi ke-3 gagal) dilakukan MANDIRI oleh pemohon**, langsung di Portal Pelaku Usaha, TANPA melalui Kepala Balai. Ini pengecualian terhadap aturan #5 — jangan disamakan alurnya.
+6. **Pengajuan ulang (setelah revisi ke-4 gagal) dilakukan MANDIRI oleh pemohon**, langsung di Portal Pelaku Usaha, TANPA melalui Kepala Balai. Ini pengecualian terhadap aturan #5 — jangan disamakan alurnya.
 7. **Relasi permohonan lama↔baru wajib ditampilkan ke pemohon** (bukan cuma tercatat di DB), pakai `parent_permohonan_id` pada tabel `permohonan`.
 8. **Kepala Balai bersifat view-only** — tidak ada tombol approval apa pun untuknya sebelum surat terbit.
 9. **Ketua Tim punya dashboard sendiri (scoped ke timnya)**, terpisah dari akses view-only Kepala Balai. Ketua Tim juga punya hak reassign staff & kirim reminder (modul M-17) — jangan gabung hak ini ke role lain.
@@ -54,7 +54,7 @@ Ini adalah aturan yang sudah disepakati lintas Tahap 1–4 dan sering jadi sumbe
 ## 5. Struktur Kode (Konvensi Laravel)
 
 - Ikuti struktur default Laravel 12 (`app/Models`, `app/Http/Controllers`, `app/Http/Requests`, `app/Services`).
-- Logika bisnis kompleks (transisi status, perhitungan SLA, kontrol maks. 3 revisi, deteksi clock-off) **wajib** ditaruh di `app/Services/`, jangan di controller.
+- Logika bisnis kompleks (transisi status, perhitungan SLA, kontrol maks. revisi, deteksi clock-off) **wajib** ditaruh di `app/Services/`, jangan di controller.
 - Setiap perubahan status permohonan **wajib** lewat satu titik masuk (mis. `StatusTransitionService`) agar aturan #2–#4 di atas konsisten dan mudah diaudit — jangan update `permohonan.status_saat_ini` langsung dari banyak tempat.
 - Setiap aksi yang mengubah data penting (disposisi, distribusi/reassign, evaluasi, upload surat) **wajib** mencatat ke `audit_trail`.
 - Gunakan Laravel Policy untuk hak akses per role (lihat matriks di `DESIGN.md` §Hak Akses) — jangan cek role dengan `if` tersebar di view/controller.
@@ -73,7 +73,7 @@ Ini adalah aturan yang sudah disepakati lintas Tahap 1–4 dan sering jadi sumbe
 
 ## 7. Testing & Kualitas
 
-- Setiap perubahan pada `StatusTransitionService` (atau modul setara) wajib disertai test yang mencakup: batas 3 revisi, transisi ke `ditutup_pengajuan_ulang`, dan perhitungan clock-off.
+- Setiap perubahan pada `StatusTransitionService` (atau modul setara) wajib disertai test yang mencakup: batas maks. revisi, transisi ke `ditutup_pengajuan_ulang`, dan perhitungan clock-off.
 - Jalankan `php artisan test` sebelum menganggap task selesai.
 - Jangan commit kredensial WA Gateway/SSO — gunakan `.env`, referensikan lewat `config/services.php`.
 

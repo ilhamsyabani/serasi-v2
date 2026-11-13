@@ -16,9 +16,10 @@ class StatusMasterSeeder extends Seeder
             ['kode' => 'revisi_1', 'nama' => 'Revisi ke-1', 'urutan' => 4, 'is_final' => false, 'is_clockoff' => true],
             ['kode' => 'revisi_2', 'nama' => 'Revisi ke-2', 'urutan' => 5, 'is_final' => false, 'is_clockoff' => true],
             ['kode' => 'revisi_3', 'nama' => 'Revisi ke-3', 'urutan' => 6, 'is_final' => false, 'is_clockoff' => true],
-            ['kode' => 'ditutup_pengajuan_ulang', 'nama' => 'Ditutup – Perlu Pengajuan Ulang', 'urutan' => 7, 'is_final' => true, 'is_clockoff' => false],
-            ['kode' => 'menunggu_surat_pengesahan', 'nama' => 'Menunggu Surat Pengesahan', 'urutan' => 8, 'is_final' => false, 'is_clockoff' => false],
-            ['kode' => 'terbit_surat_pengesahan', 'nama' => 'Terbit Surat Pengesahan', 'urutan' => 9, 'is_final' => true, 'is_clockoff' => false],
+            ['kode' => 'revisi_4', 'nama' => 'Revisi ke-4', 'urutan' => 7, 'is_final' => false, 'is_clockoff' => true],
+            ['kode' => 'ditutup_pengajuan_ulang', 'nama' => 'Ditutup – Perlu Pengajuan Ulang', 'urutan' => 8, 'is_final' => true, 'is_clockoff' => false],
+            ['kode' => 'menunggu_surat_pengesahan', 'nama' => 'Menunggu Surat Pengesahan', 'urutan' => 9, 'is_final' => false, 'is_clockoff' => false],
+            ['kode' => 'terbit_surat_pengesahan', 'nama' => 'Terbit Surat Pengesahan', 'urutan' => 10, 'is_final' => true, 'is_clockoff' => false],
         ];
 
         foreach ($statuses as $status) {

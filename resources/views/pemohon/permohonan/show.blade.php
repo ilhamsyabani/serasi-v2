@@ -81,7 +81,7 @@
 <x-ui.riwayat-revisi :permohonan="$permohonan" route-download="pemohon.download.revisi" :tampilkan-staff="false" class="mb-4" />
 
 {{-- Revisi Info --}}
-@if(in_array($permohonan->status_saat_ini, [\App\Models\Permohonan::STATUS_REVISI_1, \App\Models\Permohonan::STATUS_REVISI_2, \App\Models\Permohonan::STATUS_REVISI_3]))
+@if(in_array($permohonan->status_saat_ini, \App\Models\Permohonan::STATUS_REVISI))
     @if($permohonan->evaluasiTerakhir)
     <x-ui.card class="mb-4 border-l-4 border-l-amber-500">
         <x-ui.card-header title="Catatan Revisi" description="Staff menemukan hal yang perlu diperbaiki" />

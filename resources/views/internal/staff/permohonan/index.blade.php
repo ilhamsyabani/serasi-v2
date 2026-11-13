@@ -116,7 +116,7 @@ $filterColor = $tabs[$filter]['color'] ?? 'slate';
                         } elseif ($s === 'ditutup_pengajuan_ulang') {
                             $posisiLabel = 'Staff';
                             $posisiColor = 'bg-red-100 text-red-800';
-                        } elseif (in_array($s, ['revisi_1', 'revisi_2', 'revisi_3'])) {
+                        } elseif (in_array($s, \App\Models\Permohonan::STATUS_REVISI)) {
                             $posisiLabel = 'Pemohon';
                             $posisiColor = 'bg-amber-100 text-amber-800';
                         } else {
@@ -136,7 +136,7 @@ $filterColor = $tabs[$filter]['color'] ?? 'slate';
                         <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.evaluasi.edit', $p) }}">
                             Evaluasi
                         </x-ui.button>
-                    @elseif(in_array($p->status_saat_ini, ['revisi_1', 'revisi_2', 'revisi_3']) && $p->revisi->flatMap->dokumenRevisi->isNotEmpty())
+                    @elseif(in_array($p->status_saat_ini, \App\Models\Permohonan::STATUS_REVISI) && $p->revisi->flatMap->dokumenRevisi->isNotEmpty())
                         <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.evaluasi.edit', $p) }}">
                             Evaluasi Ulang
                         </x-ui.button>

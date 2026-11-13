@@ -21,7 +21,7 @@ foreach ($allPermohonans as $p) {
         $roleBucket['staff'][] = $p;
     } elseif ($s === 'ditutup_pengajuan_ulang') {
         $roleBucket['staff'][] = $p;
-    } elseif (in_array($s, ['revisi_1', 'revisi_2', 'revisi_3'])) {
+    } elseif (in_array($s, \App\Models\Permohonan::STATUS_REVISI)) {
         $roleBucket['pemohon'][] = $p;
     } elseif ($s === 'terbit_surat_pengesahan') {
         $roleBucket['pemohon'][] = $p;
@@ -181,6 +181,17 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                         </td>
                     </tr>
                     <tr class="hover:bg-slate-50/50">
+                        <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Revisi 4</td>
+                        <td class="px-4 py-2.5 text-right">
+                            @php $j = $counts['revisi_4'] ?? 0; @endphp
+                            @if($j > 0)
+                                <span class="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-amber-100 px-2 text-xs font-semibold text-amber-800">{{ $j }}</span>
+                            @else
+                                <span class="text-slate-400">0</span>
+                            @endif
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50">
                         <td class="px-4 py-2.5 text-sm text-slate-700 font-medium">Menunggu Surat</td>
                         <td class="px-4 py-2.5 text-right">
                             @php $j = $counts['menunggu_surat_pengesahan'] ?? 0; @endphp
@@ -270,7 +281,7 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                 <td class="px-4 py-3 text-right whitespace-nowrap">
                     @if($p->status_saat_ini === \App\Models\Permohonan::STATUS_PROSES_EVALUASI)
                         <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.evaluasi.edit', $p) }}">Evaluasi</x-ui.button>
-                    @elseif(in_array($p->status_saat_ini, [\App\Models\Permohonan::STATUS_REVISI_1, \App\Models\Permohonan::STATUS_REVISI_2, \App\Models\Permohonan::STATUS_REVISI_3]) && $p->revisi->flatMap->dokumenRevisi->isNotEmpty())
+                    @elseif(in_array($p->status_saat_ini, \App\Models\Permohonan::STATUS_REVISI) && $p->revisi->flatMap->dokumenRevisi->isNotEmpty())
                         <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.evaluasi.edit', $p) }}">Evaluasi Ulang</x-ui.button>
                     @elseif($p->status_saat_ini === \App\Models\Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN)
                         <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.surat.edit', $p) }}">Upload Surat</x-ui.button>

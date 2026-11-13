@@ -5,11 +5,11 @@
 <?php
 $pageTitle = 'Evaluasi: ' . $permohonan->no_registrasi;
 $revisiKe = (int) $permohonan->revisi_ke;
-$isStatusRevisi = in_array($permohonan->status_saat_ini, [
-    \App\Models\Permohonan::STATUS_REVISI_1,
-    \App\Models\Permohonan::STATUS_REVISI_2,
-    \App\Models\Permohonan::STATUS_REVISI_3,
-], true);
+$maksRevisi = \App\Models\Permohonan::MAKS_REVISI;
+$isRevisiTerakhir = $revisiKe >= $maksRevisi;
+// Bila dinilai Tidak Lengkap sekarang, siklus berikutnya adalah revisi terakhir.
+$akanRevisiTerakhir = $revisiKe + 1 === $maksRevisi;
+$isStatusRevisi = in_array($permohonan->status_saat_ini, \App\Models\Permohonan::STATUS_REVISI, true);
 $isEvaluasiRevisi = $permohonan->status_saat_ini === \App\Models\Permohonan::STATUS_PROSES_EVALUASI && $revisiKe > 0;
 $showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
 ?>
@@ -25,6 +25,30 @@ $showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
         }
         const checked = e.target.querySelector('input[name=\'hasil\']:checked');
         this.hasilDipilih = checked ? checked.value : null;
+        @if($akanRevisiTerakhir)
+        // Tidak Lengkap yang akan membuka revisi TERAKHIR: konfirmasi via SweetAlert.
+        if (this.hasilDipilih === 'tidak_lengkap' && window.Swal) {
+            e.preventDefault();
+            const form = e.target;
+            Swal.fire({
+                icon: 'warning',
+                title: 'Kirim Revisi ke-{{ $maksRevisi }} (Terakhir)?',
+                html: 'Permohonan akan masuk <b>Revisi ke-{{ $maksRevisi }}</b>, yaitu <b>kesempatan revisi terakhir</b> bagi pemohon.<br><br>Jika setelah revisi ini dokumen masih tidak lengkap, permohonan akan <b>otomatis ditutup</b> dan pemohon harus mengajukan ulang.',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Kirim Revisi Terakhir',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+                reverseButtons: true,
+                focusCancel: true,
+            }).then((r) => {
+                if (r.isConfirmed) {
+                    this.submitting = true;
+                    form.submit();
+                }
+            });
+            return;
+        }
+        @endif
         if (this.hasilDipilih === 'tidak_lengkap' && {{ $showConfirmModal ? 'true' : 'false' }}) {
             e.preventDefault();
             this.showConfirm = true;
@@ -73,8 +97,10 @@ $showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
                     <p class="font-semibold mb-0.5">Tahap Evaluasi: Revisi {{ $revisiKe }}</p>
                     <p class="text-xs text-amber-800 leading-relaxed">
                         Pemohon telah mengunggah berkas untuk <strong>Revisi {{ $revisiKe }}</strong>.
-                        @if($revisiKe >= 3)
-                            Ini adalah kesempatan revisi terakhir (Kuota maks. 3 kali). Jika hasil evaluasi <strong>Tidak Lengkap</strong>, permohonan akan otomatis <strong>DITUTUP</strong>.
+                        @if($isRevisiTerakhir)
+                            Ini adalah <strong>kesempatan revisi terakhir</strong> (kuota maks. {{ $maksRevisi }} kali). Jika hasil evaluasi <strong>Tidak Lengkap</strong>, permohonan akan otomatis <strong>DITUTUP</strong>.
+                        @elseif($akanRevisiTerakhir)
+                            Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus naik ke <strong>Revisi {{ $revisiKe + 1 }}</strong> — <strong>kesempatan revisi terakhir</strong> bagi pemohon.
                         @else
                             Jika Anda memilih <strong>Tidak Lengkap</strong>, siklus revisi akan naik ke <strong>Revisi {{ $revisiKe + 1 }}</strong>.
                         @endif
@@ -161,7 +187,7 @@ $showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
         class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
 
-        @if($revisiKe >= 3)
+        @if($isRevisiTerakhir)
         <div class="bg-red-600 px-6 py-4">
             <h3 class="text-white font-semibold text-base flex items-center gap-2">
                 <i class="ph ph-warning-circle text-xl" aria-hidden="true"></i>
@@ -170,7 +196,7 @@ $showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
         </div>
         <div class="p-6">
             <p class="text-sm text-slate-700 mb-2">
-                Permohonan ini telah mencapai batas maksimal <strong>3 siklus perbaikan</strong>.
+                Permohonan ini telah mencapai batas maksimal <strong>{{ $maksRevisi }} siklus perbaikan</strong>.
             </p>
             <div class="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
                 <p class="text-xs text-red-700">
@@ -206,7 +232,11 @@ $showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
             </p>
             <div class="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
                 <p class="text-xs text-red-700">
-                    <strong>Perhatian:</strong> Kuota maksimal 3 siklus revisi. Setelah Revisi 3 tetap tidak lengkap, permohonan akan ditutup secara permanen.
+                    @if($akanRevisiTerakhir)
+                    <strong>Perhatian:</strong> Revisi {{ $maksRevisi }} adalah <strong>kesempatan revisi terakhir</strong>. Bila hasil evaluasi berikutnya tetap tidak lengkap, permohonan akan ditutup secara permanen.
+                    @else
+                    <strong>Perhatian:</strong> Kuota maksimal {{ $maksRevisi }} siklus revisi. Setelah Revisi {{ $maksRevisi }} tetap tidak lengkap, permohonan akan ditutup secara permanen.
+                    @endif
                 </p>
             </div>
             <div class="flex gap-3">

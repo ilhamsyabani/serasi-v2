@@ -23,6 +23,7 @@ class EvaluasiController extends Controller
         Permohonan::STATUS_REVISI_1,
         Permohonan::STATUS_REVISI_2,
         Permohonan::STATUS_REVISI_3,
+        Permohonan::STATUS_REVISI_4,
     ];
 
     private function canEvaluate(Permohonan $permohonan): bool
@@ -113,7 +114,7 @@ class EvaluasiController extends Controller
                     $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTimId, Notifikasi::CHANNEL_EMAIL, 'DITUTUP_PENGAJUAN_ULANG');
                 }
 
-                $pesan = 'Kuota 3 revisi habis. Permohonan ditutup — pemohon perlu mengajukan ulang.';
+                $pesan = 'Kuota ' . Permohonan::MAKS_REVISI . ' revisi habis. Permohonan ditutup — pemohon perlu mengajukan ulang.';
             } else {
                 $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'REVISI_DIMINTA');
                 $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_EMAIL, 'REVISI_DIMINTA');
@@ -123,7 +124,9 @@ class EvaluasiController extends Controller
                     $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ketuaTimId, Notifikasi::CHANNEL_EMAIL, 'REVISI_DIMINTA');
                 }
 
-                $pesan = 'Evaluasi disimpan. Permohonan dikembalikan untuk revisi.';
+                $pesan = $permohonan->isRevisiTerakhir()
+                    ? 'Evaluasi disimpan. Permohonan masuk REVISI TERAKHIR (ke-' . $permohonan->revisi_ke . ').'
+                    : 'Evaluasi disimpan. Permohonan dikembalikan untuk revisi.';
             }
         }
 

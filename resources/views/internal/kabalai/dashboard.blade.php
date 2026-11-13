@@ -12,6 +12,7 @@ $statuses = [
     'revisi_1',
     'revisi_2',
     'revisi_3',
+    'revisi_4',
     'menunggu_surat_pengesahan',
     'terbit_surat_pengesahan',
     'ditutup_pengajuan_ulang',
@@ -35,9 +36,9 @@ foreach ($allPermohonans as $p) {
         // Staff: sudah didistribusikan, sedang diproses
         $roleBucket['staff'][] = $p;
     } elseif ($s === 'ditutup_pengajuan_ulang') {
-        // Ditutup: staff menutup karena revisi ke-3 gagal
+        // Ditutup: revisi terakhir (MAKS_REVISI) tetap tidak lengkap
         $roleBucket['staff'][] = $p;
-    } elseif (in_array($s, ['revisi_1', 'revisi_2', 'revisi_3'])) {
+    } elseif (in_array($s, \App\Models\Permohonan::STATUS_REVISI)) {
         // Revisi: menunggu aksi dari pemohon
         $roleBucket['pemohon'][] = $p;
     }
@@ -236,6 +237,7 @@ $stepX = $barW * 2 + $groupW;
             ['label' => 'Revisi 1', 'count' => $counts['revisi_1'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
             ['label' => 'Revisi 2', 'count' => $counts['revisi_2'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
             ['label' => 'Revisi 3', 'count' => $counts['revisi_3'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
+            ['label' => 'Revisi 4', 'count' => $counts['revisi_4'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
         ]],
     ];
     $ketAkhir = [

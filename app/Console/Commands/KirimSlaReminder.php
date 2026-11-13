@@ -43,6 +43,7 @@ class KirimSlaReminder extends Command
                 Permohonan::STATUS_REVISI_1,
                 Permohonan::STATUS_REVISI_2,
                 Permohonan::STATUS_REVISI_3,
+                Permohonan::STATUS_REVISI_4,
             ])
             ->with(['statusLog', 'distribusiAktif.staff'])
             ->get();

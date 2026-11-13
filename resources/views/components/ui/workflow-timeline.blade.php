@@ -13,6 +13,7 @@
         'revisi_1' => ['Revisi ke-1', 'ph-pencil-simple'],
         'revisi_2' => ['Revisi ke-2', 'ph-pencil-simple'],
         'revisi_3' => ['Revisi ke-3', 'ph-pencil-simple'],
+        'revisi_4' => ['Revisi ke-4', 'ph-pencil-simple'],
         'menunggu_surat_pengesahan' => ['Menunggu Surat Pengesahan', 'ph-clock-countdown'],
         'terbit_surat_pengesahan' => ['Terbit Surat Pengesahan', 'ph-seal-check'],
         'ditutup_pengajuan_ulang' => ['Ditutup — Perlu Pengajuan Ulang', 'ph-x-circle'],
@@ -31,7 +32,7 @@
 
     // Tahap revisi hanya muncul bila siklusnya memang terjadi.
     $steps = ['pengajuan', 'didisposisikan', 'proses_evaluasi'];
-    foreach (['revisi_1', 'revisi_2', 'revisi_3'] as $revisi) {
+    foreach (\App\Models\Permohonan::STATUS_REVISI as $revisi) {
         if ($logs->has($revisi) || $currentStatus === $revisi) {
             $steps[] = $revisi;
         }

@@ -1,6 +1,6 @@
 {{--
     Riwayat seluruh siklus revisi sebuah permohonan: catatan evaluator + berkas
-    perbaikan yang diunggah pemohon, per siklus (maks. 3, CLAUDE.md §3 poin 2).
+    perbaikan yang diunggah pemohon, per siklus (maks. Permohonan::MAKS_REVISI, CLAUDE.md §3 poin 2).
 
     Sumber data: `evaluasi` berhasil "tidak_lengkap" (satu baris per siklus, tidak
     pernah di-overwrite) dan `revisi` + `dokumen_revisi` yang menjawabnya.

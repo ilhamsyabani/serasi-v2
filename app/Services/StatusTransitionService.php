@@ -12,14 +12,14 @@ use App\Models\User;
  * Satu-satunya titik masuk perubahan status permohonan (CLAUDE.md §5).
  *
  * Semua aturan siklus status dijaga di sini agar konsisten & mudah diaudit:
- * - Maks. 3 siklus revisi; revisi_4 dst. DITOLAK (CLAUDE.md §3 poin 2).
+ * - Maks. Permohonan::MAKS_REVISI (4) siklus revisi; revisi_5 dst. DITOLAK (CLAUDE.md §3 poin 2).
  * - `permohonan.revisi_ke` dipelihara otomatis saat masuk tahap revisi.
- * - Tahap revisi_1/2/3 = clock-off (SLA staff berhenti, CLAUDE.md §3 poin 3).
+ * - Tahap revisi_1..4 = clock-off (SLA staff berhenti, CLAUDE.md §3 poin 3).
  */
 class StatusTransitionService
 {
     /** Batas jumlah siklus revisi. Revisi ke-(MAKS+1) tidak boleh terjadi. */
-    public const MAKS_REVISI = 3;
+    public const MAKS_REVISI = Permohonan::MAKS_REVISI;
 
     public function transisi(Permohonan $permohonan, string $statusBaru, ?string $catatan = null, ?User $actor = null, ?string $aktorTipe = 'internal'): StatusLog
     {
@@ -35,8 +35,8 @@ class StatusTransitionService
             throw new \RuntimeException('Status sudah aktif dan sama.');
         }
 
-        // Penjaga aturan maks 3 revisi + pemeliharaan revisi_ke. Ditaruh SEBELUM
-        // menulis apa pun agar transisi ilegal (revisi_4) gagal tanpa efek samping.
+        // Penjaga aturan maks revisi + pemeliharaan revisi_ke. Ditaruh SEBELUM
+        // menulis apa pun agar transisi ilegal (revisi_5) gagal tanpa efek samping.
         if (preg_match('/^revisi_(\d+)$/', $statusBaru, $m)) {
             $ke = (int) $m[1];
             if ($ke > self::MAKS_REVISI) {
@@ -57,11 +57,7 @@ class StatusTransitionService
             ]);
         }
 
-        $isClockOff = in_array($statusBaru, [
-            Permohonan::STATUS_REVISI_1,
-            Permohonan::STATUS_REVISI_2,
-            Permohonan::STATUS_REVISI_3,
-        ], true);
+        $isClockOff = in_array($statusBaru, Permohonan::STATUS_REVISI, true);
 
         $log = StatusLog::create([
             'permohonan_id' => $permohonan->id,
@@ -128,7 +124,7 @@ class StatusTransitionService
 
     /**
      * Hasil evaluasi "Tidak Lengkap": minta revisi berikutnya, atau tutup permohonan
-     * bila kuota 3 revisi sudah habis. Inilah satu-satunya cara yang benar untuk
+     * bila kuota revisi (MAKS_REVISI) sudah habis. Inilah satu-satunya cara yang benar untuk
      * bercabang setelah evaluasi gagal — controller tidak boleh menghitung sendiri.
      *
      * Jumlah revisi dihitung dari `status_log` aktual (bukan field `revisi_ke` yang
@@ -137,11 +133,7 @@ class StatusTransitionService
     public function mintaRevisiAtauTutup(Permohonan $permohonan, ?string $catatan, ?User $actor = null, string $aktorTipe = 'internal'): StatusLog
     {
         $revisiSudah = StatusLog::where('permohonan_id', $permohonan->id)
-            ->whereIn('status', [
-                Permohonan::STATUS_REVISI_1,
-                Permohonan::STATUS_REVISI_2,
-                Permohonan::STATUS_REVISI_3,
-            ])
+            ->whereIn('status', Permohonan::STATUS_REVISI)
             ->count();
 
         $berikutnya = $revisiSudah + 1;

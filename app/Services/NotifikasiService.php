@@ -45,6 +45,8 @@ class NotifikasiService
             // Placeholder standar
             $isi = str_replace('{{no_registrasi}}', $permohonan->no_registrasi, $isi);
             $isi = str_replace('{{nama_pbf}}', $permohonan->nama_pbf_snapshot, $isi);
+            $isi = str_replace('{{revisi_ke}}', (string) (int) $permohonan->revisi_ke, $isi);
+            $isi = str_replace('{{maks_revisi}}', (string) Permohonan::MAKS_REVISI, $isi);
 
             // Placeholder tambahan (mis. username, password, app_url)
             foreach ($placeholders as $key => $val) {

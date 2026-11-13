@@ -10,9 +10,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Aturan bisnis kritis CLAUDE.md §3 poin 2: maks 3 siklus revisi.
- * Interpretasi terkonfirmasi: revisi_1, revisi_2, revisi_3 boleh terjadi;
- * evaluasi gagal ke-4 -> ditutup_pengajuan_ulang (bukan revisi_4).
+ * Aturan bisnis kritis CLAUDE.md §3 poin 2: maks 4 siklus revisi (Permohonan::MAKS_REVISI).
+ * revisi_1..revisi_4 boleh terjadi; evaluasi gagal ke-5 -> ditutup_pengajuan_ulang
+ * (bukan revisi_5).
  */
 class RevisiCycleTest extends TestCase
 {
@@ -61,7 +61,7 @@ class RevisiCycleTest extends TestCase
         return $log->status;
     }
 
-    public function test_tiga_revisi_penuh_lalu_ditutup_pada_evaluasi_keempat(): void
+    public function test_empat_revisi_penuh_lalu_ditutup_pada_evaluasi_kelima(): void
     {
         $svc = $this->service();
         $p = $this->permohonan();
@@ -69,14 +69,34 @@ class RevisiCycleTest extends TestCase
         $this->assertSame(Permohonan::STATUS_REVISI_1, $this->evaluasiGagalLaluKembali($svc, $p));
         $this->assertSame(Permohonan::STATUS_REVISI_2, $this->evaluasiGagalLaluKembali($svc, $p));
         $this->assertSame(Permohonan::STATUS_REVISI_3, $this->evaluasiGagalLaluKembali($svc, $p));
+        $this->assertSame(Permohonan::STATUS_REVISI_4, $this->evaluasiGagalLaluKembali($svc, $p));
 
-        // Evaluasi gagal ke-4: kuota habis -> ditutup, BUKAN revisi_4.
+        // Evaluasi gagal ke-5: kuota habis -> ditutup, BUKAN revisi_5.
         $this->assertSame(Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG, $this->evaluasiGagalLaluKembali($svc, $p));
 
         $this->assertFalse(
-            StatusLog::where('permohonan_id', $p->id)->where('status', 'revisi_4')->exists(),
-            'revisi_4 tidak boleh pernah tercatat.'
+            StatusLog::where('permohonan_id', $p->id)->where('status', 'revisi_5')->exists(),
+            'revisi_5 tidak boleh pernah tercatat.'
         );
+        $this->assertSame(4, StatusLog::where('permohonan_id', $p->id)->whereIn('status', Permohonan::STATUS_REVISI)->count());
+    }
+
+    public function test_revisi_keempat_clock_off_dan_ditandai_terakhir(): void
+    {
+        $svc = $this->service();
+        $p = $this->permohonan();
+
+        for ($i = 1; $i <= 3; $i++) {
+            $this->evaluasiGagalLaluKembali($svc, $p);
+            $this->assertFalse($p->fresh()->isRevisiTerakhir(), "Revisi ke-$i belum revisi terakhir.");
+        }
+
+        $svc->mintaRevisiAtauTutup($p, 'tidak lengkap', null);
+        $p->refresh();
+
+        $this->assertSame(Permohonan::STATUS_REVISI_4, $p->status_saat_ini);
+        $this->assertTrue($p->isRevisiTerakhir());
+        $this->assertTrue((bool) StatusLog::where('permohonan_id', $p->id)->where('status', 'revisi_4')->value('is_clock_off'));
     }
 
     public function test_revisi_ke_dipelihara_di_record_permohonan(): void
@@ -98,7 +118,7 @@ class RevisiCycleTest extends TestCase
         $p = $this->permohonan();
 
         $this->expectException(\RuntimeException::class);
-        $svc->transisi($p, 'revisi_4', null);
+        $svc->transisi($p, 'revisi_5', null);
     }
 
     public function test_status_terminal_tercapai_bukan_selesai(): void

@@ -105,6 +105,22 @@
                 error = 'Pilih minimal satu file.';
                 return;
             }
+            @if($permohonan->isRevisiTerakhir())
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Revisi Terakhir (ke-{{ $permohonan->revisi_ke }} dari {{ \App\Models\Permohonan::MAKS_REVISI }})',
+                    html: 'Ini adalah <b>kesempatan revisi terakhir</b> Anda.<br><br>Jika setelah revisi ini dokumen masih belum lengkap, permohonan akan <b>ditutup</b> dan Anda perlu mengajukan permohonan baru.<br><br>Pastikan semua catatan evaluator sudah diperbaiki sebelum mengirim.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Kirim Revisi',
+                    cancelButtonText: 'Periksa Lagi',
+                    confirmButtonColor: '#059669',
+                    reverseButtons: true,
+                    focusCancel: true,
+                }).then((r) => { if (r.isConfirmed) $el.submit(); });
+                return;
+            }
+            @endif
             $el.submit();
         ">
             @csrf

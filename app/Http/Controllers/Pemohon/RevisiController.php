@@ -22,7 +22,7 @@ class RevisiController extends Controller
     {
         $pbf = Auth::guard('pemohon')->user();
         abort_if($permohonan->pbf_id !== $pbf->id, 403);
-        abort_if(!in_array($permohonan->status_saat_ini, [Permohonan::STATUS_REVISI_1, Permohonan::STATUS_REVISI_2, Permohonan::STATUS_REVISI_3]), 403);
+        abort_if(!in_array($permohonan->status_saat_ini, Permohonan::STATUS_REVISI), 403);
 
         $evaluasiTerakhir = $permohonan->evaluasiTerakhir;
 
@@ -33,7 +33,7 @@ class RevisiController extends Controller
     {
         $pbf = Auth::guard('pemohon')->user();
         abort_if($permohonan->pbf_id !== $pbf->id, 403);
-        abort_if(!in_array($permohonan->status_saat_ini, [Permohonan::STATUS_REVISI_1, Permohonan::STATUS_REVISI_2, Permohonan::STATUS_REVISI_3]), 403);
+        abort_if(!in_array($permohonan->status_saat_ini, Permohonan::STATUS_REVISI), 403);
 
         $request->validate([
             // Tanpa aturan pada `dokumen` sendiri, form tanpa berkas lolos validasi.
@@ -55,7 +55,7 @@ class RevisiController extends Controller
             DB::transaction(function () use ($permohonan, $files, &$paths) {
                 // Kunci baris: dua kiriman bersamaan tidak boleh memicu dua transisi.
                 $terkunci = Permohonan::whereKey($permohonan->id)->lockForUpdate()->firstOrFail();
-                abort_if(!in_array($terkunci->status_saat_ini, [Permohonan::STATUS_REVISI_1, Permohonan::STATUS_REVISI_2, Permohonan::STATUS_REVISI_3], true), 422, 'Revisi untuk permohonan ini sudah dikirim.');
+                abort_if(!in_array($terkunci->status_saat_ini, Permohonan::STATUS_REVISI, true), 422, 'Revisi untuk permohonan ini sudah dikirim.');
 
                 $evaluasiTerakhir = $terkunci->evaluasiTerakhir;
                 abort_if(!$evaluasiTerakhir, 422, 'Catatan evaluasi untuk revisi ini tidak ditemukan.');

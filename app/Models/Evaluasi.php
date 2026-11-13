@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * Siklus evaluasi dokumen oleh Staff. siklus_ke: 0 = evaluasi awal, 1-3 = pasca revisi.
+ * Siklus evaluasi dokumen oleh Staff. siklus_ke: 0 = evaluasi awal, 1-MAKS_REVISI = pasca revisi.
  *
  * Form disederhanakan (revisi terbaru, lihat CLAUDE.md §3 poin 12):
  * - Lengkap → tidak perlu isian tambahan.
@@ -64,6 +64,6 @@ class Evaluasi extends Model
 
     public function isSiklusTerakhir(): bool
     {
-        return $this->siklus_ke >= 3;
+        return $this->siklus_ke >= Permohonan::MAKS_REVISI;
     }
 }

@@ -340,6 +340,9 @@ class NotifikasiLogController extends Controller
             '{{nib}}' => $permohonan?->nib_snapshot ?? '-',
             '{{alamat}}' => $permohonan?->pbf?->alamat ?? '-',
             '{{app_url}}' => config('app.url'),
+            // Hanya dipakai template revisi terakhir, jadi default ke MAKS_REVISI.
+            '{{revisi_ke}}' => (string) ($permohonan?->revisi_ke ?: Permohonan::MAKS_REVISI),
+            '{{maks_revisi}}' => (string) Permohonan::MAKS_REVISI,
         ];
 
         foreach ($placeholders as $key => $val) {

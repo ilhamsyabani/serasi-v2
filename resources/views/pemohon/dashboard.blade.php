@@ -50,15 +50,14 @@ $suratTerbit = $riwayat->firstWhere('status_saat_ini', App\Models\Permohonan::ST
         </div>
 
         <p class="text-sm text-slate-600 mb-4">
-            @if(in_array($permohonanAktif->status_saat_ini, [\App\Models\Permohonan::STATUS_REVISI_1, \App\Models\Permohonan::STATUS_REVISI_2, \App\Models\Permohonan::STATUS_REVISI_3]))
-            📝 Permohonan Anda memerlukan perbaikan. Silakan upload revisi.
-            @else
+            @if(in_array($permohonanAktif->status_saat_ini, \App\Models\Permohonan::STATUS_REVISI))
+            📝 Permohonan Anda memerlukan perbaikan. Silakan upload revisi.            @else
             🔄 Permohonan Anda sedang dalam proses.
             @endif
         </p>
 
         <div class="flex flex-wrap gap-2">
-            @if(in_array($permohonanAktif->status_saat_ini, [\App\Models\Permohonan::STATUS_REVISI_1, \App\Models\Permohonan::STATUS_REVISI_2, \App\Models\Permohonan::STATUS_REVISI_3]))
+            @if(in_array($permohonanAktif->status_saat_ini, \App\Models\Permohonan::STATUS_REVISI))
             <x-ui.button variant="default" size="sm" href="{{ route('pemohon.revisi.show', $permohonanAktif) }}">Upload Revisi</x-ui.button>
             @endif
             <x-ui.button variant="outline" size="sm" href="{{ route('pemohon.permohonan.show', $permohonanAktif) }}">Lihat Detail</x-ui.button>

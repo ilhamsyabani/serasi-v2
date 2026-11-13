@@ -44,7 +44,7 @@ Tim BBPOM", 'is_active' => true],
 
             ['kode_event' => 'REVISI_DIMINTA', 'channel' => 'email', 'subjek' => 'Permintaan Revisi - SERASI', 'isi_template' => "Yth. {{nama_pbf}}\n\nBerdasarkan hasil evaluasi, permohonan Anda memerlukan perbaikan:\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nSilakan login ke portal dan upload dokumen revisi sesuai catatan evaluator.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
 
-            ['kode_event' => 'DITUTUP_PENGAJUAN_ULANG', 'channel' => 'email', 'subjek' => 'Permohonan Ditutup - SERASI', 'isi_template' => "Yth. {{nama_pbf}}\n\nMohon maaf, setelah 3 (tiga) kali revisi, permohonan Anda tidak memenuhi persyaratan.\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nAnda dapat mengajukan permohonan baru secara mandiri di portal.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
+            ['kode_event' => 'DITUTUP_PENGAJUAN_ULANG', 'channel' => 'email', 'subjek' => 'Permohonan Ditutup - SERASI', 'isi_template' => "Yth. {{nama_pbf}}\n\nMohon maaf, setelah {{maks_revisi}} kali revisi, permohonan Anda tidak memenuhi persyaratan.\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nAnda dapat mengajukan permohonan baru secara mandiri di portal.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
 
             ['kode_event' => 'REVISI_UPLOADED', 'channel' => 'email', 'subjek' => 'Revisi Diupload - SERASI', 'isi_template' => "Yth. Staff Sertifikasi,\n\nPemohon telah mengunggah revisi untuk permohonan:\n\nNo. Registrasi: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nSilakan review kembali kelengkapan dokumen.\n\nHormat kami,\nTim BBPOM", 'is_active' => true],
 
@@ -84,7 +84,7 @@ Pada login pertama, kode OTP akan dikirim via WhatsApp.", 'is_active' => true],
 
             ['kode_event' => 'REVISI_DIMINTA', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "📝 *Permintaan Revisi*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nDokumen belum lengkap. Mohon lakukan revisi sesuai catatan evaluator.", 'is_active' => true],
 
-            ['kode_event' => 'DITUTUP_PENGAJUAN_ULANG', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "⚠️ *Permohonan Ditutup*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nSetelah 3 kali revisi, permohonan tidak memenuhi persyaratan.\nSilakan ajukan permohonan baru secara mandiri di portal.", 'is_active' => true],
+            ['kode_event' => 'DITUTUP_PENGAJUAN_ULANG', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "⚠️ *Permohonan Ditutup*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nSetelah {{maks_revisi}} kali revisi, permohonan tidak memenuhi persyaratan.\nSilakan ajukan permohonan baru secara mandiri di portal.", 'is_active' => true],
 
             ['kode_event' => 'REVISI_DITERIMA', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "🔔 *Revisi Masuk*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nRevisi telah diupload. Silakan review.", 'is_active' => true],
 

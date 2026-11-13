@@ -15,7 +15,7 @@ class PermohonanController extends Controller
 {
     private const FILTER_BELUM = ['didisposisikan', 'proses_evaluasi'];
     private const FILTER_SUDAH = [
-        'revisi_1', 'revisi_2', 'revisi_3',
+        'revisi_1', 'revisi_2', 'revisi_3', 'revisi_4',
         'ditutup_pengajuan_ulang',
         'menunggu_surat_pengesahan',
     ];
