@@ -194,9 +194,25 @@ class SlaCalculator
         ];
 
         if ($berjalan) {
+            // Ditutup: penentunya selalu evaluasi terakhir (proses_evaluasi -> ditutup).
+            // Tahap lain di antaranya — mis. menunggu_surat_pengesahan yang keliru lalu
+            // dikoreksi (permohonan:koreksi-tutup) — tidak ikut dinilai, agar sama
+            // dengan penutupan normal.
+            if ($berjalan->status === Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG) {
+                $evaluasiTerakhir = $permohonan->statusLog
+                    ->where('status', Permohonan::STATUS_PROSES_EVALUASI)
+                    ->whereNotNull('waktu_selesai')
+                    ->sortByDesc('waktu_selesai')
+                    ->first();
+
+                if ($evaluasiTerakhir) {
+                    return $this->evaluasiLog($evaluasiTerakhir);
+                }
+            }
+
             // Jika status saat ini adalah titik akhir (selesai/ditolak)
             if (in_array($berjalan->status, $statusFinal)) {
-                
+
                 // Cari tahap SEBELUMNYA yang mengantarkan permohonan ini selesai
                 $tahapSelesaiTerakhir = $permohonan->statusLog
                     ->where('waktu_selesai', '!==', null)

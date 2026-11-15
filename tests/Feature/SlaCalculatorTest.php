@@ -298,6 +298,41 @@ class SlaCalculatorTest extends TestCase
         $this->assertSame(7, $hasil['sisa']);
     }
 
+    public function test_permohonan_ditutup_dinilai_dari_evaluasi_terakhir(): void
+    {
+        SlaConfig::create(['kode_tahap' => 'proses_evaluasi', 'nama_tahap' => 'Proses Evaluasi', 'durasi' => 7, 'satuan' => 'hari_kerja', 'clock_off' => false, 'is_active' => true]);
+        SlaConfig::create(['kode_tahap' => 'menunggu_surat_pengesahan', 'nama_tahap' => 'Menunggu Surat', 'durasi' => 3, 'satuan' => 'hari_kerja', 'clock_off' => false, 'is_active' => true]);
+        $sla = $this->sla();
+
+        $log = fn (Permohonan $p, string $status, string $mulai, ?string $selesai) => StatusLog::create([
+            'permohonan_id' => $p->id,
+            'status' => $status,
+            'waktu_mulai' => Carbon::parse($mulai),
+            'waktu_selesai' => $selesai ? Carbon::parse($selesai) : null,
+            'durasi_hari_kerja' => $selesai ? $sla->hitungHariKerja($mulai, $selesai) : null,
+            'is_clock_off' => false,
+        ]);
+
+        // Penutupan normal: proses_evaluasi (2 HK dari 7) -> ditutup.
+        $normal = $this->permohonan(Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG);
+        $log($normal, 'proses_evaluasi', '2026-01-05 09:00:00', '2026-01-07 09:00:00');
+        $log($normal, 'ditutup_pengajuan_ulang', '2026-01-07 09:00:00', null);
+
+        $hasilNormal = $sla->evaluasiPermohonan($normal->load('statusLog'));
+        $this->assertSame(SlaCalculator::STATE_SELESAI_LEBIH_AWAL, $hasilNormal['state']);
+
+        // Hasil koreksi: proses_evaluasi sama, lalu menunggu_surat keliru 15 HK, lalu ditutup.
+        // Harus dinilai sama dengan penutupan normal, bukan "telat" dari tahap keliru.
+        $koreksi = $this->permohonan(Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG);
+        $log($koreksi, 'proses_evaluasi', '2026-01-05 09:00:00', '2026-01-07 09:00:00');
+        $log($koreksi, 'menunggu_surat_pengesahan', '2026-01-07 09:00:00', '2026-01-28 09:00:00');
+        $log($koreksi, 'ditutup_pengajuan_ulang', '2026-01-28 09:00:00', null);
+
+        $hasilKoreksi = $sla->evaluasiPermohonan($koreksi->load('statusLog'));
+        $this->assertSame($hasilNormal['state'], $hasilKoreksi['state']);
+        $this->assertSame($hasilNormal['label'], $hasilKoreksi['label']);
+    }
+
     private function permohonan(string $status): Permohonan
     {
         $pbf = \App\Models\Pbf::create([
