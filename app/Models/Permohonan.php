@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * ATURAN BISNIS KRITIS (lihat CLAUDE.md §3) — JANGAN diubah lewat query langsung,
  * selalu lewat StatusTransitionService:
  * - 1 permohonan = 1 Staff aktif (lihat Distribusi::aktif()).
- * - Maks. 4 siklus revisi (Permohonan::MAKS_REVISI), siklus ke-5 tidak boleh terjadi.
+ * - Maks. 3 siklus revisi (Permohonan::MAKS_REVISI), siklus ke-4 tidak boleh terjadi.
  * - Status akhir sukses = STATUS_TERBIT_SURAT_PENGESAHAN (bukan "Selesai").
  * - Pengajuan pertama hanya oleh Kepala Balai (dibuat_oleh_tipe = kepala_balai).
  * - Pengajuan ulang dilakukan mandiri oleh Pemohon (dibuat_oleh_tipe = pemohon),
@@ -39,7 +39,6 @@ class Permohonan extends Model
     public const STATUS_REVISI_1 = 'revisi_1';
     public const STATUS_REVISI_2 = 'revisi_2';
     public const STATUS_REVISI_3 = 'revisi_3';
-    public const STATUS_REVISI_4 = 'revisi_4';
     public const STATUS_DITUTUP_PENGAJUAN_ULANG = 'ditutup_pengajuan_ulang';
     public const STATUS_MENUNGGU_SURAT_PENGESAHAN = 'menunggu_surat_pengesahan';
     public const STATUS_TERBIT_SURAT_PENGESAHAN = 'terbit_surat_pengesahan';
@@ -49,14 +48,13 @@ class Permohonan extends Model
      * masih Tidak Lengkap, permohonan ditutup (ditutup_pengajuan_ulang).
      * Bila diubah, tambahkan juga konstanta STATUS_REVISI_N + baris status_master/sla_config.
      */
-    public const MAKS_REVISI = 4;
+    public const MAKS_REVISI = 3;
 
     /** Semua status tahap revisi (clock-off, menunggu upload pemohon). */
     public const STATUS_REVISI = [
         self::STATUS_REVISI_1,
         self::STATUS_REVISI_2,
         self::STATUS_REVISI_3,
-        self::STATUS_REVISI_4,
     ];
 
     public const DIBUAT_OLEH_KEPALA_BALAI = 'kepala_balai';
@@ -217,7 +215,6 @@ class Permohonan extends Model
             self::STATUS_REVISI_1 => 'Revisi 1',
             self::STATUS_REVISI_2 => 'Revisi 2',
             self::STATUS_REVISI_3 => 'Revisi 3',
-            self::STATUS_REVISI_4 => 'Revisi 4',
             self::STATUS_DITUTUP_PENGAJUAN_ULANG => 'Ditutup – Pengajuan Ulang',
             self::STATUS_MENUNGGU_SURAT_PENGESAHAN => 'Menunggu Surat Pengesahan',
             self::STATUS_TERBIT_SURAT_PENGESAHAN => 'Terbit Surat Pengesahan',

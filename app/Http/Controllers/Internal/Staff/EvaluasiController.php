@@ -23,7 +23,6 @@ class EvaluasiController extends Controller
         Permohonan::STATUS_REVISI_1,
         Permohonan::STATUS_REVISI_2,
         Permohonan::STATUS_REVISI_3,
-        Permohonan::STATUS_REVISI_4,
     ];
 
     private function canEvaluate(Permohonan $permohonan): bool

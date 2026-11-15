@@ -12,7 +12,6 @@ $statuses = [
     'revisi_1',
     'revisi_2',
     'revisi_3',
-    'revisi_4',
     'menunggu_surat_pengesahan',
     'terbit_surat_pengesahan',
     'ditutup_pengajuan_ulang',
@@ -237,7 +236,6 @@ $stepX = $barW * 2 + $groupW;
             ['label' => 'Revisi 1', 'count' => $counts['revisi_1'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
             ['label' => 'Revisi 2', 'count' => $counts['revisi_2'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
             ['label' => 'Revisi 3', 'count' => $counts['revisi_3'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
-            ['label' => 'Revisi 4', 'count' => $counts['revisi_4'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
         ]],
     ];
     $ketAkhir = [

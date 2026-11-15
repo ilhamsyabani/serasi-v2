@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * Batas revisi = 4 (Permohonan::MAKS_REVISI). Pemberitahuan "revisi terakhir" berupa
- * modal konfirmasi (SweetAlert): ke evaluator saat akan mengirim revisi ke-4, dan ke
- * pemohon saat akan mengunggah berkas revisi ke-4. Notifikasi WA/email tetap yang biasa.
+ * Batas revisi = 3 (Permohonan::MAKS_REVISI). Pemberitahuan "revisi terakhir" berupa
+ * modal konfirmasi (SweetAlert): ke evaluator saat akan mengirim revisi ke-3, dan ke
+ * pemohon saat akan mengunggah berkas revisi ke-3. Notifikasi WA/email tetap yang biasa.
  */
 class RevisiTerakhirKonfirmasiTest extends TestCase
 {
@@ -121,16 +121,16 @@ class RevisiTerakhirKonfirmasiTest extends TestCase
     {
         [$p, $staff, $pbf] = $this->siapkan();
 
-        for ($ke = 1; $ke <= 3; $ke++) {
-            // Evaluator: belum ada konfirmasi revisi terakhir pada evaluasi ke-1..3.
+        for ($ke = 1; $ke <= 2; $ke++) {
+            // Evaluator: belum ada konfirmasi revisi terakhir pada evaluasi ke-1..2.
             $this->actingAs($staff)->get(route('internal.staff.evaluasi.edit', $p))
                 ->assertOk()
-                ->assertDontSee('Kirim Revisi ke-4 (Terakhir)?', false);
+                ->assertDontSee('Kirim Revisi ke-3 (Terakhir)?', false);
 
             $this->evaluasiTidakLengkap($p, $staff);
             $this->assertSame('revisi_' . $ke, $p->status_saat_ini);
 
-            // Pemohon revisi 1-3: tanpa konfirmasi revisi terakhir.
+            // Pemohon revisi 1-2: tanpa konfirmasi revisi terakhir.
             $this->actingAs($pbf, 'pemohon')->get(route('pemohon.revisi.show', $p))
                 ->assertOk()
                 ->assertDontSee('Revisi Terakhir (ke-', false);
@@ -138,20 +138,20 @@ class RevisiTerakhirKonfirmasiTest extends TestCase
             $this->uploadRevisi($p, $pbf);
         }
 
-        // Evaluasi ke-4 (setelah berkas revisi 3 masuk): evaluator dikonfirmasi via Swal.
+        // Evaluasi ke-3 (setelah berkas revisi 2 masuk): evaluator dikonfirmasi via Swal.
         $this->actingAs($staff)->get(route('internal.staff.evaluasi.edit', $p))
             ->assertOk()
-            ->assertSee('Kirim Revisi ke-4 (Terakhir)?', false);
+            ->assertSee('Kirim Revisi ke-3 (Terakhir)?', false);
 
-        // Evaluasi gagal ke-4 -> revisi_4 (terakhir).
+        // Evaluasi gagal ke-3 -> revisi_3 (terakhir).
         $this->evaluasiTidakLengkap($p, $staff);
-        $this->assertSame(Permohonan::STATUS_REVISI_4, $p->status_saat_ini);
+        $this->assertSame(Permohonan::STATUS_REVISI_3, $p->status_saat_ini);
         $this->assertTrue($p->isRevisiTerakhir());
 
         // Pemohon: konfirmasi Swal sebelum mengirim berkas revisi terakhir.
         $this->actingAs($pbf, 'pemohon')->get(route('pemohon.revisi.show', $p))
             ->assertOk()
-            ->assertSee('Revisi Terakhir (ke-4 dari 4)', false);
+            ->assertSee('Revisi Terakhir (ke-3 dari 3)', false);
 
         // Pemberitahuan cukup lewat modal: notifikasi WA/email tetap yang biasa.
         $this->assertSame('REVISI_DIMINTA', $this->notifTerakhir($p, Notifikasi::TUJUAN_PEMOHON, Notifikasi::CHANNEL_WHATSAPP));
@@ -159,12 +159,12 @@ class RevisiTerakhirKonfirmasiTest extends TestCase
         $this->assertSame('REVISI_DITERIMA', $this->notifTerakhir($p, Notifikasi::TUJUAN_STAFF, Notifikasi::CHANNEL_WHATSAPP));
         $this->assertSame(0, Notifikasi::where('template_kode', 'like', 'REVISI_TERAKHIR%')->count());
 
-        // Evaluasi gagal ke-5 -> ditutup; pesan penutupan menyebut 4 kali revisi.
+        // Evaluasi gagal ke-4 -> ditutup; pesan penutupan menyebut 3 kali revisi.
         $this->waTerkirim = [];
         $this->evaluasiTidakLengkap($p, $staff);
         $this->assertSame(Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG, $p->status_saat_ini);
         $waTutup = collect($this->waTerkirim)->firstWhere(0, '081100000003');
         $this->assertNotNull($waTutup);
-        $this->assertStringContainsString('Setelah 4 kali revisi', $waTutup[1]);
+        $this->assertStringContainsString('Setelah 3 kali revisi', $waTutup[1]);
     }
 }

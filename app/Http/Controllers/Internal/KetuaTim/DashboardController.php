@@ -25,7 +25,6 @@ class DashboardController extends Controller
         Permohonan::STATUS_REVISI_1,
         Permohonan::STATUS_REVISI_2,
         Permohonan::STATUS_REVISI_3,
-        Permohonan::STATUS_REVISI_4,
         Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN,
     ];
 

@@ -13,7 +13,6 @@
         'revisi_1'                  => 'ph-pencil-simple',
         'revisi_2'                  => 'ph-pencil-simple',
         'revisi_3'                  => 'ph-pencil-simple',
-        'revisi_4'                  => 'ph-pencil-simple',
         'menunggu_surat_pengesahan' => 'ph-clock-countdown',
         'terbit_surat_pengesahan'   => 'ph-seal-check',
         'ditutup_pengajuan_ulang'   => 'ph-x-circle',

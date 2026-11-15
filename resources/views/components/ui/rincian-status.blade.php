@@ -25,7 +25,6 @@ $rincian = [
     'revisi_1'                  => 'Revisi 1',
     'revisi_2'                  => 'Revisi 2',
     'revisi_3'                  => 'Revisi 3',
-    'revisi_4'                  => 'Revisi 4',
     'menunggu_surat_pengesahan' => 'Menunggu Surat',
     'terbit_surat_pengesahan'  => 'Terbit',
     'ditutup_pengajuan_ulang'  => 'Ditutup',

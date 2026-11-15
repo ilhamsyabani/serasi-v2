@@ -12,9 +12,9 @@ use App\Models\User;
  * Satu-satunya titik masuk perubahan status permohonan (CLAUDE.md §5).
  *
  * Semua aturan siklus status dijaga di sini agar konsisten & mudah diaudit:
- * - Maks. Permohonan::MAKS_REVISI (4) siklus revisi; revisi_5 dst. DITOLAK (CLAUDE.md §3 poin 2).
+ * - Maks. Permohonan::MAKS_REVISI (3) siklus revisi; revisi_4 dst. DITOLAK (CLAUDE.md §3 poin 2).
  * - `permohonan.revisi_ke` dipelihara otomatis saat masuk tahap revisi.
- * - Tahap revisi_1..4 = clock-off (SLA staff berhenti, CLAUDE.md §3 poin 3).
+ * - Tahap revisi_1..3 = clock-off (SLA staff berhenti, CLAUDE.md §3 poin 3).
  */
 class StatusTransitionService
 {
@@ -36,7 +36,7 @@ class StatusTransitionService
         }
 
         // Penjaga aturan maks revisi + pemeliharaan revisi_ke. Ditaruh SEBELUM
-        // menulis apa pun agar transisi ilegal (revisi_5) gagal tanpa efek samping.
+        // menulis apa pun agar transisi ilegal (revisi_4) gagal tanpa efek samping.
         if (preg_match('/^revisi_(\d+)$/', $statusBaru, $m)) {
             $ke = (int) $m[1];
             if ($ke > self::MAKS_REVISI) {

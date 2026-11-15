@@ -8,7 +8,6 @@ $map = [
     'revisi_1'               => ['bg-amber-100 text-amber-800',  'Revisi ke-1'],
     'revisi_2'               => ['bg-amber-100 text-amber-800',  'Revisi ke-2'],
     'revisi_3'               => ['bg-amber-100 text-amber-800',  'Revisi ke-3'],
-    'revisi_4'               => ['bg-amber-100 text-amber-800',  'Revisi ke-4'],
     'ditutup_pengajuan_ulang'=> ['bg-red-100 text-red-800',     'Ditutup'],
     'menunggu_surat_pengesahan' => ['bg-violet-100 text-violet-800', 'Menunggu Surat'],
     'terbit_surat_pengesahan'=> ['bg-emerald-100 text-emerald-800', 'Terbit'],

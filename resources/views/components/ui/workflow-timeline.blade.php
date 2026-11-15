@@ -13,7 +13,6 @@
         'revisi_1' => ['Revisi ke-1', 'ph-pencil-simple'],
         'revisi_2' => ['Revisi ke-2', 'ph-pencil-simple'],
         'revisi_3' => ['Revisi ke-3', 'ph-pencil-simple'],
-        'revisi_4' => ['Revisi ke-4', 'ph-pencil-simple'],
         'menunggu_surat_pengesahan' => ['Menunggu Surat Pengesahan', 'ph-clock-countdown'],
         'terbit_surat_pengesahan' => ['Terbit Surat Pengesahan', 'ph-seal-check'],
         'ditutup_pengajuan_ulang' => ['Ditutup — Perlu Pengajuan Ulang', 'ph-x-circle'],
