@@ -74,6 +74,13 @@ class PermohonanPolicy
         return false;
     }
 
+    /** Admin IT mengembalikan permohonan ke revisi berikutnya (koreksi status). */
+    public function koreksiStatus(User $user, Permohonan $permohonan): bool
+    {
+        return $user->isAdminIt()
+            && app(\App\Services\KoreksiStatusService::class)->alasanTidakBoleh($permohonan) === null;
+    }
+
     /** Tidak ada delete. */
     public function delete(User $user, Permohonan $permohonan): bool
     {

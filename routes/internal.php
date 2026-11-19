@@ -23,6 +23,7 @@ use App\Http\Controllers\Internal\AdminIt\UserController;
 use App\Http\Controllers\Internal\AdminIt\HariLiburController;
 use App\Http\Controllers\Internal\AdminIt\SlaConfigController;
 use App\Http\Controllers\Internal\AdminIt\AuditTrailController;
+use App\Http\Controllers\Internal\AdminIt\KoreksiStatusController;
 use App\Http\Controllers\Internal\Permohonan\PermohonanController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\Internal\KetuaTim\EskalasiController;
@@ -93,6 +94,8 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::post('/notifikasi-log/{notifikasi}/resend', [NotifikasiLogController::class, 'resend'])->name('notifikasi-log.resend');
             Route::post('/notifikasi-log/resend-all', [NotifikasiLogController::class, 'resendAll'])->name('notifikasi-log.resend-all');
             Route::resource('audit-trail', AuditTrailController::class)->only(['index']);
+            Route::get('/koreksi-status', [KoreksiStatusController::class, 'index'])->name('koreksi-status.index');
+            Route::post('/koreksi-status/{permohonan}', [KoreksiStatusController::class, 'store'])->name('koreksi-status.store');
         });
 
         // Detail permohonan lintas-role. Harus di DALAM grup `auth`, agar tamu

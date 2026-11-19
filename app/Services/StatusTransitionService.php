@@ -132,13 +132,9 @@ class StatusTransitionService
      */
     public function mintaRevisiAtauTutup(Permohonan $permohonan, ?string $catatan, ?User $actor = null, string $aktorTipe = 'internal'): StatusLog
     {
-        $revisiSudah = StatusLog::where('permohonan_id', $permohonan->id)
-            ->whereIn('status', Permohonan::STATUS_REVISI)
-            ->count();
+        $statusBerikutnya = $this->statusSetelahTidakLengkap($permohonan);
 
-        $berikutnya = $revisiSudah + 1;
-
-        if ($berikutnya > self::MAKS_REVISI) {
+        if ($statusBerikutnya === Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG) {
             return $this->transisi(
                 $permohonan,
                 Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG,
@@ -148,6 +144,22 @@ class StatusTransitionService
             );
         }
 
-        return $this->transisi($permohonan, 'revisi_' . $berikutnya, $catatan, $actor, $aktorTipe);
+        return $this->transisi($permohonan, $statusBerikutnya, $catatan, $actor, $aktorTipe);
+    }
+
+    /**
+     * Status tujuan bila permohonan dinilai "Tidak Lengkap" sekarang: revisi_(N+1),
+     * atau ditutup_pengajuan_ulang bila kuota MAKS_REVISI sudah habis. Dipakai juga
+     * untuk pratinjau (mis. konfirmasi koreksi status oleh Admin IT).
+     */
+    public function statusSetelahTidakLengkap(Permohonan $permohonan): string
+    {
+        $berikutnya = StatusLog::where('permohonan_id', $permohonan->id)
+            ->whereIn('status', Permohonan::STATUS_REVISI)
+            ->count() + 1;
+
+        return $berikutnya > self::MAKS_REVISI
+            ? Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG
+            : 'revisi_' . $berikutnya;
     }
 }
