@@ -4,50 +4,58 @@ namespace App\Console\Commands;
 
 use App\Models\Notifikasi;
 use App\Models\Permohonan;
+use App\Models\TemplateNotifikasi;
 use App\Services\NotifikasiService;
 use App\Services\SlaCalculator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Scheduled command untuk mengirim SLA reminder ke staff.
+ * Pengingat WhatsApp "SLA hampir habis" ke staff penanggung jawab.
  * Cron: setiap jam pada jam kerja (diatur di routes/console.php).
  *
- * Logic:
- * - Evaluasi setiap permohonan aktif (bukan final, bukan clock-off/revisi) lewat
- *   SlaCalculator — sumber kebenaran yang sama dengan badge SLA di dashboard.
- * - Sekalian segarkan kolom `sla_deadline_current` & `is_overdue`.
- * - Kirim bila belum telat dan sisa hari kerja <= ambang (default 1 HK, dari
- *   config services.sla_reminder_tenggat dalam jam, dibulatkan ke hari kerja).
- * - Hanya kirim jika belum pernah dikirim hari ini (cegah spam)
- * - Target: staff penanggung jawab aktif
+ * - Status SLA dihitung SlaCalculator (sla_config + hari_libur) — sumber yang sama
+ *   dengan badge SLA di dashboard. Tahap revisi (clock-off) tidak diingatkan.
+ * - Sekalian menyegarkan kolom `sla_deadline_current` & `is_overdue` semua
+ *   permohonan aktif.
+ * - Dikirim hanya untuk tahap tanggung jawab staff, saat sisa hari kerja termasuk
+ *   config services.sla_reminder_hari (default H-2 & H-1).
+ * - Maks. 1 pengingat per permohonan per hari. Setelah lewat batas, giliran
+ *   notifikasi:sla-terlambat.
  */
 class KirimSlaReminder extends Command
 {
+    public const TEMPLATE = 'SLA_MENDEKATI';
+
+    /** Tahap yang menjadi tanggung jawab staff. */
+    private const TAHAP_STAFF = [
+        Permohonan::STATUS_PROSES_EVALUASI,
+        Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN,
+    ];
+
     protected $signature = 'notifikasi:sla-reminder {--dry-run : Jangan kirim, hanya tampilkan yang akan dikirim}';
 
-    protected $description = 'Kirim WhatsApp reminder ke staff untuk permohonan yang mendekati batas SLA';
+    protected $description = 'Kirim WhatsApp pengingat ke staff untuk permohonan yang mendekati batas SLA (H-2 & H-1)';
 
     public function handle(NotifikasiService $notif, SlaCalculator $sla): int
     {
         $this->info('Mulai cek SLA reminder...');
 
-        $tenggatJam = (int) config('services.sla_reminder_tenggat', 24);
-        $ambangHari = max(1, (int) ceil($tenggatJam / 24));
+        $hariPengingat = config('services.sla_reminder_hari', [2, 1]);
         $sekarang = now();
 
         $aktif = Permohonan::query()
             ->whereNotIn('status_saat_ini', [
                 Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN,
                 Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG,
-                Permohonan::STATUS_REVISI_1,
-                Permohonan::STATUS_REVISI_2,
-                Permohonan::STATUS_REVISI_3,
+                ...Permohonan::STATUS_REVISI,
             ])
             ->with(['statusLog', 'distribusiAktif.staff'])
             ->get();
 
-        $permohonans = $aktif->filter(function (Permohonan $p) use ($sla, $ambangHari) {
+        // Evaluasi SLA tahap berjalan; simpan untuk dipakai saat menyusun pesan.
+        $hasilSla = [];
+        $permohonans = $aktif->filter(function (Permohonan $p) use ($sla, $hariPengingat, &$hasilSla) {
             $hasil = $sla->isiDeadline($p);
 
             if (! $this->option('dry-run') && $p->isDirty(['sla_deadline_current', 'is_overdue'])) {
@@ -57,9 +65,16 @@ class KirimSlaReminder extends Command
                 $p->timestamps = true;
             }
 
-            return $hasil !== null
+            $kirim = $hasil !== null
+                && in_array($p->status_saat_ini, self::TAHAP_STAFF, true)
                 && in_array($hasil['state'], [SlaCalculator::STATE_ON_TIME, SlaCalculator::STATE_AT_RISK], true)
-                && $hasil['sisa'] <= $ambangHari;
+                && in_array($hasil['sisa'], $hariPengingat, true);
+
+            if ($kirim) {
+                $hasilSla[$p->id] = $hasil;
+            }
+
+            return $kirim;
         });
 
         if ($permohonans->isEmpty()) {
@@ -69,19 +84,32 @@ class KirimSlaReminder extends Command
 
         $this->info("Ditemukan {$permohonans->count()} permohonan yang mendekati deadline.");
 
+        $templateAktif = TemplateNotifikasi::where('kode_event', self::TEMPLATE)
+            ->where('channel', Notifikasi::CHANNEL_WHATSAPP)
+            ->where('is_active', true)
+            ->exists();
+
+        if (! $templateAktif) {
+            $this->warn('Template WhatsApp ' . self::TEMPLATE . ' tidak ada / nonaktif. Tidak ada yang dikirim.');
+            return self::SUCCESS;
+        }
+
+        $namaTahap = $sla->konfigurasi()->map->nama_tahap;
         $terkirim = 0;
+
         foreach ($permohonans as $p) {
             $staff = $p->distribusiAktif?->staff;
-            if (!$staff) {
+            if (! $staff) {
                 continue;
             }
 
-            // Cek apakah sudah dikirim hari ini (prevengo spam)
+            $hasil = $hasilSla[$p->id];
+
             $sudahKirim = Notifikasi::query()
                 ->where('permohonan_id', $p->id)
                 ->where('tujuan_tipe', Notifikasi::TUJUAN_STAFF)
                 ->where('tujuan_id', $staff->id)
-                ->where('template_kode', 'REMINDER')
+                ->where('template_kode', self::TEMPLATE)
                 ->whereDate('created_at', $sekarang->toDateString())
                 ->exists();
 
@@ -91,21 +119,26 @@ class KirimSlaReminder extends Command
             }
 
             if ($this->option('dry-run')) {
-                $this->line("  [DRY] {$p->no_registrasi} → {$staff->nama}");
+                $this->line("  [DRY] {$p->no_registrasi} → {$staff->nama} (sisa {$hasil['sisa']} HK)");
                 $terkirim++;
                 continue;
             }
 
-            $result = $notif->kirimNotifikasiStaff($staff, $p, 'REMINDER');
+            $result = $notif->kirimNotifikasiStaff($staff, $p, self::TEMPLATE, [
+                '{{nama_staff}}' => $staff->nama,
+                '{{tahap}}' => $namaTahap->get($p->status_saat_ini, $p->status_saat_ini),
+                '{{deadline}}' => $hasil['deadline']?->translatedFormat('d M Y') ?? '-',
+                '{{sisa}}' => (string) $hasil['sisa'],
+            ]);
 
-            if ($result) {
+            if ($result?->status_kirim === Notifikasi::STATUS_TERKIRIM) {
                 $terkirim++;
                 Log::info('KirimSlaReminder: Terkirim', [
                     'permohonan_id' => $p->id,
-                    'staff_id'     => $staff->id,
-                    'notifikasi_id'=> $result->id,
+                    'staff_id' => $staff->id,
+                    'notifikasi_id' => $result->id,
                 ]);
-                $this->info("  [OK] {$p->no_registrasi} → {$staff->nama}");
+                $this->info("  [OK] {$p->no_registrasi} → {$staff->nama} (sisa {$hasil['sisa']} HK)");
             } else {
                 $this->warn("  [GAGAL] {$p->no_registrasi} → {$staff->nama}");
             }

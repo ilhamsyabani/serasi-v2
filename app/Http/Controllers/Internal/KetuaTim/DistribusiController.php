@@ -61,11 +61,8 @@ class DistribusiController extends Controller
 
         $permohonans = $query->latest()->paginate(10);
 
-
-        $staffList = User::whereHas('role', fn ($q) => $q->where('kode', 'staff_sertifikasi'))
-            ->where('is_aktif', true)
-            ->orderBy('nama')
-            ->get();
+        // Calon evaluator: Ketua Tim sendiri + Staff Sertifikasi aktif.
+        $staffList = User::calonEvaluator($user);
 
         // Beban kerja = permohonan aktif (belum final) yang sedang dipegang tiap staff.
         $bebanKerja = Distribusi::query()
@@ -96,13 +93,10 @@ class DistribusiController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        // Penerima wajib Staff Sertifikasi yang aktif — bukan sembarang user.
-        $staff = User::whereKey($data['staff_id'])
-            ->where('is_aktif', true)
-            ->whereHas('role', fn ($q) => $q->where('kode', 'staff_sertifikasi'))
-            ->first();
+        // Penerima wajib Staff Sertifikasi aktif, atau Ketua Tim ini sendiri — bukan sembarang user.
+        $staff = User::find($data['staff_id']);
 
-        if (! $staff) {
+        if (! $staff || ! $staff->bolehDitugaskanOleh($user)) {
             return back()->withErrors(['staff_id' => 'Staff yang dipilih tidak valid atau tidak aktif.'])->withInput();
         }
 
@@ -137,9 +131,14 @@ class DistribusiController extends Controller
         }
 
         $permohonan->refresh();
-        $data['staff_id'] = $staff->id;
 
-        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_STAFF, $data['staff_id'], Notifikasi::CHANNEL_EMAIL, 'DISTRIBUSI_BARU');
+        // Ketua Tim menugaskan dirinya sendiri: tidak perlu notifikasi ke dirinya.
+        if ($staff->id === $user->id) {
+            return redirect()->route('internal.staff.evaluasi.edit', $permohonan)
+                ->with('success', 'Permohonan ditugaskan kepada Anda. Silakan lakukan evaluasi.');
+        }
+
+        app(NotifikasiService::class)->kirim($permohonan, Notifikasi::TUJUAN_STAFF, $staff->id, Notifikasi::CHANNEL_EMAIL, 'DISTRIBUSI_BARU');
 
         app(NotifikasiService::class)->kirimNotifikasiStaff($staff, $permohonan, 'DISTRIBUSI_BARU');
 

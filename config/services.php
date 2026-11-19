@@ -53,6 +53,11 @@ return [
     ],
 
     'sla_reminder_jam' => env('SLA_REMINDER_JAM', 9),
-    'sla_reminder_tenggat' => env('SLA_REMINDER_TENGGAT', 24),
+    // Pengingat "SLA hampir habis" ke staff dikirim saat sisa hari kerja tahap
+    // berjalan bernilai salah satu dari daftar ini (default H-2 & H-1).
+    'sla_reminder_hari' => array_map('intval', array_filter(
+        explode(',', (string) env('SLA_REMINDER_HARI', '2,1')),
+        fn ($v) => trim($v) !== ''
+    )),
 
 ];

@@ -80,7 +80,7 @@
                                         @if($dr->uploaded_at)&middot; {{ $dr->uploaded_at->format('d M Y, H:i') }}@endif
                                     </p>
                                 </div>
-                                <x-ui.button variant="ghost" size="sm" href="{{ route($routeDownload, $dr->id) }}" target="_blank" aria-label="Unduh {{ $dr->nama_file_asli }}">
+                                <x-ui.button variant="ghost" size="sm" href="{{ route($routeDownload, $dr) }}" target="_blank" aria-label="Unduh {{ $dr->nama_file_asli }}">
                                     <i class="ph ph-download-simple text-base" aria-hidden="true"></i>
                                 </x-ui.button>
                             </li>

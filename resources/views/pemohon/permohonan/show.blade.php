@@ -22,14 +22,25 @@
             <x-ui.status-badge :status="$permohonan->status_saat_ini" />
         </div>
 
-        @if($permohonan->parent_permohonan_id)
+        @if($permohonan->pengajuanAsal)
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
                 <p class="text-xs text-amber-700">
                     <strong>Pengajuan Ulang</strong> — Permohonan ini diajukan ulang dari
-                    <a href="{{ route('pemohon.permohonan.show', $permohonan->parent_permohonan_id) }}" class="underline font-mono">{{ $permohonan->pengajuanAsal->no_registrasi ?? $permohonan->parent_permohonan_id }}</a>
+                    <a href="{{ route('pemohon.permohonan.show', $permohonan->pengajuanAsal) }}" class="underline font-mono">{{ $permohonan->pengajuanAsal->no_registrasi }}</a>
+                    {{ $permohonan->dibuat_oleh_tipe === \App\Models\Permohonan::DIBUAT_OLEH_KEPALA_BALAI ? '(diajukan oleh BBPOM)' : '' }}
                 </p>
             </div>
         @endif
+
+        @foreach($permohonan->pengajuanUlang as $anak)
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4">
+                <p class="text-xs text-emerald-800">
+                    <strong>Sudah diajukan ulang</strong> sebagai
+                    <a href="{{ route('pemohon.permohonan.show', $anak) }}" class="underline font-mono">{{ $anak->no_registrasi }}</a>
+                    {{ $anak->dibuat_oleh_tipe === \App\Models\Permohonan::DIBUAT_OLEH_KEPALA_BALAI ? '(diajukan oleh BBPOM)' : '' }}
+                </p>
+            </div>
+        @endforeach
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div>

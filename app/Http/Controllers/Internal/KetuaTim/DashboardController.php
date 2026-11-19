@@ -54,10 +54,8 @@ class DashboardController extends Controller
 
         $perluDistribusi = $permohonanTim->where('status_saat_ini', Permohonan::STATUS_DIDISPOSISIKAN);
 
-        $staffList = User::whereHas('role', fn ($q) => $q->where('kode', 'staff_sertifikasi'))
-            ->where('is_aktif', true)
-            ->orderBy('nama')
-            ->get();
+        // Calon evaluator untuk "Alihkan": Ketua Tim sendiri + Staff Sertifikasi aktif.
+        $staffList = User::calonEvaluator($user);
 
         // Beban kerja = jumlah permohonan aktif tim ini yang sedang dipegang tiap staff.
         $bebanKerja = $permohonanTim

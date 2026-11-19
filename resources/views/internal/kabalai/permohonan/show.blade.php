@@ -50,9 +50,32 @@
                             <i class="ph-fill ph-warning-circle text-amber-500 text-lg mt-0.5"></i>
                             <p class="text-xs text-amber-800 leading-relaxed">
                                 <strong class="font-semibold">Pengajuan Ulang</strong><br>
-                                Permohonan ini merupakan pengajuan ulang dari nomor registrasi 
-                                <span class="font-mono font-medium">{{ $permohonan->pengajuanAsal->no_registrasi ?? $permohonan->parent_permohonan_id }}</span>
+                                Permohonan ini merupakan pengajuan ulang dari nomor registrasi
+                                @if($permohonan->pengajuanAsal)
+                                    <a href="{{ route('internal.kabalai.permohonan.show', $permohonan->pengajuanAsal) }}" class="font-mono font-medium underline">{{ $permohonan->pengajuanAsal->no_registrasi }}</a>
+                                @endif
                             </p>
+                        </div>
+                    @endif
+
+                    {{-- Permohonan ditutup: tautan ke pengajuan ulangnya, atau tombol untuk mengajukan ulang. --}}
+                    @if($permohonan->status_saat_ini === \App\Models\Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG)
+                        @php $anak = $permohonan->pengajuanUlang()->first(); @endphp
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-5 flex flex-wrap items-center justify-between gap-3">
+                            @if($anak)
+                                <p class="text-xs text-slate-700">
+                                    Sudah diajukan ulang sebagai
+                                    <a href="{{ route('internal.kabalai.permohonan.show', $anak) }}" class="font-mono font-medium text-emerald-700 underline">{{ $anak->no_registrasi }}</a>
+                                    oleh {{ $anak->dibuat_oleh_tipe === \App\Models\Permohonan::DIBUAT_OLEH_PEMOHON ? 'pemohon (mandiri)' : 'Kepala Balai' }}.
+                                </p>
+                            @else
+                                <p class="text-xs text-slate-700">Permohonan ditutup dan belum diajukan ulang.</p>
+                                @can('ajukanUlang', $permohonan)
+                                    <x-ui.button variant="default" size="sm" href="{{ route('internal.kabalai.pengajuan-ulang.create', $permohonan) }}">
+                                        <i class="ph ph-arrows-clockwise mr-1" aria-hidden="true"></i> Ajukan Ulang
+                                    </x-ui.button>
+                                @endcan
+                            @endif
                         </div>
                     @endif
 

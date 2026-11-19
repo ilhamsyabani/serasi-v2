@@ -55,6 +55,16 @@ class PermohonanPolicy
         return $user->isKepalaBalai();
     }
 
+    /**
+     * Kepala Balai mengajukan ulang permohonan yang ditutup (belum pernah diajukan ulang).
+     * Pemohon tetap bisa mengajukan ulang mandiri lewat portalnya (CLAUDE.md §3 poin 6).
+     */
+    public function ajukanUlang(User $user, Permohonan $permohonan): bool
+    {
+        return $user->isKepalaBalai()
+            && app(\App\Services\PengajuanUlangService::class)->bisaDiajukanUlang($permohonan);
+    }
+
     /** Kepala Balai boleh edit data pemohon di permohonan miliknya (belum final). */
     public function update(User $user, Permohonan $permohonan): bool
     {

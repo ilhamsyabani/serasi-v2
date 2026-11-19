@@ -326,7 +326,7 @@ $stepX = $barW * 2 + $groupW;
             <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Permohonan</h3>
             <p class="mt-1.5 text-sm text-slate-500">{{ $permohonans->total() }} permohonan di tahun {{ $selectedYear }}</p>
         </div>
-        <x-ui.button variant="default" size="sm" href="{{ route('internal.kabalai.permohonan.create') }}">
+        <x-ui.button variant="destructive" size="sm" href="{{ route('internal.kabalai.permohonan.create') }}">
             <i class="ph ph-plus" aria-hidden="true"></i> Input Permohonan
         </x-ui.button>
     </div>

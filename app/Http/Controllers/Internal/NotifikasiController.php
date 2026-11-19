@@ -56,13 +56,14 @@ class NotifikasiController extends Controller
         $notifikasis = Notifikasi::query()
             ->where('tujuan_tipe', '!=', Notifikasi::TUJUAN_PEMOHON)
             ->where('tujuan_id', $user->id)
-            ->with('permohonan:id,no_registrasi')
+            ->with('permohonan:id,uuid,no_registrasi')
             ->latest()
             ->take(10)
             ->get();
 
         $items = $notifikasis->map(fn($n) => [
-            'id' => $n->id,
+            // UUID: dipakai JS untuk POST /notifikasi/{uuid}/read.
+            'id' => $n->uuid,
             'label' => $n->label,
             'icon' => $n->icon,
             'channel' => $n->channel,
@@ -70,10 +71,9 @@ class NotifikasiController extends Controller
             'is_unread' => $n->isUnread(),
             'dibaca_at' => $n->dibaca_at?->toISOString(),
             'created_at' => $n->created_at->diffForHumans(),
-            'permohonan_id' => $n->permohonan_id,
             'no_registrasi' => $n->permohonan?->no_registrasi,
-            'route' => $n->permohonan_id
-                ? route('internal.permohonan.show', $n->permohonan_id)
+            'route' => $n->permohonan
+                ? route('internal.permohonan.show', $n->permohonan)
                 : route('internal.notifikasi.index'),
         ]);
 

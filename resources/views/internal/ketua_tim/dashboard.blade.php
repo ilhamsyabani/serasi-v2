@@ -92,7 +92,7 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                         <li class="flex items-center gap-3">
                             <x-ui.avatar :name="$s->nama" size="sm" />
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium text-slate-900">{{ $s->nama }}</p>
+                                <p class="truncate text-sm font-medium text-slate-900">{{ $s->labelEvaluator(auth()->user()) }}</p>
                                 <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                                     <div class="h-full rounded-full bg-purple-700" style="width: {{ round($jumlah / $maks * 100) }}%"></div>
                                 </div>
@@ -317,6 +317,9 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                         } elseif ($s === 'didisposisikan') {
                             $posisiLabel = 'Ketua Tim';
                             $posisiColor = 'bg-purple-100 text-purple-800';
+                        } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan']) && $p->distribusiAktif?->staff_id === auth()->id()) {
+                            $posisiLabel = 'Anda (Ketua Tim)';
+                            $posisiColor = 'bg-purple-100 text-purple-800';
                         } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan', 'ditutup_pengajuan_ulang'])) {
                             $posisiLabel = 'Staff';
                             $posisiColor = 'bg-cyan-100 text-cyan-800';
@@ -336,7 +339,7 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                     @if($eskalasi->bisaReminder($p))
                         <button type="button" title="Kirim reminder WhatsApp ke staff"
                                 class="inline-flex h-8 w-8 items-center justify-center rounded-md text-amber-600 hover:bg-amber-50"
-                                @click="$dispatch('buka-eskalasi', { mode: 'reminder', id: {{ $p->id }}, noReg: @js($p->no_registrasi), staffId: {{ $p->distribusiAktif->staff_id }}, staffNama: @js($p->distribusiAktif->staff?->nama) })">
+                                @click="$dispatch('buka-eskalasi', { mode: 'reminder', id: @js($p->uuid), noReg: @js($p->no_registrasi), staffId: {{ $p->distribusiAktif->staff_id }}, staffNama: @js($p->distribusiAktif->staff?->nama) })">
                             <i class="ph ph-bell-ringing text-base" aria-hidden="true"></i>
                             <span class="sr-only">Kirim reminder</span>
                         </button>
@@ -344,10 +347,18 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                     @if($eskalasi->bisaReassign($p))
                         <button type="button" title="Alihkan ke staff lain"
                                 class="inline-flex h-8 w-8 items-center justify-center rounded-md text-blue-700 hover:bg-blue-50"
-                                @click="$dispatch('buka-eskalasi', { mode: 'reassign', id: {{ $p->id }}, noReg: @js($p->no_registrasi), staffId: {{ $p->distribusiAktif->staff_id }}, staffNama: @js($p->distribusiAktif->staff?->nama) })">
+                                @click="$dispatch('buka-eskalasi', { mode: 'reassign', id: @js($p->uuid), noReg: @js($p->no_registrasi), staffId: {{ $p->distribusiAktif->staff_id }}, staffNama: @js($p->distribusiAktif->staff?->nama) })">
                             <i class="ph ph-user-switch text-base" aria-hidden="true"></i>
                             <span class="sr-only">Alihkan staff</span>
                         </button>
+                    @endif
+                    {{-- Ketua Tim sebagai evaluator (menugaskan dirinya sendiri). --}}
+                    @if($p->distribusiAktif?->staff_id === auth()->id())
+                        @if($p->status_saat_ini === \App\Models\Permohonan::STATUS_PROSES_EVALUASI)
+                            <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.evaluasi.edit', $p) }}">Evaluasi</x-ui.button>
+                        @elseif($p->status_saat_ini === \App\Models\Permohonan::STATUS_MENUNGGU_SURAT_PENGESAHAN)
+                            <x-ui.button variant="default" size="sm" href="{{ route('internal.staff.surat.edit', $p) }}">Upload Surat</x-ui.button>
+                        @endif
                     @endif
                     <x-ui.button variant="ghost" size="sm" href="{{ route('internal.permohonan.show', $p) }}">Detail</x-ui.button>
                     <x-ui.timeline-toggle />
@@ -399,7 +410,7 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                                 <option value="">— Pilih staff —</option>
                                 @foreach($staffList as $st)
                                     <option value="{{ $st->id }}" :disabled="staffId == {{ $st->id }}">
-                                        {{ $st->nama }} ({{ $bebanKerja[$st->id] ?? 0 }} permohonan)
+                                        {{ $st->labelEvaluator(auth()->user()) }} ({{ $bebanKerja[$st->id] ?? 0 }} permohonan)
                                     </option>
                                 @endforeach
                             </select>

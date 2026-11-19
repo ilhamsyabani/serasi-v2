@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SlaConfig extends Model
 {
-    use HasFactory;
+    use HasFactory, HasPublicUuid;
 
     protected $table = 'sla_config';
 

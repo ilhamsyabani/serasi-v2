@@ -49,7 +49,9 @@ class EskalasiService
     public function bisaReminder(Permohonan $permohonan): bool
     {
         return in_array($permohonan->status_saat_ini, self::STATUS_BISA_REMINDER, true)
-            && $permohonan->distribusiAktif !== null;
+            && $permohonan->distribusiAktif !== null
+            // Tidak mengingatkan diri sendiri bila Ketua Tim yang menjadi evaluator.
+            && $permohonan->distribusiAktif->staff_id !== $permohonan->disposisi?->ketua_tim_id;
     }
 
     /**
@@ -57,7 +59,8 @@ class EskalasiService
      */
     public function reassign(Permohonan $permohonan, User $ketuaTim, User $staffBaru, string $alasan, ?string $ip = null): Distribusi
     {
-        if (! $staffBaru->is_aktif || ! $staffBaru->isStaffSertifikasi()) {
+        // Staff Sertifikasi aktif, atau Ketua Tim ini sendiri (mengambil alih evaluasi).
+        if (! $staffBaru->bolehDitugaskanOleh($ketuaTim)) {
             throw new \DomainException('Staff tujuan tidak valid atau tidak aktif.');
         }
 
@@ -113,8 +116,11 @@ class EskalasiService
         $permohonan->refresh();
 
         // WA ke staff baru dan staff lama (CLAUDE.md §3 poin 13: reassignment).
-        $this->notifikasi->kirimNotifikasiStaff($staffBaru, $permohonan, 'REASSIGNMENT');
-        if ($staffLama) {
+        // Ketua Tim yang mengambil alih untuk dirinya sendiri tidak perlu dikirimi WA.
+        if ($staffBaru->id !== $ketuaTim->id) {
+            $this->notifikasi->kirimNotifikasiStaff($staffBaru, $permohonan, 'REASSIGNMENT');
+        }
+        if ($staffLama && $staffLama->id !== $ketuaTim->id) {
             $this->notifikasi->kirimNotifikasiStaff($staffLama, $permohonan, 'REASSIGNMENT');
         }
 

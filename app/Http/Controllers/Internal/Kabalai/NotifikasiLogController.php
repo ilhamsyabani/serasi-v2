@@ -20,7 +20,7 @@ class NotifikasiLogController extends Controller
         $isAdminIt = $user->role?->kode === 'admin_it';
 
         $query = Notifikasi::query()
-            ->with(['permohonan:id,no_registrasi,nama_pbf_snapshot,pbf_id', 'permohonan.pbf:id,nama_pbf,email,no_whatsapp'])
+            ->with(['permohonan:id,uuid,no_registrasi,nama_pbf_snapshot,pbf_id', 'permohonan.pbf:id,nama_pbf,email,no_whatsapp'])
             ->latest();
 
         if (!$isAdminIt) {

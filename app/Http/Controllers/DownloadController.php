@@ -7,24 +7,22 @@ use Illuminate\Support\Facades\Gate;
 
 class DownloadController extends Controller
 {
-    public function dokumen(int $permohonanId, string $jenisDokumen)
+    // Parameter route di-resolve lewat UUID (HasPublicUuid), bukan ID angka.
+    public function dokumen(\App\Models\Permohonan $permohonan, string $jenisDokumen)
     {
-        $dokumen = \App\Models\DokumenPermohonan::where('permohonan_id', $permohonanId)
+        abort_unless($this->canAccessPermohonan($permohonan), 403);
+
+        $dokumen = \App\Models\DokumenPermohonan::where('permohonan_id', $permohonan->id)
             ->where('jenis_dokumen', $jenisDokumen)
             ->latest('versi')
             ->firstOrFail();
 
-        abort_unless(
-            $this->canAccessPermohonan($dokumen->permohonan),
-            403
-        );
-
         return $this->previewFile($dokumen->path_file, $dokumen->nama_file_asli);
     }
 
-    public function revisi(int $revisiId)
+    public function revisi(\App\Models\DokumenRevisi $revisi)
     {
-        $dokumen = \App\Models\DokumenRevisi::findOrFail($revisiId);
+        $dokumen = $revisi;
 
         abort_unless(
             $this->canAccessPermohonan($dokumen->revisi->permohonan),
@@ -34,16 +32,13 @@ class DownloadController extends Controller
         return $this->previewFile($dokumen->path_file, $dokumen->nama_file_asli);
     }
 
-    public function surat(int $permohonanId)
+    public function surat(\App\Models\Permohonan $permohonan)
     {
-        $surat = \App\Models\SuratPengesahan::where('permohonan_id', $permohonanId)
+        abort_unless($this->canAccessPermohonan($permohonan), 403);
+
+        $surat = \App\Models\SuratPengesahan::where('permohonan_id', $permohonan->id)
             ->latest('id')
             ->firstOrFail();
-
-        abort_unless(
-            $this->canAccessPermohonan($surat->permohonan),
-            403
-        );
 
         return $this->previewFile($surat->path_file, $surat->nomor_surat . '.pdf');
     }

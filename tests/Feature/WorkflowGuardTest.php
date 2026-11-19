@@ -300,8 +300,8 @@ class WorkflowGuardTest extends TestCase
 
         // Berkas revisi bisa diunduh pemilik, bukan PBF lain.
         $dokumen = $p->revisi->first()->dokumenRevisi->first();
-        $this->actingAs($pbf, 'pemohon')->get(route('pemohon.download.revisi', $dokumen->id))->assertOk();
-        $this->actingAs($this->pbf(), 'pemohon')->get(route('pemohon.download.revisi', $dokumen->id))->assertForbidden();
+        $this->actingAs($pbf, 'pemohon')->get(route('pemohon.download.revisi', $dokumen))->assertOk();
+        $this->actingAs($this->pbf(), 'pemohon')->get(route('pemohon.download.revisi', $dokumen))->assertForbidden();
     }
 
     // ── M-17: Reassign & reminder Ketua Tim ───────────
@@ -409,7 +409,7 @@ class WorkflowGuardTest extends TestCase
         // Hilang dari daftar & tidak bisa dibuka...
         $this->assertNull(Permohonan::find($p->id));
         $this->actingAs($kabalai)->get(route('internal.kabalai.permohonan.index'))->assertDontSee($p->no_registrasi);
-        $this->actingAs($kabalai)->get(route('internal.permohonan.show', $p->id))->assertNotFound();
+        $this->actingAs($kabalai)->get(route('internal.permohonan.show', $p))->assertNotFound();
 
         // ...tetapi baris, riwayat status, dan audit trail tetap ada.
         $this->assertNotNull(Permohonan::withTrashed()->find($p->id)->deleted_at);
@@ -456,7 +456,7 @@ class WorkflowGuardTest extends TestCase
             'permohonan_id' => $p->id, 'jenis_dokumen' => 'surat_permohonan', 'nama_file_asli' => 'lama.pdf',
             'path_file' => 'dokumen_permohonan/lama.pdf', 'ukuran_file_kb' => 1, 'mime_type' => 'application/pdf', 'uploaded_at' => now(),
         ]);
-        $url = route('pemohon.download.dokumen', [$p->id, 'surat_permohonan']);
+        $url = route('pemohon.download.dokumen', [$p, 'surat_permohonan']);
 
         // Sebelum dipindahkan pun tetap bisa diunduh pemiliknya (fallback), dan hanya lewat login.
         $this->actingAs($pbf, 'pemohon')->get($url)->assertOk();

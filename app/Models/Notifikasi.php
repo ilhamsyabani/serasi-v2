@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\HasPublicUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Notifikasi extends Model
 {
-    use HasFactory;
+    use HasFactory, HasPublicUuid;
 
     protected $table = 'notifikasi';
     public const UPDATED_AT = null;
@@ -133,6 +134,7 @@ class Notifikasi extends Model
         'SIAP_TERBIT' => 'Siap Terbit Surat',
         'SURAT_TERBIT' => 'Surat Pengesahan Terbit',
         'REMINDER' => 'Pengingat',
+        'SLA_MENDEKATI' => 'SLA Hampir Habis',
         'AKUN_BARU' => 'Akun Baru',
         'PENGAJUAN_ULANG' => 'Pengajuan Ulang',
         'REASSIGNMENT' => 'Penugasan Ulang Staff',
@@ -150,6 +152,7 @@ class Notifikasi extends Model
         'SIAP_TERBIT' => 'ph-seal-check',
         'SURAT_TERBIT' => 'ph-seal-check-fill',
         'REMINDER' => 'ph-bell-ringing',
+        'SLA_MENDEKATI' => 'ph-hourglass-medium',
         'AKUN_BARU' => 'ph-user-circle-plus',
         'PENGAJUAN_ULANG' => 'ph-arrows-clockwise',
         'REASSIGNMENT' => 'ph-arrows-left-right',

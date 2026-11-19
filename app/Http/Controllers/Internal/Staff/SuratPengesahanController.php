@@ -82,7 +82,7 @@ class SuratPengesahanController extends Controller
         if (! $terbit) {
             $berkas->hapus($path);
 
-            return redirect()->route('internal.staff.dashboard')
+            return redirect()->route(Auth::user()->ruteKembaliEvaluator())
                 ->with('error', 'Surat tidak disimpan: permohonan tidak lagi dalam tahap menunggu surat pengesahan.');
         }
 
@@ -92,6 +92,6 @@ class SuratPengesahanController extends Controller
         $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_WHATSAPP, 'SURAT_TERBIT');
         $notif->kirim($permohonan, Notifikasi::TUJUAN_PEMOHON, $permohonan->pbf_id, Notifikasi::CHANNEL_EMAIL, 'SURAT_TERBIT');
 
-        return redirect()->route('internal.staff.dashboard')->with('success', 'Surat pengesahan berhasil diterbitkan.');
+        return redirect()->route(Auth::user()->ruteKembaliEvaluator())->with('success', 'Surat pengesahan berhasil diterbitkan.');
     }
 }

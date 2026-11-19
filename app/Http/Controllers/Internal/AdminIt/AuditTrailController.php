@@ -14,7 +14,7 @@ class AuditTrailController extends Controller
     public function index(Request $request)
     {
         $query = AuditTrail::query()
-            ->with(['permohonan:id,no_registrasi,nama_pbf_snapshot'])
+            ->with(['permohonan:id,uuid,no_registrasi,nama_pbf_snapshot'])
             ->latest();
 
         // Filter: pencarian — OR di 3 tempat berbeda, jadi pakai where dengan OR baru di outer

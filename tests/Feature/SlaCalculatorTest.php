@@ -181,11 +181,12 @@ class SlaCalculatorTest extends TestCase
         try {
             Carbon::setTestNow('2026-01-14 10:00:00'); // Rabu
             $longgar = $buat('2026-01-12 09:00:00');   // deadline 21 Jan, sisa 5
-            $mepet = $buat('2026-01-05 14:00:00');     // deadline 14 Jan (hari ini), sisa 0
-            $besok = $buat('2026-01-06 08:00:00');     // deadline 15 Jan, sisa 1
+            $mepet = $buat('2026-01-05 14:00:00');     // deadline 14 Jan (hari ini), sisa 0 -> tidak (bukan H-2/H-1)
+            $besok = $buat('2026-01-06 08:00:00');     // deadline 15 Jan, sisa 1 -> H-1
+            $lusa = $buat('2026-01-07 08:00:00');      // deadline 16 Jan, sisa 2 -> H-2
             $telat = $buat('2026-01-01 09:00:00');     // deadline 12 Jan, sudah lewat
 
-            // Tanpa --dry-run agar kolom ikut disegarkan.
+            // Tanpa --dry-run agar kolom ikut disegarkan. Yang dipilih: H-1 & H-2.
             $this->artisan('notifikasi:sla-reminder')
                 ->expectsOutputToContain('Ditemukan 2 permohonan')
                 ->assertSuccessful();

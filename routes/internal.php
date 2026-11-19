@@ -9,6 +9,7 @@ use App\Http\Controllers\Internal\DashboardController;
 use App\Http\Controllers\Internal\Kabalai\DashboardController as KabalaiDashboardController;
 use App\Http\Controllers\Internal\Kabalai\PermohonanController as KabalaiPermohonanController;
 use App\Http\Controllers\Internal\Kabalai\DisposisiController;
+use App\Http\Controllers\Internal\Kabalai\PengajuanUlangController;
 use App\Http\Controllers\Internal\Kabalai\NotifikasiLogController;
 use App\Http\Controllers\Internal\KetuaTim\DashboardController as KetuaTimDashboardController;
 use App\Http\Controllers\Internal\KetuaTim\DistribusiController;
@@ -49,6 +50,10 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::get('/permohonan/{permohonan}/edit', [KabalaiPermohonanController::class, 'edit'])->name('permohonan.edit');
             Route::put('/permohonan/{permohonan}', [KabalaiPermohonanController::class, 'update'])->name('permohonan.update');
             Route::delete('/permohonan/{permohonan}', [KabalaiPermohonanController::class, 'destroy'])->name('permohonan.destroy');
+            // Pengajuan ulang permohonan yang ditutup (akun PBF sama, cukup unggah dokumen).
+            Route::get('/pengajuan-ulang', [PengajuanUlangController::class, 'index'])->name('pengajuan-ulang.index');
+            Route::get('/pengajuan-ulang/{permohonan}', [PengajuanUlangController::class, 'create'])->name('pengajuan-ulang.create');
+            Route::post('/pengajuan-ulang/{permohonan}', [PengajuanUlangController::class, 'store'])->name('pengajuan-ulang.store');
             Route::get('/disposisi', [DisposisiController::class, 'index'])->name('disposisi.index');
             Route::post('/disposisi/{permohonan}', [DisposisiController::class, 'store'])->name('disposisi.store');
         });
@@ -64,6 +69,11 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
 
         Route::prefix('staff')->middleware('role:staff_sertifikasi')->name('staff.')->group(function () {
             Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
+        });
+
+        // Tugas evaluator: Staff Sertifikasi, atau Ketua Tim yang menugaskan dirinya sendiri.
+        // Controller tetap memastikan hanya evaluator aktif (distribusi aktif) yang boleh beraksi.
+        Route::prefix('staff')->middleware('role:staff_sertifikasi,ketua_tim')->name('staff.')->group(function () {
             Route::get('/permohonan', [StaffPermohonanController::class, 'index'])->name('permohonan.index');
             Route::get('/evaluasi/{permohonan}/edit', [EvaluasiController::class, 'edit'])->name('evaluasi.edit');
             Route::put('/evaluasi/{permohonan}', [EvaluasiController::class, 'update'])->name('evaluasi.update');

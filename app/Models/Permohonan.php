@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\HasPublicUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,7 +29,7 @@ class Permohonan extends Model
 {
     // Hapus = soft delete: baris, riwayat status, dan audit trail tetap tersimpan
     // (CLAUDE.md §4 — riwayat instansi pemerintah tidak boleh hilang).
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasPublicUuid, SoftDeletes;
 
     protected $table = 'permohonan';
 

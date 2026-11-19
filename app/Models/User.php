@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
  */
 class User extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, HasPublicUuid;
 
     protected $table = 'users';
 
@@ -63,6 +64,58 @@ class User extends Authenticatable
     public function isAdminIt(): bool
     {
         return $this->role?->kode === Role::ADMIN_IT;
+    }
+
+    // ── Evaluator ─────────────────────────────────────
+
+    /**
+     * Boleh ditugaskan sebagai evaluator oleh Ketua Tim ini (distribusi/reassign):
+     * Staff Sertifikasi aktif, ATAU Ketua Tim itu sendiri (menugaskan dirinya).
+     * Tetap 1 permohonan = 1 evaluator (CLAUDE.md §3 poin 1).
+     */
+    public function bolehDitugaskanOleh(User $ketuaTim): bool
+    {
+        if (! $this->is_aktif) {
+            return false;
+        }
+
+        return $this->isStaffSertifikasi()
+            || ($this->id === $ketuaTim->id && $ketuaTim->isKetuaTim());
+    }
+
+    /**
+     * Calon evaluator yang bisa dipilih Ketua Tim: dirinya sendiri (paling atas)
+     * lalu Staff Sertifikasi aktif.
+     *
+     * @return \Illuminate\Support\Collection<int,User>
+     */
+    public static function calonEvaluator(User $ketuaTim): \Illuminate\Support\Collection
+    {
+        $staff = static::whereHas('role', fn ($q) => $q->where('kode', Role::STAFF_SERTIFIKASI))
+            ->where('is_aktif', true)
+            ->orderBy('nama')
+            ->get();
+
+        return $ketuaTim->isKetuaTim() && $ketuaTim->is_aktif
+            ? $staff->prepend($ketuaTim)->values()
+            : $staff;
+    }
+
+    /** Label pilihan evaluator, menandai Ketua Tim yang menugaskan dirinya sendiri. */
+    public function labelEvaluator(?User $pemilih = null): string
+    {
+        return $pemilih && $this->id === $pemilih->id
+            ? $this->nama . ' (Saya — Ketua Tim)'
+            : $this->nama;
+    }
+
+    /**
+     * Halaman tujuan setelah evaluator menyelesaikan aksi (evaluasi/unggah surat):
+     * Ketua Tim kembali ke daftar "Evaluasi Saya", staff ke dashboard-nya.
+     */
+    public function ruteKembaliEvaluator(): string
+    {
+        return $this->isKetuaTim() ? 'internal.staff.permohonan.index' : 'internal.staff.dashboard';
     }
 
     // ── Sebagai Kepala Balai ──────────────────────────

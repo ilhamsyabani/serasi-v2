@@ -58,21 +58,12 @@
                     <td class="px-4 py-3 text-slate-700">{{ $p->nama_pbf_snapshot }}</td>
                     <td class="px-4 py-3"><x-ui.status-badge :status="$p->status_saat_ini" /></td>
                     <td class="px-4 py-3 text-slate-400 text-xs">{{ $p->tanggal_pengajuan?->format('d M Y') }}</td>
-                    <td class="px-4 py-3 text-right">
-                        <div x-data="{ open: false }">
-                            <x-ui.button variant="outline" size="sm" @click="open = !open">Disposisi</x-ui.button>
-                            <div x-show="open" x-transition class="mt-2 bg-white border border-slate-200 rounded-lg p-4 shadow-lg text-left w-64">
-                                <form method="POST" action="{{ route('internal.kabalai.disposisi.store', $p) }}" class="space-y-3">
-                                    @csrf
-                                    <x-ui.select label="Pilih Ketua Tim" name="ketua_tim_id" :options="$ketuaTimList->mapWithKeys(fn($kt) => [$kt->id => $kt->nama])->toArray()" placeholder="— Pilih —" required />
-                                    <x-ui.textarea label="Catatan" name="catatan" :rows="2" placeholder="Opsional" />
-                                    <div class="flex gap-2">
-                                        <x-ui.button type="submit" size="sm">Kirim</x-ui.button>
-                                        <x-ui.button type="button" variant="ghost" size="sm" @click="open = false">Batal</x-ui.button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+                    {{-- x-data wajib: Alpine hanya menjalankan x-on:click di dalam komponen x-data. --}}
+                    <td class="px-4 py-3 text-right" x-data>
+                        <x-ui.button variant="outline" size="sm"
+                            x-on:click="$dispatch('buka-disposisi', {{ \Illuminate\Support\Js::from(['uuid' => $p->uuid, 'noReg' => $p->no_registrasi, 'pbf' => $p->nama_pbf_snapshot]) }})">
+                            <i class="ph ph-paper-plane-right mr-1.5" aria-hidden="true"></i> Disposisi
+                        </x-ui.button>
                     </td>
                 </tr>
                 @empty
@@ -82,4 +73,37 @@
         </table>
     </x-ui.card-content>
 </x-ui.card>
+
+{{-- Modal disposisi: satu untuk semua baris. Dibuka ulang otomatis bila validasi gagal. --}}
+<x-ui.modal name="disposisi" title="Disposisi ke Ketua Tim"
+    :buka-otomatis="$errors->any() && old('_permohonan')"
+    :detail="['uuid' => old('_permohonan'), 'noReg' => old('_no_reg'), 'pbf' => old('_pbf')]">
+    <x-slot:subtitle>
+        <span class="font-mono" x-text="data.noReg"></span> &middot; <span x-text="data.pbf"></span>
+    </x-slot:subtitle>
+
+    <form method="POST" :action="{{ \Illuminate\Support\Js::from(route('internal.kabalai.disposisi.store', '__ID__')) }}.replace('__ID__', data.uuid)">
+        @csrf
+        <input type="hidden" name="_permohonan" :value="data.uuid">
+        <input type="hidden" name="_no_reg" :value="data.noReg">
+        <input type="hidden" name="_pbf" :value="data.pbf">
+
+        <div class="space-y-4 px-5 py-4">
+            <x-ui.select label="Pilih Ketua Tim" name="ketua_tim_id"
+                :options="$ketuaTimList->mapWithKeys(fn($kt) => [$kt->id => $kt->nama])->toArray()"
+                placeholder="— Pilih Ketua Tim —" required
+                :error="$errors->first('ketua_tim_id')" />
+            <x-ui.textarea label="Catatan (opsional)" name="catatan" :rows="3"
+                :value="old('catatan')" placeholder="Contoh: Mohon untuk ditindaklanjuti."
+                :error="$errors->first('catatan')" />
+        </div>
+
+        <div class="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
+            <x-ui.button type="button" variant="ghost" size="sm" x-on:click="buka = false">Batal</x-ui.button>
+            <x-ui.button type="submit" size="sm">
+                <i class="ph ph-paper-plane-right mr-1.5" aria-hidden="true"></i> Kirim Disposisi
+            </x-ui.button>
+        </div>
+    </form>
+</x-ui.modal>
 @endsection

@@ -100,7 +100,8 @@ class RevisiController extends Controller
 
         $ktId = $permohonan->disposisi?->ketua_tim_id;
         $kt = $ktId ? User::find($ktId) : null;
-        if ($kt) {
+        // Ketua Tim yang juga evaluatornya sudah menerima REVISI_DITERIMA di atas — jangan dobel.
+        if ($kt && $ktId !== $staffId) {
             $notif->kirimNotifikasiKetuaTim($kt, $permohonan, 'REVISI_UPLOADED');
             $notif->kirim($permohonan, Notifikasi::TUJUAN_KETUA_TIM, $ktId, Notifikasi::CHANNEL_EMAIL, 'REVISI_UPLOADED');
         }

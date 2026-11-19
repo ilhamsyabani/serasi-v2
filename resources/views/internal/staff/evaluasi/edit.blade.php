@@ -170,7 +170,7 @@ $showConfirmModal = $revisiKe > 0 || $isStatusRevisi;
 
             <div class="flex items-center gap-3 pt-2">
                 <x-ui.button type="submit" variant="default" x-bind:disabled="submitting">Simpan Evaluasi</x-ui.button>
-                <x-ui.button variant="outline" href="{{ route('internal.staff.dashboard') }}">Batal</x-ui.button>
+                <x-ui.button variant="outline" href="{{ route(auth()->user()->ruteKembaliEvaluator()) }}">Batal</x-ui.button>
             </div>
         </form>
     </x-ui.card-content>

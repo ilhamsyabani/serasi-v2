@@ -98,7 +98,12 @@ Pada login pertama, kode OTP akan dikirim via WhatsApp.", 'is_active' => true],
 
             ['kode_event' => 'REMINDER', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => "⏰ *Reminder*\n\nNo. Reg: {{no_registrasi}}\nPBF: {{nama_pbf}}\n\nPermohonan mendekati batas SLA. Segera diproses.", 'is_active' => true],
 
-            ['kode_event' => 'SLA_TERLAMBAT', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => \App\Models\TemplateNotifikasi::DEFAULT_SLA_TERLAMBAT_WA, 'is_active' => true],
+            ['kode_event' => 'PENGAJUAN_ULANG', 'channel' => 'whatsapp', 'subjek' => '', 'isi_template' => \App\Models\TemplateNotifikasi::DEFAULT_PENGAJUAN_ULANG_WA, 'is_active' => true],
+            ['kode_event' => 'PENGAJUAN_ULANG', 'channel' => 'email', 'subjek' => 'Pengajuan Ulang Diterima - SERASI', 'isi_template' => \App\Models\TemplateNotifikasi::DEFAULT_PENGAJUAN_ULANG_EMAIL, 'is_active' => true],
+
+            ['kode_event' => 'SLA_MENDEKATI','channel' => 'whatsapp', 'subjek' => '', 'isi_template' => \App\Models\TemplateNotifikasi::DEFAULT_SLA_MENDEKATI_WA, 'is_active' => true],
+
+            ['kode_event' => 'SLA_TERLAMBAT','channel' => 'whatsapp', 'subjek' => '', 'isi_template' => \App\Models\TemplateNotifikasi::DEFAULT_SLA_TERLAMBAT_WA, 'is_active' => true],
         ];
 
         foreach ($templates as $t) {

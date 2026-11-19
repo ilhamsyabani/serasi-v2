@@ -94,7 +94,8 @@ class EvaluasiController extends Controller
 
         $notif = app(NotifikasiService::class);
         $ketuaTimId = $permohonan->disposisi?->ketua_tim_id;
-        $ketuaTim = $ketuaTimId ? User::find($ketuaTimId) : null;
+        // Bila Ketua Tim sendiri yang mengevaluasi, ia tidak perlu dikirimi notifikasi.
+        $ketuaTim = $ketuaTimId && $ketuaTimId !== $user->id ? User::find($ketuaTimId) : null;
 
         if ($data['hasil'] === 'lengkap') {
             if ($ketuaTim) {
@@ -129,6 +130,6 @@ class EvaluasiController extends Controller
             }
         }
 
-        return redirect()->route('internal.staff.dashboard')->with('success', $pesan);
+        return redirect()->route($user->ruteKembaliEvaluator())->with('success', $pesan);
     }
 }
