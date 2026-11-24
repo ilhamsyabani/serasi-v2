@@ -24,7 +24,8 @@ $navItems = collect([
         'section' => 'Permohonan',
         'items' => collect([
             (object)['route' => 'internal.kabalai.permohonan.index', 'label' => 'Semua Permohonan', 'icon' => 'ph-files', 'roles' => ['kepala_balai']],
-            (object)['route' => 'internal.kabalai.pengajuan-ulang.index', 'label' => 'Pengajuan Ulang', 'icon' => 'ph-arrows-clockwise', 'roles' => ['kepala_balai']],
+            // Disembunyikan sementara (24 Nov 2026) — route & halaman tetap ada.
+            // (object)['route' => 'internal.kabalai.pengajuan-ulang.index', 'label' => 'Pengajuan Ulang', 'icon' => 'ph-arrows-clockwise', 'roles' => ['kepala_balai']],
             (object)['route' => 'internal.kabalai.disposisi.index', 'label' => 'Disposisi', 'icon' => 'ph-paper-plane-tilt', 'roles' => ['kepala_balai']],
             (object)['route' => 'internal.ketua_tim.distribusi.index', 'label' => 'Distribusi', 'icon' => 'ph-share-network', 'roles' => ['ketua_tim']],
             // Permohonan yang Ketua Tim tugaskan kepada dirinya sendiri sebagai evaluator.
