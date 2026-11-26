@@ -475,4 +475,32 @@ class WorkflowGuardTest extends TestCase
         // Idempoten.
         $this->artisan('berkas:amankan')->assertSuccessful();
     }
+
+    // ── Dashboard Kepala Balai ────────────────────────
+
+    public function test_posisi_dan_on_process_kabalai_tidak_bergantung_tahun_pengajuan(): void
+    {
+        $kabalai = $this->user(Role::KEPALA_BALAI);
+        $tahunLalu = now()->subYear();
+
+        // Diajukan tahun lalu, masih berjalan sampai sekarang.
+        $this->permohonan(Permohonan::STATUS_PROSES_EVALUASI, ['tanggal_pengajuan' => $tahunLalu]);
+        $this->permohonan(Permohonan::STATUS_REVISI_2, ['tanggal_pengajuan' => $tahunLalu]);
+        // Sudah final: tidak boleh masuk posisi mana pun.
+        $this->permohonan(Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN, ['tanggal_pengajuan' => $tahunLalu]);
+        $this->permohonan(Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG, ['tanggal_pengajuan' => $tahunLalu]);
+        // Diajukan tahun ini.
+        $this->permohonan(Permohonan::STATUS_PENGAJUAN);
+
+        // Dashboard default = tahun berjalan; permohonan tahun lalu yang masih berjalan tetap terhitung.
+        $response = $this->actingAs($kabalai)->get(route('internal.kabalai.dashboard'))->assertOk();
+
+        $this->assertSame(3, $response->viewData('onProcess'));
+        $this->assertEqualsCanonicalizing(
+            [Permohonan::STATUS_PROSES_EVALUASI, Permohonan::STATUS_REVISI_2, Permohonan::STATUS_PENGAJUAN],
+            $response->viewData('permohonanBerjalan')->pluck('status_saat_ini')->all()
+        );
+        // Statistik per tahun tetap mengikuti tahun terpilih.
+        $this->assertCount(1, $response->viewData('allPermohonans'));
+    }
 }

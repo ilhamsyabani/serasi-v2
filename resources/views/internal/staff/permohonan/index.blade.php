@@ -114,13 +114,14 @@ $filterColor = $tabs[$filter]['color'] ?? 'slate';
                             $posisiLabel = 'Staff';
                             $posisiColor = 'bg-cyan-100 text-cyan-800';
                         } elseif ($s === 'ditutup_pengajuan_ulang') {
-                            $posisiLabel = 'Staff';
+                            // Status akhir: tidak lagi berada di tangan siapa pun.
+                            $posisiLabel = 'Selesai';
                             $posisiColor = 'bg-red-100 text-red-800';
                         } elseif (in_array($s, \App\Models\Permohonan::STATUS_REVISI)) {
                             $posisiLabel = 'Pemohon';
                             $posisiColor = 'bg-amber-100 text-amber-800';
                         } else {
-                            $posisiLabel = 'Pemohon';
+                            $posisiLabel = 'Selesai';
                             $posisiColor = 'bg-emerald-100 text-emerald-800';
                         }
                     @endphp

@@ -127,9 +127,17 @@ class DashboardController extends Controller
             $availableYears = $availableYears->push(now()->year)->sortDesc()->values();
         }
 
-        $onProcess = Permohonan::whereYear('tanggal_pengajuan', $year)
-            ->whereNotIn('status_saat_ini', ['terbit_surat_pengesahan', 'ditutup_pengajuan_ulang'])
-            ->count();
+        // "Posisi permohonan saat ini" & "On Process" = SEMUA permohonan yang belum final,
+        // TANPA filter tahun. Permohonan yang diajukan tahun lalu tetapi masih berjalan
+        // harus tetap terhitung; dengan filter tahun, semuanya lenyap tiap pergantian tahun.
+        $permohonanBerjalan = Permohonan::query()
+            ->whereNotIn('status_saat_ini', [
+                Permohonan::STATUS_TERBIT_SURAT_PENGESAHAN,
+                Permohonan::STATUS_DITUTUP_PENGAJUAN_ULANG,
+            ])
+            ->get(['id', 'status_saat_ini', 'tanggal_pengajuan']);
+
+        $onProcess = $permohonanBerjalan->count();
 
         $statusOptions = [
             'pengajuan' => 'Pengajuan',
@@ -149,6 +157,7 @@ class DashboardController extends Controller
             'slaRingkasan' => $sla->ringkasan($allPerms),
             'statBulanan' => $statBulanan,
             'onProcess' => $onProcess,
+            'permohonanBerjalan' => $permohonanBerjalan,
             'selectedYear' => (int) $year,
             'availableYears' => $availableYears,
             'search' => $search,

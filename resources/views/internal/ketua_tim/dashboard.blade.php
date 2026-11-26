@@ -318,9 +318,13 @@ $onProcess = $allPermohonans->whereNotIn('status_saat_ini', ['terbit_surat_penge
                         } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan']) && $p->distribusiAktif?->staff_id === auth()->id()) {
                             $posisiLabel = 'Anda (Ketua Tim)';
                             $posisiColor = 'bg-purple-100 text-purple-800';
-                        } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan', 'ditutup_pengajuan_ulang'])) {
+                        } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan'])) {
                             $posisiLabel = 'Staff';
                             $posisiColor = 'bg-cyan-100 text-cyan-800';
+                        } elseif ($p->isStatusAkhir()) {
+                            // Status akhir: tidak lagi berada di tangan siapa pun.
+                            $posisiLabel = 'Selesai';
+                            $posisiColor = 'bg-slate-100 text-slate-600';
                         } else {
                             $posisiLabel = 'Pemohon';
                             $posisiColor = 'bg-amber-100 text-amber-800';
