@@ -19,13 +19,11 @@ foreach ($allPermohonans as $p) {
         $roleBucket['katim'][] = $p;
     } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan'])) {
         $roleBucket['staff'][] = $p;
-    } elseif ($s === 'ditutup_pengajuan_ulang') {
-        $roleBucket['staff'][] = $p;
     } elseif (in_array($s, \App\Models\Permohonan::STATUS_REVISI)) {
         $roleBucket['pemohon'][] = $p;
-    } elseif ($s === 'terbit_surat_pengesahan') {
-        $roleBucket['pemohon'][] = $p;
     }
+    // terbit_surat_pengesahan & ditutup_pengajuan_ulang = status akhir,
+    // tidak masuk bucket role mana pun.
 }
 
 $counts = $allPermohonans->countBy('status_saat_ini');

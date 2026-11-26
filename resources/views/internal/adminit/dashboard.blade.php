@@ -212,6 +212,10 @@ $onProcess = $permohonans->whereNotIn('status_saat_ini', ['terbit_surat_pengesah
                 <i class="ph ph-calendar-x mr-2" aria-hidden="true"></i>
                 Hari Libur & Cuti →
             </x-ui.button>
+            <x-ui.button variant="outline" href="{{ route('internal.adminit.hari-libur.index', ['import' => 1]) }}" class="w-full justify-start">
+                <i class="ph ph-microsoft-excel-logo mr-2" aria-hidden="true"></i>
+                Import Excel Hari Libur →
+            </x-ui.button>
         </x-ui.card-content>
     </x-ui.card>
 </div>

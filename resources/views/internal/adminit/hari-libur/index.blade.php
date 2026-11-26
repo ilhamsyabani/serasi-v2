@@ -12,6 +12,82 @@
     <div class="flex items-center gap-2">
         <x-ui.button variant="outline" size="sm" href="{{ route('internal.adminit.hari-libur.create') }}">+ Tambah Satu</x-ui.button>
         <x-ui.button variant="outline" size="sm" x-data @click="$dispatch('open-bulk')">+ Tambah Massal</x-ui.button>
+        <x-ui.button variant="default" size="sm" x-data @click="$dispatch('open-import')">
+            <i class="ph ph-microsoft-excel-logo mr-1.5" aria-hidden="true"></i> Import Excel
+        </x-ui.button>
+    </div>
+</div>
+
+{{-- Ringkasan hasil import --}}
+@if($hasil = session('hasilImport'))
+    @php
+        $jumlahDilewati = count($hasil['dilewati']);
+        $jumlahGagal = count($hasil['gagal']);
+    @endphp
+    <x-ui.alert :type="$jumlahGagal ? 'warning' : 'success'" class="mb-5" dismissible>
+        <p class="font-medium">
+            Import selesai: {{ $hasil['ditambah'] }} ditambahkan, {{ $hasil['diperbarui'] }} diperbarui,
+            {{ $jumlahDilewati }} dilewati (sudah ada), {{ $jumlahGagal }} gagal.
+        </p>
+        @if($jumlahDilewati)
+            <p class="mt-1 text-xs">Dilewati: {{ implode(', ', array_slice($hasil['dilewati'], 0, 20)) }}{{ $jumlahDilewati > 20 ? ', …' : '' }}</p>
+        @endif
+        @if($jumlahGagal)
+            <ul class="mt-2 list-disc pl-5 text-xs space-y-0.5">
+                @foreach(array_slice($hasil['gagal'], 0, 30) as $pesan)
+                    <li>{{ $pesan }}</li>
+                @endforeach
+                @if($jumlahGagal > 30)
+                    <li>… dan {{ $jumlahGagal - 30 }} baris lainnya.</li>
+                @endif
+            </ul>
+        @endif
+    </x-ui.alert>
+@endif
+
+{{-- Modal Import Excel. Terbuka otomatis bila datang dari tombol dashboard (?import=1) atau validasi gagal. --}}
+<div x-data="{ open: {{ request()->boolean('import') || $errors->has('berkas') ? 'true' : 'false' }} }"
+     @open-import.window="open = true"
+     x-show="open"
+     x-on:keydown.escape.window="open = false"
+     x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4" @click.stop>
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <h3 class="font-semibold text-slate-900">Import Hari Libur dari Excel</h3>
+            <button type="button" @click="open = false" class="text-slate-400 hover:text-slate-600" aria-label="Tutup">
+                <i class="ph ph-x text-xl"></i>
+            </button>
+        </div>
+        <form method="POST" action="{{ route('internal.adminit.hari-libur.import.store') }}" enctype="multipart/form-data" class="p-5 space-y-4">
+            @csrf
+            <x-ui.file-input label="Berkas Excel / CSV" name="berkas" accept=".xlsx,.csv"
+                :max-kb="\App\Services\HariLiburImportService::UKURAN_MAKS_KB" required
+                help="Kolom A: Tanggal, kolom B: Keterangan. Baris judul boleh ada." />
+
+            <div class="rounded-lg bg-slate-50 border border-slate-100 p-3 text-xs text-slate-600 space-y-1">
+                <p>Tanggal boleh berformat sel <em>Date</em> Excel, atau teks <span class="font-mono">YYYY-MM-DD</span> / <span class="font-mono">DD/MM/YYYY</span>.</p>
+                <p>Hanya sheet pertama yang dibaca, maks {{ \App\Services\HariLiburImportService::MAKS_BARIS }} baris. Baris yang gagal tidak menghentikan baris lain.</p>
+                <a href="{{ route('internal.adminit.hari-libur.import.template') }}" class="inline-flex items-center gap-1 font-medium text-emerald-700 hover:underline">
+                    <i class="ph ph-download-simple" aria-hidden="true"></i> Unduh template Excel
+                </a>
+            </div>
+
+            <label class="flex items-start gap-2.5 text-sm text-slate-700">
+                <input type="checkbox" name="timpa" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                <span>
+                    Perbarui keterangan untuk tanggal yang sudah ada
+                    <span class="block text-xs text-slate-400">Jika tidak dicentang, tanggal yang sudah terdaftar dilewati.</span>
+                </span>
+            </label>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <x-ui.button type="button" variant="outline" @click="open = false">Batal</x-ui.button>
+                <x-ui.button type="submit" variant="default">
+                    <i class="ph ph-upload-simple mr-1.5" aria-hidden="true"></i> Import
+                </x-ui.button>
+            </div>
+        </form>
     </div>
 </div>
 

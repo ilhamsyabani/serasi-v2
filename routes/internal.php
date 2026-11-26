@@ -21,6 +21,7 @@ use App\Http\Controllers\Internal\AdminIt\DashboardController as AdminItDashboar
 use App\Http\Controllers\Internal\AdminIt\ConfigSettingController;
 use App\Http\Controllers\Internal\AdminIt\UserController;
 use App\Http\Controllers\Internal\AdminIt\HariLiburController;
+use App\Http\Controllers\Internal\AdminIt\HariLiburImportController;
 use App\Http\Controllers\Internal\AdminIt\SlaConfigController;
 use App\Http\Controllers\Internal\AdminIt\AuditTrailController;
 use App\Http\Controllers\Internal\AdminIt\KoreksiStatusController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Internal\Permohonan\PermohonanController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\Internal\KetuaTim\EskalasiController;
 use App\Http\Controllers\Internal\NotifikasiController;
+use App\Http\Controllers\Internal\LaporanController;
 
 Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'security.headers'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -87,6 +89,10 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::get('/pengaturan', [ConfigSettingController::class, 'index'])->name('config-setting.index');
             Route::post('/pengaturan', [ConfigSettingController::class, 'update'])->name('config-setting.update');
             Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+            // Import (modal di halaman Hari Libur). Didaftarkan sebelum resource agar
+            // `hari-libur/import/...` tidak tertangkap sebagai {hari_libur}.
+            Route::post('/hari-libur/import', [HariLiburImportController::class, 'store'])->name('hari-libur.import.store');
+            Route::get('/hari-libur/import/template', [HariLiburImportController::class, 'template'])->name('hari-libur.import.template');
             Route::resource('hari-libur', HariLiburController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
             Route::post('/hari-libur/bulk', [HariLiburController::class, 'bulkStore'])->name('hari-libur.bulk-store');
             Route::resource('sla-config', SlaConfigController::class)->only(['index', 'edit', 'update']);
@@ -96,6 +102,13 @@ Route::prefix('admin')->name('internal.')->middleware(['web', 'force.https', 'se
             Route::resource('audit-trail', AuditTrailController::class)->only(['index']);
             Route::get('/koreksi-status', [KoreksiStatusController::class, 'index'])->name('koreksi-status.index');
             Route::post('/koreksi-status/{permohonan}', [KoreksiStatusController::class, 'store'])->name('koreksi-status.store');
+        });
+
+        // M-14 Laporan & Ekspor — Ketua Tim (timnya) dan Staff (miliknya).
+        Route::prefix('laporan')->middleware('role:ketua_tim,staff_sertifikasi')->name('laporan.')->group(function () {
+            Route::get('/', [LaporanController::class, 'index'])->name('index');
+            Route::get('/export', [LaporanController::class, 'export'])->middleware('throttle:10,1')->name('export');
+            Route::get('/export-pdf', [LaporanController::class, 'exportPdf'])->middleware('throttle:10,1')->name('export-pdf');
         });
 
         // Detail permohonan lintas-role. Harus di DALAM grup `auth`, agar tamu

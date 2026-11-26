@@ -34,14 +34,12 @@ foreach ($allPermohonans as $p) {
     } elseif (in_array($s, ['proses_evaluasi', 'menunggu_surat_pengesahan'])) {
         // Staff: sudah didistribusikan, sedang diproses
         $roleBucket['staff'][] = $p;
-    } elseif ($s === 'ditutup_pengajuan_ulang') {
-        // Ditutup: revisi terakhir (MAKS_REVISI) tetap tidak lengkap
-        $roleBucket['staff'][] = $p;
     } elseif (in_array($s, \App\Models\Permohonan::STATUS_REVISI)) {
         // Revisi: menunggu aksi dari pemohon
         $roleBucket['pemohon'][] = $p;
     }
-    // terbit_surat_pengesahan = selesai, tidak masuk bucket mana pun
+    // terbit_surat_pengesahan & ditutup_pengajuan_ulang = status akhir,
+    // tidak masuk bucket role mana pun (ditampilkan terpisah).
 }
 
 $counts = $allPermohonans->countBy('status_saat_ini');

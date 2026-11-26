@@ -41,14 +41,21 @@ $navItems = collect([
         ])
     ],
 
+    // ── Laporan (M-14) ──
+    (object)[
+        'section' => 'Laporan',
+        'items' => collect([
+            (object)['route' => 'internal.laporan.index', 'label' => 'Laporan & Ekspor', 'icon' => 'ph-file-xls', 'roles' => ['ketua_tim', 'staff_sertifikasi']],
+        ])
+    ],
+
     // ── Manajemen (Admin IT only) ──
     (object)[
         'section' => 'Manajemen',
         'items' => collect([
             (object)['route' => 'internal.adminit.users.index', 'label' => 'Manajemen User', 'icon' => 'ph-users-three', 'roles' => ['admin_it']],
             (object)['route' => 'internal.adminit.sla-config.index', 'label' => 'Konfigurasi SLA', 'icon' => 'ph-clock-countdown', 'roles' => ['admin_it']],
-            (object)['route' => 'internal.adminit.hari-libur.index', 'label' => 'Hari Libur & Cuti', 'icon' => 'ph-calendar-x', 'roles' => ['admin_it']],
-            (object)['route' => 'internal.adminit.config-setting.index', 'label' => 'Pengaturan', 'icon' => 'ph-gear', 'roles' => ['admin_it']],
+            (object)['route' => 'internal.adminit.hari-libur.index', 'label' => 'Hari Libur & Cuti', 'icon' => 'ph-calendar-x', 'roles' => ['admin_it']],            (object)['route' => 'internal.adminit.config-setting.index', 'label' => 'Pengaturan', 'icon' => 'ph-gear', 'roles' => ['admin_it']],
             (object)['route' => 'internal.adminit.koreksi-status.index', 'label' => 'Koreksi Status', 'icon' => 'ph-arrow-counter-clockwise', 'roles' => ['admin_it']],
         ])
     ],
