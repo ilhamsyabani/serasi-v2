@@ -23,7 +23,9 @@ $roleBucket = [
     'staff'   => [],
     'pemohon' => [],
 ];
-foreach ($allPermohonans as $p) {
+// Posisi saat ini dihitung dari seluruh permohonan yang belum final (lintas tahun),
+// bukan hanya yang diajukan pada tahun terpilih.
+foreach ($permohonanBerjalan as $p) {
     $s = $p->status_saat_ini;
     if ($s === 'pengajuan') {
         // Kabalai: input permohonan, belum didisposisikan
@@ -42,7 +44,9 @@ foreach ($allPermohonans as $p) {
     // tidak masuk bucket role mana pun (ditampilkan terpisah).
 }
 
+// $counts: per tahun terpilih (status akhir). $countsBerjalan: posisi saat ini, lintas tahun.
 $counts = $allPermohonans->countBy('status_saat_ini');
+$countsBerjalan = $permohonanBerjalan->countBy('status_saat_ini');
 $namaBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 @endphp
 
@@ -76,7 +80,7 @@ $namaBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov',
             </div>
             <div class="rounded-xl bg-white/15 p-2.5"><i class="ph ph-hourglass-medium text-xl" aria-hidden="true"></i></div>
         </div>
-        <p class="text-xs text-amber-100 mt-2">sedang diproses</p>
+        <p class="text-xs text-amber-100 mt-2">sedang diproses (semua tahun)</p>
     </div>
 </div>
 
@@ -227,13 +231,13 @@ $stepX = $barW * 2 + $groupW;
         ['label' => 'Kepala Balai',          'icon' => 'ph-user-circle-gear', 'count' => count($roleBucket['kabalai']), 'color' => 'bg-blue-100 text-blue-800',     'children' => []],
         ['label' => 'Ketua Tim Sertifikasi', 'icon' => 'ph-users-three',      'count' => count($roleBucket['katim']),   'color' => 'bg-purple-100 text-purple-800', 'children' => []],
         ['label' => 'Staff Sertifikasi',     'icon' => 'ph-user-list',        'count' => count($roleBucket['staff']),   'color' => 'bg-cyan-100 text-cyan-800',     'children' => [
-            ['label' => 'Verifikasi / Evaluasi', 'count' => $counts['proses_evaluasi'] ?? 0,           'color' => 'bg-cyan-100 text-cyan-800'],
-            ['label' => 'Menunggu Surat',        'count' => $counts['menunggu_surat_pengesahan'] ?? 0, 'color' => 'bg-violet-100 text-violet-800'],
+            ['label' => 'Verifikasi / Evaluasi', 'count' => $countsBerjalan['proses_evaluasi'] ?? 0,           'color' => 'bg-cyan-100 text-cyan-800'],
+            ['label' => 'Menunggu Surat',        'count' => $countsBerjalan['menunggu_surat_pengesahan'] ?? 0, 'color' => 'bg-violet-100 text-violet-800'],
         ]],
         ['label' => 'Pemohon (PBF)',         'icon' => 'ph-storefront',       'count' => count($roleBucket['pemohon']), 'color' => 'bg-amber-100 text-amber-800',   'children' => [
-            ['label' => 'Revisi 1', 'count' => $counts['revisi_1'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
-            ['label' => 'Revisi 2', 'count' => $counts['revisi_2'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
-            ['label' => 'Revisi 3', 'count' => $counts['revisi_3'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
+            ['label' => 'Revisi 1', 'count' => $countsBerjalan['revisi_1'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
+            ['label' => 'Revisi 2', 'count' => $countsBerjalan['revisi_2'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
+            ['label' => 'Revisi 3', 'count' => $countsBerjalan['revisi_3'] ?? 0, 'color' => 'bg-amber-100 text-amber-800'],
         ]],
     ];
     $ketAkhir = [
@@ -244,7 +248,7 @@ $stepX = $barW * 2 + $groupW;
     <x-ui.card class="pb-2">
         <div class="px-6 pb-4">
             <h3 class="font-semibold text-lg leading-none tracking-tight text-blue-900">Keterangan Role &amp; Status</h3>
-            <p class="mt-1.5 text-sm text-slate-500">Posisi permohonan saat ini</p>
+            <p class="mt-1.5 text-sm text-slate-500">Posisi permohonan yang masih berjalan saat ini (semua tahun)</p>
         </div>
         <ul class="divide-y divide-slate-100 border-t border-slate-100">
             @foreach($ketRoles as $role)
